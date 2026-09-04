@@ -1,0 +1,6 @@
+# HTTrack Website Copier Cookie File
+# This file format is compatible with Netscape cookies
+chromora.in	TRUE	/	FALSE	1999999999	woocommerce_items_in_cart	1
+chromora.in	TRUE	/	FALSE	1999999999	wp_woocommerce_session_806d0dd823f2c0a34f022115538d8767	t_13346c11242c8d1d62a0493d1a062c%7C1788550164%7C1788463764%7C%24generic%24yUsdxsAOIc_Hrf5uN-ZxzZ_b-IdqHKUACE0m5VdG
+chromora.in	TRUE	/	FALSE	1999999999	woocommerce_cart_hash	4f5428a81b57819cc9f3861a2ae8c5c1
+

@@ -1,0 +1,1 @@
+import{j as e}from"./index-CgsTjVhy.js";import{L as o}from"./label-C8dAbglz.js";const a=({label:s})=>e.jsx(o,{className:"col-span-4 sm:col-span-2 font-medium text-sm text-foreground",children:s});export{a as L};
