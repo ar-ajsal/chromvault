@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createRazorpayOrder,
   verifyPaymentAndCreateOrder,
+  createGuestOrder,
   getAllOrders,
   getOrderById,
   updateOrder,
@@ -16,6 +17,7 @@ const {
 // Razorpay Checkout
 router.post('/create-razorpay-order', createRazorpayOrder);
 router.post('/verify-payment', verifyPaymentAndCreateOrder);
+router.post('/guest-checkout', createGuestOrder);
 
 // Dashboard Analytics
 router.get('/dashboard-amount', getDashboardAmount);

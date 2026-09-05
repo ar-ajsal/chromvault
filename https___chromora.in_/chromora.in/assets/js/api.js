@@ -59,7 +59,7 @@ function createProductCardHTML(product) {
                 ${saleBadge}
                 <img
                     width="300" height="300"
-                    src="${image}"
+                      src="${image}"
                     class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail"
                     alt="${title}"
                     loading="lazy"
@@ -68,16 +68,19 @@ function createProductCardHTML(product) {
                 <h2 class="woocommerce-loop-product__title">${title}</h2>
                 <span class="price">${priceHTML}</span>
             </a>
-            <a
-                href="#"
-                data-product_id="${productId}"
-                data-product_title="${title}"
-                data-product_price="${price}"
-                data-product_image="${image}"
-                data-product_slug="${slug}"
-                class="button product_type_simple add_to_cart_button ajax_add_to_cart"
-                aria-label="Add "${title}" to your cart"
-            >Add to cart</a>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                <a
+                    href="#"
+                    data-product_id="${productId}"
+                    data-product_title="${title}"
+                    data-product_price="${price}"
+                    data-product_image="${image}"
+                    data-product_slug="${slug}"
+                    class="button product_type_simple add_to_cart_button ajax_add_to_cart"
+                    aria-label="Add &quot;${title}&quot; to your cart"
+                    style="flex: 1; text-align: center; border-radius: 0; background-color: #000; color: #fff; text-transform: uppercase; font-weight: bold;"
+                >Add to cart</a>
+            </div>
         </div>
     </li>`;
 }

@@ -8,6 +8,7 @@ const adminSchema = new mongoose.Schema({
   phone: { type: String, required: false },
   role: { type: String, default: 'Admin' },
   image: { type: String, required: false },
+  access_list: { type: Array, required: false },
 }, { timestamps: true });
 
 adminSchema.pre('save', async function() {

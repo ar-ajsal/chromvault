@@ -40,7 +40,8 @@ const loginAdmin = async (req, res) => {
         name: admin.name,
         email: admin.email,
         role: admin.role,
-        image: admin.image
+        image: admin.image,
+        access_list: admin.access_list
       });
     } else {
       res.status(401).send({ message: "Invalid Email or Password!" });

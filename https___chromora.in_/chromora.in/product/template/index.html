@@ -2060,6 +2060,561 @@ class="hfeed site" id="page">
 	<div class="summary entry-summary">
 		<nav class="woocommerce-breadcrumb" aria-label="Breadcrumb"><a href="../../index.html">Home</a>&nbsp;&#47;&nbsp;<a href="../../product-category/bestsellers/index.html">BESTSELLERS</a>&nbsp;&#47;&nbsp;CH fleur-bracelet</nav><span class="single-product-category"><a href="../../product-category/bestsellers/index.html" rel="tag">BESTSELLERS</a>, <a href="../../product-category/bracelets/index.html" rel="tag">BRACELETS</a>, <a href="../../product-category/ch/index.html" rel="tag">CH-CHROME HEARTS</a></span><h1 class="product_title entry-title">CH fleur-bracelet</h1><p class="price"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#8377;</span>1,199</bdi></span></del> <span class="screen-reader-text">Original price was: &#8377;1,199.</span><ins aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#8377;</span>449</bdi></span></ins><span class="screen-reader-text">Current price is: &#8377;449.</span></p>
 <p class="stock out-of-stock">Out of stock</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- CHROMORA PREMIUM CART ACTIONS             -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="chromora-cart-actions">
+
+    <!-- Urgency badge -->
+    <div id="chro-urgency">
+        <span id="chro-fire">🔥</span>
+        <span id="chro-urgency-text">Only <strong>3 left</strong> — selling fast</span>
+    </div>
+
+    <!-- Quantity selector -->
+    <div id="chro-qty-wrap">
+        <span id="chro-qty-label">QTY</span>
+        <div id="chro-qty-controls">
+            <button id="chromora-qty-minus" class="chro-qty-btn" aria-label="Decrease quantity">−</button>
+            <input type="number" id="chromora-qty" class="qty" name="quantity" value="1" min="1" max="99" aria-label="Product quantity" />
+            <button id="chromora-qty-plus" class="chro-qty-btn" aria-label="Increase quantity">+</button>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div id="chro-btn-stack">
+
+        <!-- ADD TO CART — primary action -->
+        <div id="chro-atc-wrap">
+            <button id="chromora-add-to-cart-btn"
+                class="button single_add_to_cart_button"
+                data-product_id="151"
+                aria-label="Add to cart">
+                <span class="chro-btn-icon">🛒</span>
+                <span class="chro-btn-label">ADD TO CART</span>
+                <span id="chro-atc-shine"></span>
+            </button>
+        </div>
+
+        <!-- BUY NOW — urgent CTA -->
+        <button id="chromora-buy-now-btn"
+            class="button single_buy_now_button"
+            data-product_id="151"
+            aria-label="Buy now">
+            <span class="chro-btn-icon">⚡</span>
+            <span class="chro-btn-label">BUY NOW</span>
+            <span id="chro-buy-shine"></span>
+        </button>
+
+    </div>
+
+    <!-- Trust badges -->
+    <div id="chro-trust">
+        <span>🚚 Free Ship ₹499+</span>
+        <span>↩️ Easy Returns</span>
+        <span>🔒 Secure Pay</span>
+    </div>
+
+</div>
+
+<style>
+/* ═══ KEYFRAMES ═══ */
+@keyframes chro-pulse-ring {
+    0%   { box-shadow: 0 0 0 0px rgba(255,255,255,0.35); }
+    70%  { box-shadow: 0 0 0 14px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0px rgba(255,255,255,0); }
+}
+@keyframes chro-glow-buy {
+    0%, 100% { box-shadow: 0 0 18px 4px rgba(255,220,80,0.45), 0 4px 24px rgba(255,200,0,0.25); }
+    50%       { box-shadow: 0 0 32px 8px rgba(255,220,80,0.7),  0 8px 32px rgba(255,200,0,0.4); }
+}
+@keyframes chro-shimmer {
+    0%   { left: -100%; }
+    100% { left: 150%; }
+}
+@keyframes chro-fire-bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%       { transform: translateY(-3px) scale(1.15); }
+}
+@keyframes chro-urgency-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.7; }
+}
+@keyframes chro-badge-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ WRAPPER ═══ */
+#chromora-cart-actions {
+    all: initial !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    margin: 22px 0 20px 0 !important;
+    font-family: 'Pixelify Sans', sans-serif !important;
+    animation: chro-badge-in 0.4s ease both !important;
+}
+
+/* ═══ URGENCY BADGE ═══ */
+#chro-urgency {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: rgba(255,60,60,0.12) !important;
+    border: 1px solid rgba(255,80,80,0.4) !important;
+    border-radius: 50px !important;
+    padding: 6px 14px !important;
+    width: fit-content !important;
+    animation: chro-urgency-pulse 2s ease-in-out infinite !important;
+}
+#chro-fire {
+    font-size: 14px !important;
+    display: inline-block !important;
+    animation: chro-fire-bounce 1.2s ease-in-out infinite !important;
+}
+#chro-urgency-text {
+    font-family: 'Pixelify Sans', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #ff8888 !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+}
+#chro-urgency-text strong {
+    color: #ff4444 !important;
+    font-weight: 800 !important;
+}
+
+/* ═══ QTY SELECTOR ═══ */
+#chro-qty-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+#chro-qty-label {
+    font-family: 'Space Mono', monospace !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: rgba(255,255,255,0.45) !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+}
+#chro-qty-controls {
+    display: flex !important;
+    align-items: center !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1.5px solid rgba(255,255,255,0.25) !important;
+    border-radius: 50px !important;
+    overflow: hidden !important;
+    backdrop-filter: blur(4px) !important;
+}
+#chromora-cart-actions .chro-qty-btn {
+    all: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+    font-weight: 300 !important;
+    color: rgba(255,255,255,0.8) !important;
+    cursor: pointer !important;
+    transition: background 0.15s, color 0.15s !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+#chromora-cart-actions .chro-qty-btn:hover {
+    background: rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+    transform: none !important;
+}
+#chromora-cart-actions #chromora-qty {
+    all: unset !important;
+    width: 42px !important;
+    height: 36px !important;
+    text-align: center !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    border-left: 1px solid rgba(255,255,255,0.15) !important;
+    border-right: 1px solid rgba(255,255,255,0.15) !important;
+    background: transparent !important;
+    -moz-appearance: textfield !important;
+}
+#chromora-cart-actions #chromora-qty::-webkit-outer-spin-button,
+#chromora-cart-actions #chromora-qty::-webkit-inner-spin-button { -webkit-appearance: none !important; }
+
+/* ═══ BUTTON STACK ═══ */
+#chro-btn-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+/* ─── ADD TO CART ─── */
+#chro-atc-wrap {
+    position: relative !important;
+    border-radius: 12px !important;
+    padding: 2px !important;
+    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.6) 100%) !important;
+    animation: chro-pulse-ring 2.5s ease-out infinite !important;
+}
+#chromora-add-to-cart-btn {
+    all: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 17px 24px !important;
+    background: #0a0a0a !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    font-family: 'Pixelify Sans', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2.5px !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    position: relative !important;
+    overflow: hidden !important;
+    transition: background 0.25s ease, transform 0.18s ease !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+#chromora-add-to-cart-btn:hover {
+    background: #1a1a1a !important;
+    transform: translateY(-3px) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 8px 28px rgba(255,255,255,0.12) !important;
+}
+#chromora-add-to-cart-btn:active {
+    transform: translateY(0px) !important;
+}
+#chromora-add-to-cart-btn.added {
+    background: linear-gradient(135deg, #0d6b0d, #1a9a1a) !important;
+    letter-spacing: 3px !important;
+}
+#chro-atc-shine {
+    position: absolute !important;
+    top: 0 !important; left: -100% !important;
+    width: 60% !important; height: 100% !important;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%) !important;
+    pointer-events: none !important;
+    transition: none !important;
+}
+#chromora-add-to-cart-btn:hover #chro-atc-shine {
+    animation: chro-shimmer 0.6s ease forwards !important;
+}
+
+/* ─── BUY NOW ─── */
+#chromora-buy-now-btn {
+    all: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 17px 24px !important;
+    background: linear-gradient(135deg, #FFD700 0%, #FF8C00 50%, #FFD700 100%) !important;
+    background-size: 200% auto !important;
+    color: #000 !important;
+    border-radius: 12px !important;
+    font-family: 'Pixelify Sans', sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    letter-spacing: 3px !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border: none !important;
+    animation: chro-glow-buy 2s ease-in-out infinite !important;
+    transition: transform 0.18s ease, filter 0.18s ease !important;
+}
+#chromora-buy-now-btn:hover {
+    transform: translateY(-4px) scale(1.02) !important;
+    filter: brightness(1.1) !important;
+    color: #000 !important;
+    background: linear-gradient(135deg, #FFE44D 0%, #FFA500 50%, #FFE44D 100%) !important;
+    box-shadow: 0 10px 40px rgba(255,200,0,0.5) !important;
+    border: none !important;
+}
+#chromora-buy-now-btn:active {
+    transform: translateY(0px) scale(0.99) !important;
+}
+#chro-buy-shine {
+    position: absolute !important;
+    top: 0 !important; left: -100% !important;
+    width: 60% !important; height: 100% !important;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%) !important;
+    pointer-events: none !important;
+    animation: chro-shimmer 2s ease 1s infinite !important;
+}
+
+/* ═══ TRUST BADGES ═══ */
+#chro-trust {
+    display: flex !important;
+    gap: 0 !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 10px !important;
+    backdrop-filter: blur(4px) !important;
+}
+#chro-trust span {
+    font-family: 'Space Mono', monospace !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: rgba(255,255,255,0.5) !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+}
+
+/* ═══ ICON SIZE ═══ */
+#chromora-cart-actions .chro-btn-icon {
+    font-size: 17px !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+}
+#chromora-cart-actions .chro-btn-label {
+    flex-shrink: 0 !important;
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 480px) {
+    #chro-trust { flex-wrap: wrap; gap: 6px !important; justify-content: center !important; }
+    #chromora-buy-now-btn { font-size: 14px !important; letter-spacing: 2px !important; }
+    #chromora-add-to-cart-btn { font-size: 13px !important; }
+}
+</style>
+
+<script>
+(function(){
+    var qtyInput = document.getElementById('chromora-qty');
+    document.getElementById('chromora-qty-minus').addEventListener('click', function(){
+        var v = parseInt(qtyInput.value)||1;
+        if(v>1) qtyInput.value = v-1;
+    });
+    document.getElementById('chromora-qty-plus').addEventListener('click', function(){
+        var v = parseInt(qtyInput.value)||1;
+        if(v<99) qtyInput.value = v+1;
+    });
+
+    // ATC flash
+    var atcBtn = document.getElementById('chromora-add-to-cart-btn');
+    if(atcBtn){
+        atcBtn.addEventListener('click', function(){
+            var orig = atcBtn.innerHTML;
+            atcBtn.innerHTML = '<span class="chro-btn-icon">✓</span><span class="chro-btn-label">ADDED TO CART!</span>';
+            atcBtn.classList.add('added');
+            // bounce
+            atcBtn.style.transform = 'scale(0.96)';
+            setTimeout(function(){ atcBtn.style.transform = ''; }, 120);
+            setTimeout(function(){ atcBtn.innerHTML = orig; atcBtn.classList.remove('added'); }, 2000);
+        });
+    }
+
+    // Randomise urgency stock number between 3-7 for realism
+    var urgText = document.getElementById('chro-urgency-text');
+    if(urgText){
+        var n = Math.floor(Math.random()*5)+3;
+        urgText.innerHTML = 'Only <strong>'+n+' left</strong> \u2014 selling fast';
+    }
+})();
+</script>
+<!-- END CHROMORA CART ACTIONS -->
+
+<style>
+/* ====== CHROMORA PRODUCT ACTION BUTTONS — HIGH SPECIFICITY FIX ====== */
+#chromora-cart-actions {
+    margin: 20px 0 18px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+/* Quantity row */
+#chromora-cart-actions .chromora-qty-wrap {
+    display: flex !important;
+    align-items: center !important;
+    width: fit-content !important;
+    border: 2px solid rgba(255,255,255,0.7) !important;
+    border-radius: 50px !important;
+    overflow: hidden !important;
+    background: #000 !important;
+}
+#chromora-cart-actions button.chromora-qty-btn {
+    all: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    color: #fff !important;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border: none !important;
+    transition: background 0.15s !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+}
+#chromora-cart-actions button.chromora-qty-btn:hover {
+    background: rgba(255,255,255,0.12) !important;
+    color: #fff !important;
+    transform: none !important;
+}
+#chromora-cart-actions .chromora-qty-input {
+    width: 46px !important;
+    height: 38px !important;
+    text-align: center !important;
+    border: none !important;
+    border-left: 1px solid rgba(255,255,255,0.4) !important;
+    border-right: 1px solid rgba(255,255,255,0.4) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #fff !important;
+    font-size: 15px !important;
+    font-family: 'Space Mono', monospace !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    -moz-appearance: textfield !important;
+    outline: none !important;
+}
+#chromora-cart-actions .chromora-qty-input::-webkit-outer-spin-button,
+#chromora-cart-actions .chromora-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+/* Button row */
+#chromora-cart-actions .chromora-btn-row {
+    display: flex !important;
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
+}
+/* ADD TO CART — black bg, white border */
+#chromora-cart-actions button.chromora-atc-btn {
+    all: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 !important;
+    padding: 13px 16px !important;
+    background: #111 !important;
+    color: #fff !important;
+    border: 2px solid #fff !important;
+    border-radius: 8px !important;
+    font-family: 'Pixelify Sans', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.5px !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+#chromora-cart-actions button.chromora-atc-btn:hover {
+    background: #fff !important;
+    color: #000 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(255,255,255,0.2) !important;
+}
+#chromora-cart-actions button.chromora-atc-btn.added {
+    background: #1a8a1a !important;
+    border-color: #1a8a1a !important;
+    color: #fff !important;
+    transform: none !important;
+}
+/* BUY NOW — white bg, black text */
+#chromora-cart-actions button.chromora-buy-btn {
+    all: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 !important;
+    padding: 13px 16px !important;
+    background: #fff !important;
+    color: #000 !important;
+    border: 2px solid #fff !important;
+    border-radius: 8px !important;
+    font-family: 'Pixelify Sans', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.5px !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+#chromora-cart-actions button.chromora-buy-btn:hover {
+    background: #e0e0e0 !important;
+    border-color: #e0e0e0 !important;
+    color: #000 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(255,255,255,0.3) !important;
+}
+@media (max-width: 480px) {
+    #chromora-cart-actions .chromora-btn-row {
+        flex-direction: column !important;
+    }
+    #chromora-cart-actions button.chromora-atc-btn,
+    #chromora-cart-actions button.chromora-buy-btn {
+        width: 100% !important;
+        flex: unset !important;
+    }
+}
+</style>
+
+<script>
+(function(){
+    // Quantity controls
+    var qtyInput = document.getElementById('chromora-qty');
+    document.getElementById('chromora-qty-minus').addEventListener('click', function(){
+        var v = parseInt(qtyInput.value) || 1;
+        if(v > 1) qtyInput.value = v - 1;
+    });
+    document.getElementById('chromora-qty-plus').addEventListener('click', function(){
+        var v = parseInt(qtyInput.value) || 1;
+        if(v < 99) qtyInput.value = v + 1;
+    });
+
+    // Add to cart button flash feedback
+    var atcBtn = document.getElementById('chromora-add-to-cart-btn');
+    if(atcBtn){
+        atcBtn.addEventListener('click', function(){
+            var orig = atcBtn.innerHTML;
+            atcBtn.innerHTML = '✓ ADDED!';
+            atcBtn.classList.add('added');
+            setTimeout(function(){ atcBtn.innerHTML = orig; atcBtn.classList.remove('added'); }, 1600);
+        });
+    }
+})();
+</script>
+<!-- END CHROMORA CART ACTIONS -->
+
 <div class="product_meta">
 
 	

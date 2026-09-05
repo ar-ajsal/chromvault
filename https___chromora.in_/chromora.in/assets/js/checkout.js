@@ -3,7 +3,23 @@
  */
 
 (function () {
-  const API_BASE = 'http://localhost:5000/v1';
+  const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000/v1'
+    : 'https://chromora.in/v1';
+
+  let indianStatesData = [];
+  
+  // Fetch Indian States and Districts asynchronously
+  async function fetchStatesAndDistricts() {
+    try {
+      const res = await fetch('https://raw.githubusercontent.com/sab99r/Indian-States-And-Districts/master/states-and-districts.json');
+      const data = await res.json();
+      indianStatesData = data.states || [];
+    } catch (err) {
+      console.error('Failed to fetch Indian states and districts:', err);
+    }
+  }
+  fetchStatesAndDistricts();
 
   // Inject Razorpay Script if not present
   if (!document.getElementById('razorpay-sdk')) {
@@ -13,6 +29,7 @@
     document.head.appendChild(rzpScript);
   }
 
+  // Google Maps API removed as per client request
   // Inject Styles
   const style = document.createElement('style');
   style.innerHTML = `
@@ -319,8 +336,7 @@
   `;
   document.head.appendChild(style);
 
-  // Cart State Manager
-  const Cart = {
+    const Cart = {
     get() {
       try {
         return JSON.parse(localStorage.getItem('chromora_cart')) || [];
@@ -334,22 +350,22 @@
     },
     add(product) {
       const cart = this.get();
-      const existing = cart.find(item => item.id === product.id);
+      const existing = cart.find(item => item._id === product._id);
       if (existing) {
-        existing.quantity = (existing.quantity || 1) + 1;
+        existing.quantity = (existing.quantity || 1) + (product.quantity || 1);
       } else {
-        cart.push({ ...product, quantity: 1 });
+        cart.push({ ...product, quantity: product.quantity || 1 });
       }
       this.save(cart);
       openDrawer('cart');
     },
     remove(id) {
-      const cart = this.get().filter(item => item.id !== id);
+      const cart = this.get().filter(item => item._id !== id && item.id !== id);
       this.save(cart);
     },
     updateQty(id, delta) {
       const cart = this.get();
-      const item = cart.find(i => i.id === id);
+      const item = cart.find(i => i._id === id || i.id === id);
       if (item) {
         item.quantity = Math.max(1, (item.quantity || 1) + delta);
         this.save(cart);
@@ -438,13 +454,13 @@
         <div class="chromora-cart-item">
           <img src="${item.image || 'wp-content/uploads/woocommerce-placeholder.png'}" class="chromora-cart-img" />
           <div class="chromora-cart-item-details">
-            <h4 class="chromora-cart-item-title">${item.title}</h4>
+            <h4 class="chromora-cart-item-title">${item.title || item.name || 'Product'}</h4>
             <div class="chromora-cart-item-price">₹${item.price}</div>
             <div class="chromora-qty-wrap">
-              <button class="chromora-qty-btn" onclick="chromoraCheckout.updateQty('${item.id}', -1)">-</button>
+              <button class="chromora-qty-btn" onclick="chromoraCheckout.updateQty('${item._id || item.id}', -1)">-</button>
               <span style="font-size: 13px; font-weight: bold; width: 20px; text-align: center;">${item.quantity}</span>
-              <button class="chromora-qty-btn" onclick="chromoraCheckout.updateQty('${item.id}', 1)">+</button>
-              <button class="chromora-remove-btn" onclick="chromoraCheckout.remove('${item.id}')">Remove</button>
+              <button class="chromora-qty-btn" onclick="chromoraCheckout.updateQty('${item._id || item.id}', 1)">+</button>
+              <button class="chromora-remove-btn" onclick="chromoraCheckout.remove('${item._id || item.id}')">Remove</button>
             </div>
           </div>
         </div>
@@ -479,36 +495,155 @@
             <input type="text" id="cust-name" placeholder="John Doe" required />
           </div>
           <div class="chromora-form-group">
-            <label>Email Address *</label>
-            <input type="email" id="cust-email" placeholder="john@example.com" required />
-          </div>
-          <div class="chromora-form-group">
             <label>Phone Number *</label>
-            <input type="tel" id="cust-phone" placeholder="9876543210" required />
+            <input type="tel" id="cust-phone" placeholder="10-digit mobile number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required />
           </div>
           <div class="chromora-form-group">
-            <label>Shipping Address *</label>
-            <input type="text" id="cust-address" placeholder="House #, Street, Area" required />
+            <label>Email Address <span style="color:#888;font-size:12px;">(Optional)</span></label>
+            <input type="email" id="cust-email" placeholder="john@example.com" />
           </div>
           <div style="display: flex; gap: 10px;">
             <div class="chromora-form-group" style="flex: 1;">
-              <label>City *</label>
-              <input type="text" id="cust-city" placeholder="Mumbai" required />
+              <label>State *</label>
+              <select id="cust-state" required style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;">
+                <option value="">Select State</option>
+              </select>
+            </div>
+            <div class="chromora-form-group" style="flex: 1;">
+              <label>District *</label>
+              <select id="cust-district" required disabled style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;">
+                <option value="">Select District</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div class="chromora-form-group" style="flex: 2;">
+              <label>City / Town / Locality *</label>
+              <input type="text" id="cust-city" placeholder="Locality" required />
             </div>
             <div class="chromora-form-group" style="flex: 1;">
               <label>Pincode *</label>
-              <input type="text" id="cust-pincode" placeholder="400001" required />
+              <input type="text" id="cust-pincode" placeholder="6-digit" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" required />
+              <div id="pincode-msg" style="font-size:11px; margin-top:4px; font-weight:500;"></div>
             </div>
+          </div>
+          <div class="chromora-form-group">
+            <label>Street Address / House / Locality *</label>
+            <input type="text" id="cust-address" list="address-suggestions" placeholder="Search for your area, street, or building" required />
+            <datalist id="address-suggestions"></datalist>
+          </div>
+          <div class="chromora-form-group" style="margin-top: 12px; background: #141414; border: 1px solid #333; border-radius: 6px; padding: 12px 14px; color: #aaa; font-size: 13px;">
+            💳 Payment via <strong style="color:#fff;">Razorpay</strong> (UPI, Cards, Net Banking, Wallets)
           </div>
         </form>
       `;
+
+      // Populate states dynamically
+      setTimeout(() => {
+        const stateSelect = document.getElementById('cust-state');
+        const districtSelect = document.getElementById('cust-district');
+        if (stateSelect && indianStatesData.length > 0) {
+          indianStatesData.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.state;
+            opt.textContent = s.state;
+            stateSelect.appendChild(opt);
+          });
+          
+          stateSelect.addEventListener('change', (e) => {
+            const selectedState = e.target.value;
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            if (selectedState) {
+              const stateObj = indianStatesData.find(s => s.state === selectedState);
+              if (stateObj && stateObj.districts) {
+                stateObj.districts.forEach(d => {
+                  const opt = document.createElement('option');
+                  opt.value = d;
+                  opt.textContent = d;
+                  districtSelect.appendChild(opt);
+                });
+                districtSelect.disabled = false;
+              }
+            } else {
+              districtSelect.disabled = true;
+            }
+          });
+        }
+        // Pincode API Validation
+        const pincodeInput = document.getElementById('cust-pincode');
+        const pincodeMsg = document.getElementById('pincode-msg');
+        const datalist = document.getElementById('address-suggestions');
+        
+        window.isPincodeValid = false;
+        
+        if (pincodeInput) {
+          pincodeInput.addEventListener('input', async (e) => {
+            const pin = e.target.value;
+            window.isPincodeValid = false;
+            pincodeMsg.innerHTML = '';
+            datalist.innerHTML = '';
+            
+            if (pin.length === 6) {
+              pincodeMsg.innerHTML = '<span style="color:#aaa;">Validating PIN...</span>';
+              try {
+                const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+                const data = await res.json();
+                
+                if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice) {
+                  const offices = data[0].PostOffice;
+                  const firstOffice = offices[0];
+                  const pinState = firstOffice.State;
+                  const pinDistrict = firstOffice.District;
+                  
+                  const selectedState = stateSelect.options[stateSelect.selectedIndex]?.text || '';
+                  const selectedDistrict = districtSelect.options[districtSelect.selectedIndex]?.text || '';
+                  
+                  if (!selectedState || !selectedDistrict || selectedState === 'Select State' || selectedDistrict === 'Select District') {
+                     pincodeMsg.innerHTML = '<span style="color:#f87171;">Please select State & District first.</span>';
+                     return;
+                  }
+
+                  // Check for mismatch (simple includes check for robustness against slight spelling variations)
+                  const stateMismatch = !pinState.toLowerCase().includes(selectedState.toLowerCase()) && !selectedState.toLowerCase().includes(pinState.toLowerCase());
+                  const distMismatch = !pinDistrict.toLowerCase().includes(selectedDistrict.toLowerCase()) && !selectedDistrict.toLowerCase().includes(pinDistrict.toLowerCase());
+                  
+                  if (stateMismatch) {
+                     pincodeMsg.innerHTML = `<span style="color:#f87171;">Error: PIN belongs to ${pinState}. Please select correct State.</span>`;
+                     return;
+                  }
+                  
+                  window.isPincodeValid = true;
+                  if (distMismatch) {
+                     pincodeMsg.innerHTML = `<span style="color:#4ade80;">✓ PIN verified! (${pinDistrict}, ${pinState})</span>`;
+                  } else {
+                     pincodeMsg.innerHTML = '<span style="color:#4ade80;">✓ PIN verified!</span>';
+                  }
+                  
+                  offices.forEach(office => {
+                    const opt = document.createElement('option');
+                    opt.value = office.Name;
+                    datalist.appendChild(opt);
+                  });
+
+                } else {
+                  pincodeMsg.innerHTML = '<span style="color:#f87171;">Invalid Indian PIN code.</span>';
+                }
+              } catch (err) {
+                console.error('Pincode API failed:', err);
+                pincodeMsg.innerHTML = '<span style="color:#fbbf24;">Validation unavailable (Network error).</span>';
+                window.isPincodeValid = true; // allow bypass on network failure
+              }
+            }
+          });
+        }
+      }, 50);
 
       footerEl.innerHTML = `
         <div class="chromora-summary-row chromora-summary-total" style="margin-top: 0; padding-top: 0; border: none;">
           <span>Total Payable</span>
           <span>₹${Cart.total()}</span>
         </div>
-        <button class="chromora-btn-primary" id="chromora-pay-btn">Pay ₹${Cart.total()} with Razorpay</button>
+        <button class="chromora-btn-primary" id="chromora-pay-btn">Pay Now (₹${Cart.total()})</button>
         <button class="chromora-btn-secondary" id="chromora-back-cart-btn">Back to Cart</button>
       `;
 
@@ -516,7 +651,7 @@
         openDrawer('cart');
       };
 
-      document.getElementById('chromora-pay-btn').onclick = handleRazorpayPayment;
+      document.getElementById('chromora-pay-btn').onclick = handlePayment;
     } else if (currentView === 'success') {
       titleEl.innerText = 'ORDER CONFIRMED';
 
@@ -525,15 +660,14 @@
           <div class="chromora-success-icon">✓</div>
           <h3 class="chromora-success-title">Thank you for your order!</h3>
           <p class="chromora-success-desc">
-            Your payment was verified successfully. A confirmation has been sent to your email.
+            Your order was placed successfully. A confirmation has been sent to your email.
           </p>
           <div class="chromora-receipt">
-            <p><strong>Invoice Number:</strong> #${lastOrderData?.invoice || '10001'}</p>
-            <p><strong>Order ID:</strong> ${lastOrderData?._id || 'N/A'}</p>
-            <p><strong>Customer:</strong> ${lastOrderData?.userInfo?.name || 'Customer'}</p>
-            <p><strong>Amount Paid:</strong> ₹${lastOrderData?.total || 0}</p>
-            <p><strong>Payment Method:</strong> Razorpay</p>
-            <p><strong>Status:</strong> Processing</p>
+            <p><strong>Order ID:</strong> ${lastOrderData?.orderId || 'N/A'}</p>
+            <p><strong>Customer:</strong> ${lastOrderData?.customerName || 'Customer'}</p>
+            <p><strong>Amount:</strong> ₹${lastOrderData?.total || 0}</p>
+            <p><strong>Payment Method:</strong> ${lastOrderData?.paymentMethod || 'Razorpay'}</p>
+            <p><strong>Status:</strong> ${lastOrderData?.status || 'Pending'}</p>
           </div>
         </div>
       `;
@@ -544,29 +678,82 @@
     }
   }
 
-  // Handle Payment Initiation with Razorpay
-  async function handleRazorpayPayment() {
+  // Handle Payment Initiation
+  let isProcessing = false;
+  async function handlePayment() {
+    if (isProcessing) return; // prevent double submission
+
     const name = document.getElementById('cust-name')?.value.trim();
     const email = document.getElementById('cust-email')?.value.trim();
     const phone = document.getElementById('cust-phone')?.value.trim();
     const address = document.getElementById('cust-address')?.value.trim();
     const city = document.getElementById('cust-city')?.value.trim();
     const pincode = document.getElementById('cust-pincode')?.value.trim();
+    const state = document.getElementById('cust-state')?.value;
+    const district = document.getElementById('cust-district')?.value;
 
-    if (!name || !email || !phone || !address || !city || !pincode) {
-      alert('Please fill in all shipping details!');
+    if (!name || !phone || !address || !city || !pincode || !state || !district) {
+      alert('Please fill in all required shipping details (including State and District)!');
       return;
     }
-
+    if (name.length < 3) {
+      alert('Please enter a valid full name.');
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      alert('Please enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+    if (!/^\d{6}$/.test(pincode)) {
+      alert('Please enter a valid 6-digit pincode.');
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+    if (window.isPincodeValid === false) {
+      alert('Please enter a valid PIN code that matches your selected State and District.');
+      return;
+    }
     const payBtn = document.getElementById('chromora-pay-btn');
     payBtn.disabled = true;
-    payBtn.innerText = 'Processing Order...';
+    payBtn.innerText = 'Processing...';
+    isProcessing = true;
 
-    const cart = Cart.get();
+    const cartRaw = Cart.get();
     const total = Cart.total();
 
+    // Map cart to backend-expected format: _id, name, title, image, quantity
+    const cart = cartRaw.map(item => ({
+      _id: item._id || item.id,
+      name: item.title || item.name || 'Product',
+      title: item.title || item.name || 'Product',
+      image: item.image || '',
+      slug: item.slug || '',
+      quantity: item.quantity || 1,
+      price: item.price || 0
+    }));
+
+    const deliveryAddress = {
+      street: address,
+      city: city,
+      state: state,
+      district: district,
+      zip: pincode,
+      country: 'India'
+    };
+
+    const resetBtn = () => {
+      isProcessing = false;
+      if (payBtn) {
+        payBtn.disabled = false;
+        payBtn.innerText = `Pay Now (₹${total})`;
+      }
+    };
+
+    // Razorpay Flow
     try {
-      // 1. Create Order on Backend
       const orderRes = await fetch(`${API_BASE}/orders/create-razorpay-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -574,12 +761,11 @@
       });
 
       if (!orderRes.ok) {
-        throw new Error('Failed to create Razorpay order');
+        const err = await orderRes.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to create payment order');
       }
-
       const orderData = await orderRes.json();
 
-      // 2. Open Razorpay Checkout Modal
       const options = {
         key: orderData.key,
         amount: orderData.amount,
@@ -588,18 +774,11 @@
         description: 'Order Payment',
         image: 'https://chromora.in/wp-content/uploads/2026/04/cropped-Group-1-1.png',
         order_id: orderData.id,
-        prefill: {
-          name,
-          email,
-          contact: phone
-        },
-        theme: {
-          color: '#000000'
-        },
+        prefill: { name, email, contact: phone },
+        theme: { color: '#000000' },
         handler: async function (response) {
           payBtn.innerText = 'Verifying Payment...';
           try {
-            // 3. Verify Payment on Backend
             const verifyRes = await fetch(`${API_BASE}/orders/verify-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -607,20 +786,8 @@
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                cart,
-                userInfo: {
-                  name,
-                  email,
-                  contact: phone,
-                  address,
-                  city,
-                  zipCode: pincode,
-                  country: 'India'
-                },
-                subTotal: total,
-                shippingCost: 0,
-                discount: 0,
-                total
+                customerName: name, phone, email, deliveryAddress,
+                cart, discount: 0, shippingFee: 0
               })
             });
 
@@ -629,23 +796,20 @@
             if (verifyRes.ok && verifyData.success) {
               lastOrderData = verifyData.order;
               Cart.clear();
+              isProcessing = false;
               openDrawer('success');
             } else {
-              alert(verifyData.message || 'Payment verification failed.');
-              payBtn.disabled = false;
-              payBtn.innerText = `Pay ₹${total} with Razorpay`;
+              alert(verifyData.message || 'Payment verification failed. Please contact support with your payment ID: ' + response.razorpay_payment_id);
+              resetBtn();
             }
           } catch (err) {
-            console.error('Verification error:', err);
-            alert('Error verifying payment.');
-            payBtn.disabled = false;
-            payBtn.innerText = `Pay ₹${total} with Razorpay`;
+            alert('Error verifying payment. Please contact support.');
+            resetBtn();
           }
         },
         modal: {
           ondismiss: function () {
-            payBtn.disabled = false;
-            payBtn.innerText = `Pay ₹${total} with Razorpay`;
+            resetBtn();
           }
         }
       };
@@ -653,16 +817,12 @@
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function (response) {
         alert('Payment Failed: ' + response.error.description);
-        payBtn.disabled = false;
-        payBtn.innerText = `Pay ₹${total} with Razorpay`;
+        resetBtn();
       });
       rzp.open();
-
     } catch (err) {
-      console.error('Payment flow error:', err);
       alert('Error initiating checkout: ' + err.message);
-      payBtn.disabled = false;
-      payBtn.innerText = `Pay ₹${total} with Razorpay`;
+      resetBtn();
     }
   }
 

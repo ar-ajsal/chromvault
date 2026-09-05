@@ -6,45 +6,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Bind add to cart buttons (event delegation for dynamically loaded products)
     document.body.addEventListener('click', (e) => {
-        // 1. Loop Product "Add to cart" button
-        if (e.target.classList.contains('ajax_add_to_cart') || e.target.classList.contains('add_to_cart_button')) {
+        // 1. Loop Product "Add to cart" button (not single product page)
+        const btn = e.target.closest('.ajax_add_to_cart, .add_to_cart_button');
+        if (btn && !btn.classList.contains('single_add_to_cart_button') && !btn.classList.contains('single_buy_now_button')) {
             e.preventDefault();
-            
-            const btn = e.target;
-            const productElement = btn.closest('.product-inner') || btn.closest('.product');
-            const id = btn.getAttribute('data-product_id') || ('prod_' + Date.now());
-            const title = productElement?.querySelector('.woocommerce-loop-product__title')?.innerText || 'Product';
-            const priceText = productElement?.querySelector('ins .amount')?.innerText || productElement?.querySelector('.amount')?.innerText || '0';
-            const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
-            const image = productElement?.querySelector('img')?.src || '';
+
+            const _id = btn.getAttribute('data-product_id') || ('prod_' + Date.now());
+            const title = btn.getAttribute('data-product_title') || btn.closest('.product-inner')?.querySelector('.woocommerce-loop-product__title')?.innerText || 'Product';
+            const price = parseFloat(btn.getAttribute('data-product_price')) || 0;
+            const image = btn.getAttribute('data-product_image') || '';
+            const slug = btn.getAttribute('data-product_slug') || '';
 
             if (window.chromoraCheckout) {
-                window.chromoraCheckout.add({ id, title, price, image });
+                window.chromoraCheckout.add({ _id, id: _id, title, price, image, slug });
             } else {
-                addToCart({ id, title, price, image, quantity: 1 });
+                addToCart({ _id, id: _id, title, price, image, slug, quantity: 1 });
             }
         }
 
         // 2. Single Product Page "Add to cart" and "Buy Now" buttons
-        if (e.target.classList.contains('single_add_to_cart_button') || e.target.classList.contains('single_buy_now_button')) {
+        const singleBtn = e.target.closest('.single_add_to_cart_button, .single_buy_now_button');
+        if (singleBtn) {
             e.preventDefault();
 
-            const btn = e.target;
-            const isBuyNow = btn.classList.contains('single_buy_now_button');
-            const id = btn.getAttribute('data-product_id') || window.location.pathname.split('/').filter(Boolean).pop() || ('prod_' + Date.now());
+            const isBuyNow = singleBtn.classList.contains('single_buy_now_button');
+            const _id = singleBtn.getAttribute('data-product_id') || window.location.pathname.split('/').filter(Boolean).pop() || ('prod_' + Date.now());
             const title = document.querySelector('h1.product_title')?.innerText || 'Product';
             const priceText = document.querySelector('p.price ins .amount')?.innerText || document.querySelector('p.price .amount')?.innerText || '0';
             const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
             const image = document.querySelector('.woocommerce-product-gallery__image img, img.wp-post-image')?.src || '';
+            const slug = window.location.pathname.split('/').filter(Boolean).pop() || '';
             const qtyInput = document.querySelector('input.qty');
             const quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
 
             if (window.chromoraCheckout) {
-                for (let i = 0; i < quantity; i++) {
-                    window.chromoraCheckout.add({ id, title, price, image });
-                }
+                window.chromoraCheckout.add({ _id, id: _id, title, price, image, slug, quantity });
             } else {
-                addToCart({ id, title, price, image, quantity });
+                addToCart({ _id, id: _id, title, price, image, slug, quantity });
             }
 
             if (isBuyNow) {
@@ -60,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function addToCart(product) {
     let cart = JSON.parse(localStorage.getItem('chromora_cart')) || [];
-    
-    const existing = cart.find(item => item.id === product.id);
+
+    const existing = cart.find(item => item._id === product._id);
     if (existing) {
         existing.quantity += (product.quantity || 1);
     } else {
@@ -75,7 +73,7 @@ function addToCart(product) {
 function updateCartCount() {
     let cart = JSON.parse(localStorage.getItem('chromora_cart')) || [];
     const count = cart.reduce((total, item) => total + (item.quantity || 1), 0);
-    
+
     const badges = document.querySelectorAll('.cart-count, .cart-contents .count, #chromora-cart-count');
     badges.forEach(b => b.innerText = count);
 }
