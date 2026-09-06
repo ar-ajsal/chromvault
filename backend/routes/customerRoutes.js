@@ -6,10 +6,14 @@ const {
   getAllCustomers,
   getCustomerById
 } = require('../controllers/customerController');
+const { protectAdmin } = require('../middleware/authMiddleware');
 
-router.post('/create', createCustomer);
+// ─── Public ────────────────────────────────────────────────
+router.post('/create', createCustomer); // registration
 router.post('/login', loginCustomer);
-router.get('/', getAllCustomers);
-router.get('/:id', getCustomerById);
+
+// ─── Admin-only (contains customer PII) ────────────────────
+router.get('/', protectAdmin, getAllCustomers);
+router.get('/:id', protectAdmin, getCustomerById);
 
 module.exports = router;

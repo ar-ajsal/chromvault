@@ -1,5 +1,39 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE = 'http://localhost:5000/v1';
+    // Served from the admin app (same origin as the Dashtar SPA), so calls go
+    // through the admin server's same-origin "/api" proxy → backend. No hardcoded
+    // host, works in dev and prod wherever the admin server is deployed.
+    const API_BASE = '/api';
+
+    // Reuse the Dashtar SPA's admin session. It stores the JWT in an "adminInfo"
+    // cookie (JSON with a .token field). We read it and send it as a Bearer token
+    // so these now-protected order endpoints authorize correctly.
+    function getAdminToken() {
+        try {
+            const m = document.cookie.match(/(?:^|;\s*)adminInfo=([^;]+)/);
+            if (!m) return null;
+            const info = JSON.parse(decodeURIComponent(m[1]));
+            return info && info.token ? info.token : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function authHeaders(extra) {
+        const headers = Object.assign({}, extra || {});
+        const token = getAdminToken();
+        if (token) headers.Authorization = 'Bearer ' + token;
+        return headers;
+    }
+
+    function requireAuthOrRedirect(res) {
+        if (res && (res.status === 401 || res.status === 403)) {
+            // Session missing/expired — bounce to the admin login.
+            window.location.href = '/login';
+            return true;
+        }
+        return false;
+    }
+
     // DOM Elements
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
@@ -47,9 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...(paymentStatus && { paymentStatus })
             });
 
-            const res = await fetch(`${API_BASE}/orders?${queryParams.toString()}`);
+            const res = await fetch(`${API_BASE}/orders?${queryParams.toString()}`, {
+                headers: authHeaders()
+            });
+            if (requireAuthOrRedirect(res)) return;
             const data = await res.json();
-            
+
             totalPages = data.pages || 1;
             renderOrders(data.orders || []);
             
@@ -225,9 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${API_BASE}/orders/${currentOrder._id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ status, paymentStatus })
             });
+            if (requireAuthOrRedirect(res)) return;
             if (res.ok) {
                 showToast('Order status updated successfully');
                 fetchOrders();
@@ -252,9 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${API_BASE}/orders/${currentOrder._id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ shippingDetails })
             });
+            if (requireAuthOrRedirect(res)) return;
             if (res.ok) {
                 showToast('Tracking info updated successfully');
                 fetchOrders();

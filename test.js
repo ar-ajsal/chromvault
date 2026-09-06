@@ -1,1 +1,0 @@
-const fs = require('fs'); let html = fs.readFileSync('https___chromora.in_/chromora.in/shop/index.html', 'utf8'); console.log('Original length:', html.length); html = html.replace(/<ul class="products columns-4">[\s\S]*?<\/ul>/, 'DYNAMIC'); console.log('Replaced length:', html.length);

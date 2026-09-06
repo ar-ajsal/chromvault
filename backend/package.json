@@ -2,9 +2,16 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "seed": "node seed.js",
+    "seed:admin": "node seedAdmin.js",
+    "test": "node tests/auth.test.js && node tests/pricing.test.js && node tests/controllers.test.js"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "keywords": [],
   "author": "",

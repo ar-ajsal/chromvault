@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { upload } = require('../config/cloudinary');
+const { protectAdmin } = require('../middleware/authMiddleware');
+
+// All uploads are admin-only to protect the Cloudinary account from abuse.
+router.use(protectAdmin);
 
 router.post('/', upload.single('file'), (req, res) => {
   try {

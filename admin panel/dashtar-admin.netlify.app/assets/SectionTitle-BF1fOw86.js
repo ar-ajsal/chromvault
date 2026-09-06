@@ -1,1 +1,0 @@
-import{j as t,a as n}from"./index-CgsTjVhy.js";function c({title:s,description:e,className:a}){return t.jsxs("div",{className:n("space-y-0.5 mb-2 lg:mb-0",a),children:[t.jsx("h2",{className:"text-2xl font-bold tracking-tight",children:s}),e&&t.jsx("p",{className:"text-muted-foreground text-sm",children:e})]})}export{c as S};

@@ -3,26 +3,37 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const { computeOrderPricing } = require('../utils/pricing');
 
 
 const getRazorpayInstance = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    throw new Error('Razorpay credentials are not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.');
+  }
   return new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TXHURjJtlreCDv',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'Xb73RLTpN9pD160is3a2UUH1'
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
   });
 };
 
 // 1. Create Razorpay Order
+// The amount is ALWAYS computed server-side from the cart against the DB.
+// Any client-supplied `amount` is ignored so the charged sum cannot be tampered with.
 const createRazorpayOrder = async (req, res) => {
   try {
-    const { amount, currency = 'INR' } = req.body;
-    if (!amount || amount <= 0) {
+    const { cart, currency = 'INR' } = req.body;
+
+    const pricing = await computeOrderPricing(cart);
+    if (pricing.error) {
+      return res.status(400).send({ message: pricing.error });
+    }
+    if (!pricing.total || pricing.total <= 0) {
       return res.status(400).send({ message: 'Invalid order amount' });
     }
 
     const razorpay = getRazorpayInstance();
     const options = {
-      amount: Math.round(amount * 100), // Amount in paise
+      amount: Math.round(pricing.total * 100), // Amount in paise, from server-side total
       currency,
       receipt: `rcpt_${Date.now()}`
     };
@@ -32,7 +43,7 @@ const createRazorpayOrder = async (req, res) => {
       id: order.id,
       amount: order.amount,
       currency: order.currency,
-      key: process.env.RAZORPAY_KEY_ID || 'rzp_test_TXHURjJtlreCDv'
+      key: process.env.RAZORPAY_KEY_ID
     });
   } catch (err) {
     console.error('Error creating Razorpay order:', err);
@@ -40,10 +51,21 @@ const createRazorpayOrder = async (req, res) => {
   }
 };
 
-// Helper: Generate Unique Order ID
+// Helper: Generate a human-readable order ID.
+// Count-based numbering can collide under concurrency, so the caller saves
+// inside a retry loop; here we just derive the next candidate from the max
+// existing number to reduce collisions.
 const generateOrderId = async () => {
-  const count = await Order.countDocuments();
-  return `ORD-${10001 + count}`;
+  const last = await Order.findOne({ orderId: /^ORD-\d+$/ })
+    .sort({ createdAt: -1 })
+    .select('orderId')
+    .lean();
+  let next = 10001;
+  if (last && last.orderId) {
+    const n = parseInt(last.orderId.replace('ORD-', ''), 10);
+    if (!Number.isNaN(n)) next = n + 1;
+  }
+  return `ORD-${next}`;
 };
 
 // Helper: Deduct Stock
@@ -70,63 +92,21 @@ const restoreStock = async (cart) => {
   }
 };
 
-// 2. Create Guest Order (For COD / Manual UPI)
-const createGuestOrder = async (req, res) => {
-  try {
-    const {
-      customerName, phone, email, deliveryAddress,
-      cart, discount = 0, shippingFee = 0,
-      paymentMethod, paymentReference, paymentScreenshot
-    } = req.body;
+// NOTE: Guest / COD / manual-UPI checkout was intentionally REMOVED.
+// Business decision: Razorpay is the only supported payment flow. Placing an
+// order without a verified Razorpay payment (and its signature) is no longer
+// possible, which removes an unauthenticated order-injection path.
 
-    // Securely validate stock + calculate totals from DB
-    let calculatedSubTotal = 0;
-    for (let item of cart) {
-      if (item._id) {
-        const product = await Product.findById(item._id);
-        if (!product) {
-          return res.status(400).send({ message: `Product not found: ${item.name || item.title || item._id}` });
-        }
-        if (product.stock < item.quantity) {
-          return res.status(400).send({ message: `Insufficient stock for: ${typeof product.title === 'object' ? product.title.en : product.title}. Only ${product.stock} left.` });
-        }
-        const price = product.prices?.price || product.prices?.originalPrice || 0;
-        calculatedSubTotal += price * item.quantity;
-        item.price = price;
-        item.name = typeof product.title === 'object' ? product.title.en : (product.title || item.name || 'Product');
-      }
-    }
-    const calculatedTotal = calculatedSubTotal - discount + shippingFee;
-
-    const orderId = await generateOrderId();
-
-    const newOrder = new Order({
-      customerName, phone, email, deliveryAddress,
-      orderId,
-      cart, subTotal: calculatedSubTotal, discount, shippingFee, total: calculatedTotal,
-      paymentMethod,
-      paymentStatus: (paymentMethod === 'Cash On Delivery') ? 'Pending' : 'Pending',
-      paymentReference,
-      paymentScreenshot,
-      status: 'Pending'
-    });
-
-    await newOrder.save();
-    await deductStock(cart);
-    res.status(201).send({ success: true, message: 'Order placed successfully!', order: newOrder });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
-
-// 3. Verify Payment & Create MongoDB Order (For Razorpay)
+// 2. Verify Payment & Create MongoDB Order (For Razorpay)
 const verifyPaymentAndCreateOrder = async (req, res) => {
   try {
     const {
       razorpay_order_id, razorpay_payment_id, razorpay_signature,
       customerName, phone, email, deliveryAddress,
-      cart, discount = 0, shippingFee = 0
+      cart
     } = req.body;
+    // NOTE: discount and shippingFee are deliberately NOT read from the client.
+    // They are derived server-side by computeOrderPricing below.
 
     // Backend strict validation
     if (!customerName || customerName.trim().length < 3) {
@@ -171,7 +151,10 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
     }
 
     // Verify HMAC SHA256 signature
-    const secret = process.env.RAZORPAY_KEY_SECRET || 'Xb73RLTpN9pD160is3a2UUH1';
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return res.status(500).send({ message: 'Payment verification is not configured.' });
+    }
     const generatedSignature = crypto
       .createHmac('sha256', secret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -187,69 +170,58 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
       return res.status(200).send({ success: true, message: 'Order already recorded.', order: existingOrder });
     }
 
-    // Securely validate stock + calculate totals from DB
-    let calculatedSubTotal = 0;
-    for (let item of cart) {
-      if (item._id) {
-        let product = null;
-        try {
-          if (mongoose.Types.ObjectId.isValid(item._id)) {
-            product = await Product.findById(item._id);
-          }
-          if (!product) {
-            product = await Product.findOne({ productId: String(item._id) });
-          }
-        } catch (e) {
-          product = null;
-        }
+    // Authoritative pricing: recompute subtotal/discount/shipping/total from the
+    // DB using the SAME helper that priced the Razorpay order. Unknown products
+    // are rejected here rather than billed at a client-supplied price.
+    const pricing = await computeOrderPricing(cart);
+    if (pricing.error) {
+      return res.status(400).send({ message: pricing.error });
+    }
 
-        if (!product) {
-          // Legacy WP product not in MongoDB
-          const price = item.price || 0;
-          calculatedSubTotal += price * item.quantity;
-          item.name = item.title || item.name || 'Legacy Product';
-          continue;
+    // Persist with a small retry loop. Two things can race:
+    //   - orderId (count-derived) can collide → regenerate and retry
+    //   - paymentReference is partial-UNIQUE → a concurrent duplicate throws
+    //     E11000; we treat that as "already recorded" and return the winner.
+    let newOrder = null;
+    let saveErr = null;
+    for (let attempt = 0; attempt < 5 && !newOrder; attempt++) {
+      const candidate = new Order({
+        customerName, phone, email, deliveryAddress,
+        orderId: await generateOrderId(),
+        cart: pricing.lineItems,
+        subTotal: pricing.subTotal,
+        discount: pricing.discount,
+        shippingFee: pricing.shippingFee,
+        total: pricing.total,
+        paymentMethod: 'Razorpay',
+        paymentStatus: 'Paid',
+        paymentReference: razorpay_payment_id,
+        paymentDate: new Date(),
+        status: 'Confirmed'
+      });
+      try {
+        await candidate.save();
+        newOrder = candidate;
+      } catch (e) {
+        saveErr = e;
+        if (e && e.code === 11000) {
+          // Duplicate key. If it's the payment reference, another request won
+          // the race — return that order. If it's the orderId, retry.
+          const dup = await Order.findOne({ paymentReference: razorpay_payment_id });
+          if (dup) {
+            return res.status(200).send({ success: true, message: 'Order already recorded.', order: dup });
+          }
+          continue; // orderId collision → regenerate
         }
-
-        if (product.stock < item.quantity) {
-          return res.status(400).send({ message: `Insufficient stock for: ${typeof product.title === 'object' ? product.title.en : product.title}. Only ${product.stock} left.` });
-        }
-        const price = product.prices?.price || product.prices?.originalPrice || 0;
-        calculatedSubTotal += price * item.quantity;
-        item.price = price;
-        item.name = typeof product.title === 'object' ? product.title.en : (product.title || item.name || 'Product');
+        throw e; // unexpected error
       }
     }
-    const calculatedTotal = calculatedSubTotal - discount + shippingFee;
 
-    const orderId = await generateOrderId();
+    if (!newOrder) {
+      throw saveErr || new Error('Could not persist order after multiple attempts.');
+    }
 
-    const finalCart = cart.map(item => {
-      const formattedItem = {
-        name: item.name,
-        image: item.image,
-        quantity: item.quantity,
-        price: item.price
-      };
-      if (item._id && mongoose.Types.ObjectId.isValid(item._id)) {
-        formattedItem.productId = item._id;
-      }
-      return formattedItem;
-    });
-
-    const newOrder = new Order({
-      customerName, phone, email, deliveryAddress,
-      orderId,
-      cart: finalCart, subTotal: calculatedSubTotal, discount, shippingFee, total: calculatedTotal,
-      paymentMethod: 'Razorpay',
-      paymentStatus: 'Paid',
-      paymentReference: razorpay_payment_id,
-      paymentDate: new Date(),
-      status: 'Confirmed'
-    });
-
-    await newOrder.save();
-    await deductStock(cart);
+    await deductStock(pricing.lineItems);
 
     res.status(201).send({
       success: true,
@@ -368,7 +340,9 @@ const updateOrder = async (req, res) => {
     }
 
     if (shippingDetails) {
-      order.shippingDetails = { ...order.shippingDetails, ...shippingDetails };
+      const existingSd = order.shippingDetails?.toObject ? order.shippingDetails.toObject() : (order.shippingDetails || {});
+      order.shippingDetails = Object.assign({}, existingSd, shippingDetails);
+      order.markModified('shippingDetails');
     }
 
     await order.save();
@@ -389,24 +363,61 @@ const deleteOrder = async (req, res) => {
 };
 
 // 8. Dashboard Metrics
+// Real analytics computed with a single aggregation over Paid orders, bucketed
+// by day/month boundaries so the admin sees live revenue instead of zeros.
 const getDashboardAmount = async (req, res) => {
   try {
-    const orders = await Order.find({ paymentStatus: 'Paid' });
-    let totalOrderAmount = 0;
-    
-    orders.forEach(order => {
-      totalOrderAmount += order.total || 0;
-    });
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const [row] = await Order.aggregate([
+      { $match: { paymentStatus: 'Paid' } },
+      {
+        $group: {
+          _id: null,
+          totalOrderAmount: { $sum: '$total' },
+          todayOrderAmount: {
+            $sum: { $cond: [{ $gte: ['$createdAt', startOfToday] }, '$total', 0] }
+          },
+          yesterdayOrderAmount: {
+            $sum: {
+              $cond: [
+                { $and: [{ $gte: ['$createdAt', startOfYesterday] }, { $lt: ['$createdAt', startOfToday] }] },
+                '$total',
+                0
+              ]
+            }
+          },
+          thisMonthOrderAmount: {
+            $sum: { $cond: [{ $gte: ['$createdAt', startOfThisMonth] }, '$total', 0] }
+          },
+          lastMonthOrderAmount: {
+            $sum: {
+              $cond: [
+                { $and: [{ $gte: ['$createdAt', startOfLastMonth] }, { $lt: ['$createdAt', startOfThisMonth] }] },
+                '$total',
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
 
     res.send({
-      todayOrderAmount: 0,
-      yesterdayOrderAmount: 0,
-      thisMonthOrderAmount: 0,
-      lastMonthOrderAmount: 0,
-      totalOrderAmount
+      todayOrderAmount: row?.todayOrderAmount || 0,
+      yesterdayOrderAmount: row?.yesterdayOrderAmount || 0,
+      thisMonthOrderAmount: row?.thisMonthOrderAmount || 0,
+      lastMonthOrderAmount: row?.lastMonthOrderAmount || 0,
+      totalOrderAmount: row?.totalOrderAmount || 0
     });
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    console.error('[orders] getDashboardAmount', err);
+    res.status(500).send({ message: 'Failed to compute dashboard amounts.' });
   }
 };
 
@@ -438,13 +449,38 @@ const getDashboardRecentOrder = async (req, res) => {
   }
 };
 
+// Best-selling products by total quantity sold across Paid orders.
+// Aggregates order line items so the admin chart reflects real sales.
 const getBestSellerChart = async (req, res) => {
-  res.send({ bestSellingProduct: [] });
+  try {
+    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit, 10) || 5));
+    const rows = await Order.aggregate([
+      { $match: { paymentStatus: 'Paid' } },
+      { $unwind: '$cart' },
+      {
+        $group: {
+          _id: '$cart.name',
+          total: { $sum: '$cart.quantity' }
+        }
+      },
+      { $sort: { total: -1 } },
+      { $limit: limit }
+    ]);
+
+    const bestSellingProduct = rows.map((r) => ({
+      name: r._id || 'Product',
+      total: r.total || 0
+    }));
+
+    res.send({ bestSellingProduct });
+  } catch (err) {
+    console.error('[orders] getBestSellerChart', err);
+    res.status(500).send({ message: 'Failed to compute best sellers.' });
+  }
 };
 
 module.exports = {
   createRazorpayOrder,
-  createGuestOrder,
   verifyPaymentAndCreateOrder,
   getAllOrders,
   getOrderById,

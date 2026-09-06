@@ -1,4 +1,9 @@
-const API_BASE_URL = 'http://localhost:5000/v1';
+// API base comes from the shared runtime config (assets/js/config.js), which
+// resolves an env-injected value in production and a localhost default in dev.
+const API_BASE_URL = (window.CHROMORA_CONFIG && window.CHROMORA_CONFIG.API_BASE)
+  || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000/v1'
+        : window.location.origin + '/v1');
 
 // Fetch all products from backend
 async function fetchProducts(params = {}) {
@@ -98,7 +103,7 @@ async function renderProducts(containerSelector) {
     const products = await fetchProducts();
 
     if (!products.length) {
-        container.innerHTML = '<p style="color:#aaa;padding:20px;">No products found. Make sure the backend is running on port 5000.</p>';
+        container.innerHTML = '<p style="color:#aaa;padding:20px;">No products found.</p>';
         return;
     }
 

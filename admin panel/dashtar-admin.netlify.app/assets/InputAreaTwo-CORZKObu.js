@@ -1,1 +1,0 @@
-import{j as r}from"./index-CgsTjVhy.js";import{I as x}from"./input-gQHjKdDm.js";const I=({register:s,defaultValue:t,required:o,name:e,label:p,type:a,placeholder:i,min:n,max:u,step:m})=>r.jsx(r.Fragment,{children:r.jsx(x,{...s(`${e}`,{required:o?`${p} is required!`:!1}),defaultValue:t,type:a,placeholder:i,name:e,min:n,max:u,step:m,autoComplete:"new-password"})});export{I};

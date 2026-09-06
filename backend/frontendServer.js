@@ -4,7 +4,21 @@ const fs = require('fs');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
-const PORT = 3001;
+
+// ─── Environment-based configuration ───────────────────────
+// Everything that used to be hardcoded to localhost is now driven by env vars
+// so the same code runs in dev and prod. Sensible localhost defaults are kept
+// so `node frontendServer.js` still "just works" during development.
+const PORT = parseInt(process.env.STOREFRONT_PORT, 10) || 3001;
+const ADMIN_PORT = parseInt(process.env.ADMIN_PORT, 10) || 3002;
+// Where the storefront/admin should send API calls. In production set this to
+// your public backend, e.g. https://api.chromora.in/v1 (no trailing slash).
+const API_TARGET = (process.env.API_PROXY_TARGET || 'http://localhost:5000/v1').replace(/\/+$/, '');
+// Value injected into served HTML as window.__CHROMORA_API_BASE__ so the
+// storefront's config.js can pick it up. Defaults to the same-origin /api proxy
+// on the admin server, or leave blank to let config.js use its own heuristic.
+const STOREFRONT_API_BASE = process.env.STOREFRONT_API_BASE || '';
+const ADMIN_URL = process.env.ADMIN_URL || `http://localhost:${ADMIN_PORT}`;
 
 const staticRoot = path.join(__dirname, '..', 'https___chromora.in_');
 const siteRoot = path.join(staticRoot, 'chromora.in');
@@ -15,7 +29,18 @@ function serveFixedHtml(res, filePath) {
     return res.status(404).send('Not Found');
   }
   let html = fs.readFileSync(filePath, 'utf8');
-  
+
+  // Inject the runtime API base (from env) so config.js resolves the right
+  // backend in production without editing shipped JS. Harmless when blank.
+  if (STOREFRONT_API_BASE) {
+    const inject = `<script>window.__CHROMORA_API_BASE__=${JSON.stringify(STOREFRONT_API_BASE)};</script>`;
+    if (/<head[^>]*>/i.test(html)) {
+      html = html.replace(/<head[^>]*>/i, (m) => m + inject);
+    } else {
+      html = inject + html;
+    }
+  }
+
   // Strip WooCommerce/Jetpack Analytics to prevent Webpack ChunkLoadError infinite reload loop (blinking)
   html = html.replace(/<script[^>]*id=["']woocommerce-analytics-client-js["'][^>]*><\/script>/gi, '');
   html = html.replace(/<script[^>]*id=["']woocommerce-analytics-js["'][^>]*><\/script>/gi, '');
@@ -166,138 +191,48 @@ app.get([
   serveFixedHtml(res, path.join(siteRoot, 'product', 'template', 'index.html'));
 });
 
-// ─── Admin Panel ───────────────────────────────────────────────────────────────
-const adminRoot = path.join(__dirname, '..', 'admin panel', 'dashtar-admin.netlify.app');
+// ─── Admin Panel (Chromora Command Center) ──────────────────────────────────────
+// Buildless single-page admin. Static assets are served from command-center/,
+// /api is proxied to the backend, and all non-asset paths fall back to
+// index.html so the hash router can take over.
+const adminRoot = path.join(__dirname, '..', 'admin panel', 'command-center');
 const adminApp = express();
 
-const customOrdersRoot = path.join(__dirname, 'custom-orders');
-adminApp.use('/orders', express.static(customOrdersRoot));
-
-// Proxy /api/* → http://localhost:5000/v1/*
+// Proxy /api/* → API_TARGET (env-driven; defaults to local backend /v1)
 adminApp.use('/api', createProxyMiddleware({
-  target: 'http://localhost:5000/v1',
+  target: API_TARGET,
   changeOrigin: true,
   pathRewrite: { '^/api': '' }
 }));
 
+// Static command-center files: styles.css, *.js, views/*.js, and the PWA
+// assets (manifest.webmanifest, service-worker.js, icons, favicon).
 adminApp.use(express.static(adminRoot));
 
-// Redirect individual order detail pages to our custom orders dashboard
-adminApp.get('/order/:id', (req, res) => {
-  res.redirect('/orders');
-});
-
-adminApp.use((req, res, next) => {
+// SPA fallback: anything that isn't a real file → index.html (hash router).
+// Reject requests that look like a missing asset so we don't return HTML for JS.
+adminApp.use((req, res) => {
   if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
     return res.status(404).type('txt').send('Not Found');
   }
-  next();
-});
-
-adminApp.use((req, res) => {
   let html = fs.readFileSync(path.join(adminRoot, 'index.html'), 'utf8');
-  // Inject script to force full page reload for Custom Orders dashboard and hide Delivery Boys
-  const interceptScript = `
-    <style>
-      a[href*="/delivery-boys"], 
-      a[href*="/delivery-boy"],
-      a[href*="/shipments"] { 
-        display: none !important; 
-      }
-    </style>
-    </style>
-    <script>
-      document.addEventListener('click', function(e) {
-        let el = e.target.closest('a');
-        if (el && el.getAttribute('href') === '/orders') {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = '/orders';
-        }
-      }, true);
 
-      // --- CUSTOM SEARCH MODAL FOR MISSING SIDEBAR ---
-      function showCustomSearch() {
-         if (document.getElementById('custom-nav-modal')) return;
-         const modal = document.createElement('div');
-         modal.id = 'custom-nav-modal';
-         modal.innerHTML = \`
-           <div style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:flex-start; padding-top:10vh;">
-             <div style="background:#fff; width:500px; border-radius:8px; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-               <h3 style="margin-top:0; margin-bottom:15px; font-family:sans-serif; color:#111;">Menu Search</h3>
-               <input type="text" id="custom-nav-input" placeholder="Search menu (e.g. Products, Orders)..." style="width:100%; padding:12px; border:1px solid #ccc; border-radius:6px; font-size:16px; margin-bottom:15px; outline:none;" autocomplete="off" />
-               <ul id="custom-nav-list" style="list-style:none; padding:0; margin:0; max-height:350px; overflow-y:auto; font-family:sans-serif;">
-                 <li><a href="/dashboard" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">📊 Dashboard</a></li>
-                 <li><a href="/products" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">🛍️ Products</a></li>
-                 <li><a href="/product/add" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">➕ Add Product</a></li>
-                 <li><a href="/category" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">📁 Categories</a></li>
-                 <li><a href="/orders" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">📦 Orders</a></li>
-                 <li><a href="/customers" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">👥 Customers</a></li>
-                 <li><a href="/coupons" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">🎟️ Coupons</a></li>
-                 <li><a href="/staff" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">🧑‍💼 Our Staff</a></li>
-                 <li><a href="/settings" style="display:block; padding:12px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">⚙️ Settings</a></li>
-               </ul>
-             </div>
-           </div>
-         \`;
-         document.body.appendChild(modal);
-         
-         const input = document.getElementById('custom-nav-input');
-         input.focus();
-         
-         input.addEventListener('input', (e) => {
-           const term = e.target.value.toLowerCase();
-           const links = modal.querySelectorAll('li');
-           links.forEach(li => {
-             if (li.textContent.toLowerCase().includes(term)) {
-               li.style.display = 'block';
-             } else {
-               li.style.display = 'none';
-             }
-           });
-         });
-         
-         modal.addEventListener('click', (e) => {
-           if (e.target === modal.firstElementChild) {
-             modal.remove();
-           }
-         });
-         
-         const closeHandler = (e) => {
-           if (e.key === 'Escape') {
-             modal.remove();
-             document.removeEventListener('keydown', closeHandler);
-           }
-         };
-         document.addEventListener('keydown', closeHandler);
-      }
-
-      document.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-          e.preventDefault();
-          showCustomSearch();
-        }
-      });
-
-      document.addEventListener('click', (e) => {
-        const searchDiv = e.target.closest('.relative');
-        if (searchDiv && searchDiv.querySelector('input[type="search"]')) {
-           e.preventDefault();
-           e.stopPropagation();
-           showCustomSearch();
-        }
-      }, true);
-    </script>
-  `;
-  html = html.replace('</body>', interceptScript + '</body>');
+  // Optionally override the admin API base at runtime (defaults to the
+  // same-origin "/api" proxy). Set ADMIN_API_BASE only if the admin must talk
+  // to a backend on a different origin.
+  if (process.env.ADMIN_API_BASE) {
+    const base = JSON.stringify(process.env.ADMIN_API_BASE.replace(/\/+$/, ''));
+    const inject = `<script>window.__ADMIN_API_BASE__=${base};</script>`;
+    html = html.replace(/<head[^>]*>/i, (m) => m + inject);
+  }
   res.send(html);
 });
 
-adminApp.listen(3002, () => {
-  console.log(`✅ Admin Panel running at http://localhost:3002`);
+adminApp.listen(ADMIN_PORT, () => {
+  console.log(`✅ Admin Panel (Command Center) running at ${ADMIN_URL}`);
 });
 
-app.use('/admin', (req, res) => res.redirect('http://localhost:3002'));
+app.use('/admin', (req, res) => res.redirect(ADMIN_URL));
 
 // ─── Full Site Static Files ────────────────────────────────────────────────────
 app.use('/chromora.in', express.static(siteRoot));

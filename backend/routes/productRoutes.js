@@ -9,15 +9,20 @@ const {
   updateStatus,
   deleteProduct
 } = require('../controllers/productController');
+const { protectAdmin } = require('../middleware/authMiddleware');
 
-router.post('/add', addProduct);
-router.post('/all', addAllProducts);
+// ─── Public storefront reads ───────────────────────────────
 router.get('/', getAllProducts);
-router.post('/:id', getProductById);
-router.get('/slug/:slug', getProductBySlug); // frontend uses POST for getProductById as per ProductServices-DBTGWG86.js
-router.patch('/:id', updateProduct);
-router.put('/status/:id', updateStatus);
-router.delete('/:id', deleteProduct);
+router.get('/slug/:slug', getProductBySlug);
+
+// ─── Admin-only reads/writes ───────────────────────────────
+// Note: getProductById is POST /:id (the Dashtar SPA reads a single product via POST).
+router.post('/add', protectAdmin, addProduct);
+router.post('/all', protectAdmin, addAllProducts);
+router.post('/:id', protectAdmin, getProductById);
+router.patch('/:id', protectAdmin, updateProduct);
+router.put('/status/:id', protectAdmin, updateStatus);
+router.delete('/:id', protectAdmin, deleteProduct);
 
 module.exports = router;
 

@@ -1,94 +1,170 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
+
+// Distinguish Mongoose validation errors (client's fault → 400) from real
+// server errors (→ 500). Keeps HTTP semantics correct for callers.
+function sendError(res, err, fallback = 'Something went wrong.') {
+  if (err && (err.name === 'ValidationError' || err.name === 'CastError')) {
+    return res.status(400).send({ message: err.message });
+  }
+  if (err && err.code === 11000) {
+    return res.status(409).send({ message: 'A product with that unique field already exists.' });
+  }
+  console.error('[products]', err);
+  return res.status(500).send({ message: fallback });
+}
 
 const addProduct = async (req, res) => {
   try {
-    const newProduct = new Product(req.body);
+    const categoryId = req.body.category || (Array.isArray(req.body.categories) && req.body.categories[0]);
+    if (!categoryId) {
+      return res.status(400).send({ message: 'Category is required for all products. Please select a category.' });
+    }
+    const payload = Object.assign({}, req.body);
+    payload.category = categoryId;
+    if (!payload.categories || !payload.categories.length) {
+      payload.categories = [categoryId];
+    }
+    const newProduct = new Product(payload);
     await newProduct.save();
-    res.status(200).send({ message: "Product Added Successfully!", product: newProduct });
+    res.status(201).send({ message: 'Product Added Successfully!', product: newProduct });
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to add product.');
   }
 };
 
 const addAllProducts = async (req, res) => {
   try {
-    await Product.insertMany(req.body);
-    res.status(200).send({ message: "Products Added Successfully!" });
+    if (!Array.isArray(req.body) || req.body.length === 0) {
+      return res.status(400).send({ message: 'Expected a non-empty array of products.' });
+    }
+    const inserted = await Product.insertMany(req.body);
+    res.status(201).send({ message: 'Products Added Successfully!', count: inserted.length });
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to bulk-add products.');
   }
 };
 
 const getAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 20, category, title, price } = req.query;
-    let query = {};
-    if (category) {
-      query.categories = category;
-    }
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const { category, title } = req.query;
+
+    const query = {};
+    if (category) query.categories = category;
     if (title) {
       query.$or = [
-        { "title.en": { $regex: title, $options: "i" } },
-        { "title.bn": { $regex: title, $options: "i" } }
+        { 'title.en': { $regex: title, $options: 'i' } },
+        { 'title.bn': { $regex: title, $options: 'i' } },
+        { title: { $regex: title, $options: 'i' } } // tolerate string-typed titles
       ];
     }
-    const products = await Product.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .populate('category');
-      
-    const totalDoc = await Product.countDocuments(query);
-    res.status(200).send({ products, totalDoc });
+
+    const [products, totalDoc] = await Promise.all([
+      Product.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('category'),
+      Product.countDocuments(query)
+    ]);
+
+    res.status(200).send({
+      products,
+      totalDoc,
+      page,
+      limit,
+      pages: Math.ceil(totalDoc / limit)
+    });
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to fetch products.');
   }
 };
 
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).send({ message: "Product not found!" });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).send({ message: 'Invalid product id.' });
+    }
+    const product = await Product.findById(req.params.id).populate('category');
+    if (!product) return res.status(404).send({ message: 'Product not found!' });
     res.status(200).send(product);
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to fetch product.');
   }
 };
 
 const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).send({ message: "Product Updated Successfully!", product });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).send({ message: 'Invalid product id.' });
+    }
+    const payload = Object.assign({}, req.body);
+    if (payload.category || payload.categories) {
+      const categoryId = payload.category || (Array.isArray(payload.categories) && payload.categories[0]);
+      if (!categoryId) {
+        return res.status(400).send({ message: 'Category is required for all products. Please select a category.' });
+      }
+      payload.category = categoryId;
+      if (!payload.categories || !payload.categories.length) {
+        payload.categories = [categoryId];
+      }
+    }
+    const product = await Product.findByIdAndUpdate(req.params.id, payload, {
+      new: true,
+      runValidators: true
+    });
+    if (!product) return res.status(404).send({ message: 'Product not found!' });
+    res.status(200).send({ message: 'Product Updated Successfully!', product });
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to update product.');
   }
 };
 
 const updateStatus = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).send({ message: 'Invalid product id.' });
+    }
     const newStatus = req.body.status;
-    await Product.findByIdAndUpdate(req.params.id, { status: newStatus });
+    if (newStatus !== 'show' && newStatus !== 'hide') {
+      return res.status(400).send({ message: "status must be 'show' or 'hide'." });
+    }
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: newStatus },
+      { new: true }
+    );
+    if (!product) return res.status(404).send({ message: 'Product not found!' });
     res.status(200).send({ message: `Product ${newStatus === 'show' ? 'Published' : 'Unpublished'} Successfully!` });
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to update product status.');
   }
 };
 
 const deleteProduct = async (req, res) => {
   try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.status(200).send({ message: "Product Deleted Successfully!" });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).send({ message: 'Invalid product id.' });
+    }
+    const deleted = await Product.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).send({ message: 'Product not found!' });
+    res.status(200).send({ message: 'Product Deleted Successfully!' });
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to delete product.');
   }
 };
 
 const getProductBySlug = async (req, res) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug });
-    res.send(product);
+    const product = await Product.findOne({ slug: req.params.slug }).populate('category');
+    // Root-cause fix: previously returned 200 with a null body, so the
+    // storefront couldn't tell "not found" from a real product.
+    if (!product) return res.status(404).send({ message: 'Product not found!' });
+    res.status(200).send(product);
   } catch (err) {
-    res.status(500).send({ message: err.message });
+    sendError(res, err, 'Failed to fetch product.');
   }
 };
 
@@ -102,4 +178,3 @@ module.exports = {
   updateStatus,
   deleteProduct
 };
-

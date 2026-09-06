@@ -3,9 +3,12 @@
  */
 
 (function () {
-  const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:5000/v1'
-    : 'https://chromora.in/v1';
+  // API base from shared runtime config (assets/js/config.js). Falls back to a
+  // hostname heuristic if config.js failed to load, so checkout never hard-breaks.
+  const API_BASE = (window.CHROMORA_CONFIG && window.CHROMORA_CONFIG.API_BASE)
+    || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+          ? 'http://localhost:5000/v1'
+          : window.location.origin + '/v1');
 
   let indianStatesData = [];
   
@@ -505,15 +508,13 @@
           <div style="display: flex; gap: 10px;">
             <div class="chromora-form-group" style="flex: 1;">
               <label>State *</label>
-              <select id="cust-state" required style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;">
-                <option value="">Select State</option>
-              </select>
+              <input type="text" id="cust-state" list="state-list" required autocomplete="off" placeholder="Type to search state" style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;" />
+              <datalist id="state-list"></datalist>
             </div>
             <div class="chromora-form-group" style="flex: 1;">
               <label>District *</label>
-              <select id="cust-district" required disabled style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;">
-                <option value="">Select District</option>
-              </select>
+              <input type="text" id="cust-district" list="district-list" required disabled autocomplete="off" placeholder="Select state first" style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;" />
+              <datalist id="district-list"></datalist>
             </div>
           </div>
           <div style="display: flex; gap: 10px;">
@@ -538,36 +539,92 @@
         </form>
       `;
 
-      // Populate states dynamically
+      // Populate searchable State / District inputs (datalist-backed)
       setTimeout(() => {
-        const stateSelect = document.getElementById('cust-state');
-        const districtSelect = document.getElementById('cust-district');
-        if (stateSelect && indianStatesData.length > 0) {
+        const stateInput = document.getElementById('cust-state');
+        const districtInput = document.getElementById('cust-district');
+        const stateList = document.getElementById('state-list');
+        const districtList = document.getElementById('district-list');
+
+        // Normalize for tolerant matching (case/space/diacritics-insensitive)
+        const norm = (v) => (v || '').toString().trim().toLowerCase();
+
+        function findState(name) {
+          const n = norm(name);
+          return indianStatesData.find(s => norm(s.state) === n);
+        }
+
+        function fillStateOptions() {
+          if (!stateList) return;
+          stateList.innerHTML = '';
           indianStatesData.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.state;
-            opt.textContent = s.state;
-            stateSelect.appendChild(opt);
+            stateList.appendChild(opt);
           });
-          
-          stateSelect.addEventListener('change', (e) => {
-            const selectedState = e.target.value;
-            districtSelect.innerHTML = '<option value="">Select District</option>';
-            if (selectedState) {
-              const stateObj = indianStatesData.find(s => s.state === selectedState);
-              if (stateObj && stateObj.districts) {
-                stateObj.districts.forEach(d => {
-                  const opt = document.createElement('option');
-                  opt.value = d;
-                  opt.textContent = d;
-                  districtSelect.appendChild(opt);
-                });
-                districtSelect.disabled = false;
-              }
+        }
+
+        function fillDistrictOptions(stateObj) {
+          districtList.innerHTML = '';
+          if (stateObj && Array.isArray(stateObj.districts)) {
+            stateObj.districts.forEach(d => {
+              const opt = document.createElement('option');
+              opt.value = d;
+              districtList.appendChild(opt);
+            });
+          }
+        }
+
+        function resetDistrict(placeholder) {
+          districtInput.value = '';
+          districtInput.disabled = true;
+          districtInput.placeholder = placeholder || 'Select state first';
+          districtList.innerHTML = '';
+          districtInput.dataset.valid = '';
+        }
+
+        if (stateInput && indianStatesData.length > 0) {
+          fillStateOptions();
+
+          // When the state changes, always reset the district (dependent field).
+          stateInput.addEventListener('input', () => {
+            const stateObj = findState(stateInput.value);
+            resetDistrict();
+            if (stateObj) {
+              stateInput.dataset.valid = 'true';
+              fillDistrictOptions(stateObj);
+              districtInput.disabled = false;
+              districtInput.placeholder = 'Type to search district';
             } else {
-              districtSelect.disabled = true;
+              stateInput.dataset.valid = '';
             }
           });
+
+          // On blur, snap to an exact known state or clear if it isn't valid.
+          stateInput.addEventListener('blur', () => {
+            const stateObj = findState(stateInput.value);
+            if (stateObj) {
+              stateInput.value = stateObj.state; // canonical casing
+            } else if (stateInput.value) {
+              stateInput.value = '';
+              resetDistrict();
+            }
+          });
+
+          // District: validate against the currently selected state's list.
+          function validateDistrict(snap) {
+            const stateObj = findState(stateInput.value);
+            if (!stateObj) { districtInput.dataset.valid = ''; return; }
+            const match = (stateObj.districts || []).find(d => norm(d) === norm(districtInput.value));
+            if (match) {
+              if (snap) districtInput.value = match;
+              districtInput.dataset.valid = 'true';
+            } else {
+              districtInput.dataset.valid = '';
+            }
+          }
+          districtInput.addEventListener('input', () => validateDistrict(false));
+          districtInput.addEventListener('blur', () => validateDistrict(true));
         }
         // Pincode API Validation
         const pincodeInput = document.getElementById('cust-pincode');
@@ -595,10 +652,10 @@
                   const pinState = firstOffice.State;
                   const pinDistrict = firstOffice.District;
                   
-                  const selectedState = stateSelect.options[stateSelect.selectedIndex]?.text || '';
-                  const selectedDistrict = districtSelect.options[districtSelect.selectedIndex]?.text || '';
-                  
-                  if (!selectedState || !selectedDistrict || selectedState === 'Select State' || selectedDistrict === 'Select District') {
+                  const selectedState = (stateInput?.value || '').trim();
+                  const selectedDistrict = (districtInput?.value || '').trim();
+
+                  if (!selectedState || !selectedDistrict) {
                      pincodeMsg.innerHTML = '<span style="color:#f87171;">Please select State & District first.</span>';
                      return;
                   }
@@ -689,8 +746,10 @@
     const address = document.getElementById('cust-address')?.value.trim();
     const city = document.getElementById('cust-city')?.value.trim();
     const pincode = document.getElementById('cust-pincode')?.value.trim();
-    const state = document.getElementById('cust-state')?.value;
-    const district = document.getElementById('cust-district')?.value;
+    const stateEl = document.getElementById('cust-state');
+    const districtEl = document.getElementById('cust-district');
+    const state = stateEl?.value.trim();
+    const district = districtEl?.value.trim();
 
     if (!name || !phone || !address || !city || !pincode || !state || !district) {
       alert('Please fill in all required shipping details (including State and District)!');
@@ -698,6 +757,15 @@
     }
     if (name.length < 3) {
       alert('Please enter a valid full name.');
+      return;
+    }
+    // State & district must be real, mutually-consistent values (not free text).
+    if (stateEl && stateEl.dataset.valid !== 'true') {
+      alert('Please select a valid State from the list.');
+      return;
+    }
+    if (districtEl && districtEl.dataset.valid !== 'true') {
+      alert('Please select a valid District for your State.');
       return;
     }
     if (!/^[6-9]\d{9}$/.test(phone)) {
@@ -754,10 +822,12 @@
 
     // Razorpay Flow
     try {
+      // Send the cart (not a client-controlled amount): the backend prices the
+      // order from the DB and returns the authoritative Razorpay amount.
       const orderRes = await fetch(`${API_BASE}/orders/create-razorpay-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total, currency: 'INR' })
+        body: JSON.stringify({ cart, currency: 'INR' })
       });
 
       if (!orderRes.ok) {
@@ -787,7 +857,7 @@
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 customerName: name, phone, email, deliveryAddress,
-                cart, discount: 0, shippingFee: 0
+                cart
               })
             });
 

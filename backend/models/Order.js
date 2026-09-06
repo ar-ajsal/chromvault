@@ -22,11 +22,12 @@ const orderSchema = new mongoose.Schema({
   shippingFee: { type: Number, default: 0 },
   total: { type: Number, default: 0 },
 
-  // Payment Information
-  paymentMethod: { type: String, default: 'Cash On Delivery' },
+  // Payment Information (Razorpay is the only supported method)
+  paymentMethod: { type: String, default: 'Razorpay' },
   paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Failed'], default: 'Pending' },
-  paymentReference: { type: String, required: false }, // UTR or Payment ID
-  paymentScreenshot: { type: String, required: false }, // URL to cloudinary
+  paymentReference: { type: String, required: false }, // Razorpay payment id
+  // Legacy field retained for backward compatibility with historical orders.
+  paymentScreenshot: { type: String, required: false },
 
   // Order Status
   status: { 
@@ -50,5 +51,21 @@ const orderSchema = new mongoose.Schema({
   deliveryDate: { type: Date, required: false },
 
 }, { timestamps: true });
+
+// ─── Indexes for common queries ────────────────────────────
+// Duplicate-payment guard looks up by paymentReference on every checkout.
+// Sparse because legacy/pending orders may not have one; not unique because a
+// blank/absent reference must not collide.
+// Partial-UNIQUE so the same Razorpay payment can never create two orders even
+// under a race (the check-then-save window is closed at the DB level). Partial
+// so orders without a reference don't collide on null.
+orderSchema.index(
+  { paymentReference: 1 },
+  { unique: true, partialFilterExpression: { paymentReference: { $type: 'string' } } }
+);
+// Admin list is sorted newest-first and filtered by status/paymentStatus.
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ paymentStatus: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

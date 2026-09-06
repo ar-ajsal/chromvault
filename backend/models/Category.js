@@ -7,6 +7,7 @@ const categorySchema = new mongoose.Schema({
   parentName: { type: String },
   id: { type: String },
   icon: { type: String },
+  image: { type: String },
   status: { type: String, default: 'show' },
 }, { timestamps: true });
 
