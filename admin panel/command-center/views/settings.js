@@ -97,6 +97,23 @@
 
       '</div></div>' +
 
+      // Hero Media Panel
+      '<div class="panel" style="margin-bottom:20px">' +
+      '<div class="panel-head">' +
+      '<h3>' + icon('image') + 'Storefront Hero Media</h3>' +
+      '</div>' +
+      '<div class="panel-pad">' +
+      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;">' +
+      'Upload a video (.mp4, .webm) or an image (.jpg, .png, .webp) for the homepage hero section. (Max 10MB)' +
+      '</p>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">' +
+      '<input type="file" id="heroMediaInput" accept="video/mp4,video/webm,image/jpeg,image/png,image/webp" style="display:none">' +
+      '<button class="btn ghost" onclick="document.getElementById(\'heroMediaInput\').click()">' + icon('upload') + 'Choose File</button>' +
+      '<span id="heroMediaName" class="cell-sub" style="font-size:13px">No file chosen</span>' +
+      '</div>' +
+      '<button class="btn primary" id="btnUploadHeroMedia" disabled>' + icon('check') + 'Upload & Save</button>' +
+      '</div></div>' +
+
       // Team Management (super admin only)
       (isSuper ?
         '<div class="panel" style="margin-top:16px"><div class="panel-head"><h3>' + icon('users') + 'Add team member</h3>' +
@@ -164,6 +181,45 @@
         }
       });
     });
+
+    // Hero Media Upload logic
+    var heroInput = root.querySelector('#heroMediaInput');
+    var heroName = root.querySelector('#heroMediaName');
+    var heroBtn = root.querySelector('#btnUploadHeroMedia');
+    if (heroInput) {
+      heroInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+          heroName.textContent = this.files[0].name;
+          heroBtn.disabled = false;
+        } else {
+          heroName.textContent = 'No file chosen';
+          heroBtn.disabled = true;
+        }
+      });
+      heroBtn.addEventListener('click', function () {
+        var file = heroInput.files[0];
+        if (!file) return;
+        heroBtn.disabled = true;
+        heroBtn.innerHTML = UI.spinner() + ' Uploading...';
+        
+        CC.API.upload(file)
+          .then(function (url) {
+            return CC.API.put('/settings/hero_media', { value: url });
+          })
+          .then(function () {
+            CC.toast('Hero media updated successfully!', 'ok');
+            heroName.textContent = 'Live on storefront';
+            heroInput.value = '';
+          })
+          .catch(function (e) {
+            CC.toast(e.message || 'Upload failed', 'bad');
+          })
+          .then(function () {
+            heroBtn.disabled = true;
+            heroBtn.innerHTML = icon('check') + 'Upload & Save';
+          });
+      });
+    }
 
     // Sign out button click
     root.querySelector('#logoutBtn').addEventListener('click', function () {

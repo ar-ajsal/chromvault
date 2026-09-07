@@ -11,7 +11,8 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'chromvault',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+    resource_type: 'auto',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'webm']
   }
 });
 

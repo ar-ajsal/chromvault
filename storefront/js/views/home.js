@@ -64,6 +64,25 @@
       if (sec) Views.fill(sec, Views.errorHtml(err));
     });
 
+    // Fetch dynamic hero media
+    API.get('/settings/hero_media').then(function(res) {
+      if (Router.stale(t)) return;
+      var heroContainer = U.$('#homeHeroMedia');
+      if (!heroContainer) return;
+      var url = res && res.value;
+      if (url) {
+        var isVideo = url.match(/\.(mp4|webm)$/i) || url.indexOf('/video/') > -1;
+        if (isVideo) {
+          heroContainer.innerHTML = '<video autoplay loop muted playsinline class="hero-video"><source src="' + U.escAttr(url) + '"></video>';
+        } else {
+          heroContainer.innerHTML = '<img src="' + U.escAttr(url) + '" class="hero-video" alt="Hero Media" style="object-fit:cover;width:100%;height:100%;">';
+        }
+      }
+    }).catch(function(err) {
+      // Ignore if not set or fails, it will just remain empty or fallback
+      console.warn('Hero media not loaded', err);
+    });
+
     // Categories may already be loaded by the shell; if not, wait for its event.
     var cats = Shell.categories();
     if (cats.length) paintCats(cats);
@@ -80,16 +99,12 @@
   };
 
   /* ── Hero ────────────────────────────────────────────────────────────────
-     The signature. Three lines of display type with exactly one word in metal,
-     against the rotating chrome pour. The spec row underneath is filled with
-     real counts once the catalogue responds — until then it shows em dashes
-     rather than a fabricated number. */
+     The signature. Displays the dynamically uploaded video or image from admin. */
   function heroHtml() {
     return '' +
-      '<section class="hero-video-wrap">' +
-        '<video autoplay loop muted playsinline class="hero-video">' +
-          '<source src="/assets/hero-video.mp4" type="video/mp4">' +
-        '</video>' +
+      '<section class="hero-video-wrap" id="homeHeroMedia">' +
+        // Default fallback or skeleton before load
+        '<div style="width:100%;height:100%;background:var(--ink-5);"></div>' +
       '</section>';
   }
 

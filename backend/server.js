@@ -78,6 +78,7 @@ app.use('/v1/customer', require('./routes/customerRoutes'));
 app.use('/v1/cloudinary', require('./routes/uploadRoutes'));
 app.use('/v1/orders', require('./routes/orderRoutes'));
 app.use('/v1/reviews', require('./routes/reviewRoutes'));
+app.use('/v1/settings', require('./routes/settingRoutes'));
 
 app.get('/', (req, res) => {
   res.send('Chromvault Backend API is running...');
