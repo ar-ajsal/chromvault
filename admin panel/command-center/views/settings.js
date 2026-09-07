@@ -111,6 +111,9 @@
       '<button class="btn ghost" onclick="document.getElementById(\'heroMediaInput\').click()">' + icon('upload') + 'Choose File</button>' +
       '<span id="heroMediaName" class="cell-sub" style="font-size:13px">No file chosen</span>' +
       '</div>' +
+      '<button class="btn primary" id="btnUploadHeroMedia" disabled>' + icon('check') + 'Upload & Save</button>' +
+      '</div></div>' +
+
       // Push Notifications Panel
       '<div class="panel" style="margin-bottom:20px">' +
       '<div class="panel-head">' +
@@ -201,63 +204,68 @@
         '</div></div>' : '');
 
     // Save button click
-    root.querySelector('#btnSaveFromAddress').addEventListener('click', function () {
-      var storeName = (root.querySelector('#faStoreName').value || '').trim();
-      var phone = (root.querySelector('#faPhone').value || '').trim();
-      var address = (root.querySelector('#faAddress').value || '').trim();
+    var btnSaveFA = root.querySelector('#btnSaveFromAddress');
+    if (btnSaveFA) {
+      btnSaveFA.addEventListener('click', function () {
+        var storeName = (root.querySelector('#faStoreName').value || '').trim();
+        var phone = (root.querySelector('#faPhone').value || '').trim();
+        var address = (root.querySelector('#faAddress').value || '').trim();
 
-      if (!storeName) {
-        CC.toast('Store / Sender name is required', 'bad');
-        return;
-      }
-      if (!address) {
-        CC.toast('From Address is required', 'bad');
-        return;
-      }
-
-      var btn = root.querySelector('#btnSaveFromAddress');
-      btn.disabled = true;
-
-      try {
-        if (global.Invoice && global.Invoice.saveFromSettings) {
-          global.Invoice.saveFromSettings({
-            storeName: storeName,
-            phone: phone,
-            address: address
-          });
+        if (!storeName) {
+          CC.toast('Store / Sender name is required', 'bad');
+          return;
         }
-        CC.toast('From Address saved! All order slips & invoices will use this address.', 'ok');
-      } catch (e) {
-        CC.toast('Failed to save settings: ' + e.message, 'bad');
-      } finally {
-        setTimeout(function () { btn.disabled = false; }, 400);
-      }
-    });
+        if (!address) {
+          CC.toast('From Address is required', 'bad');
+          return;
+        }
 
-    // Reset to defaults click
-    root.querySelector('#btnResetFromAddress').addEventListener('click', function () {
-      CC.confirmModal({
-        title: 'Reset From Address?',
-        body: 'This will revert the dispatch From Address to original factory defaults.',
-        ok: 'Reset',
-        danger: true
-      }).then(function (ok) {
-        if (!ok) return;
-        if (global.Invoice && global.Invoice.resetFromSettings) {
-          var def = global.Invoice.resetFromSettings();
-          root.querySelector('#faStoreName').value = def.storeName || '';
-          root.querySelector('#faPhone').value = def.phone || '';
-          root.querySelector('#faAddress').value = def.address || '';
-          CC.toast('From Address reset to factory defaults.', 'ok');
+        btnSaveFA.disabled = true;
+
+        try {
+          if (global.Invoice && global.Invoice.saveFromSettings) {
+            global.Invoice.saveFromSettings({
+              storeName: storeName,
+              phone: phone,
+              address: address
+            });
+          }
+          CC.toast('From Address saved! All order slips & invoices will use this address.', 'ok');
+        } catch (e) {
+          CC.toast('Failed to save settings: ' + e.message, 'bad');
+        } finally {
+          setTimeout(function () { btnSaveFA.disabled = false; }, 400);
         }
       });
-    });
+    }
+
+    // Reset to defaults click
+    var btnResetFA = root.querySelector('#btnResetFromAddress');
+    if (btnResetFA) {
+      btnResetFA.addEventListener('click', function () {
+        CC.confirmModal({
+          title: 'Reset From Address?',
+          body: 'This will revert the dispatch From Address to original factory defaults.',
+          ok: 'Reset',
+          danger: true
+        }).then(function (ok) {
+          if (!ok) return;
+          if (global.Invoice && global.Invoice.resetFromSettings) {
+            var def = global.Invoice.resetFromSettings();
+            root.querySelector('#faStoreName').value = def.storeName || '';
+            root.querySelector('#faPhone').value = def.phone || '';
+            root.querySelector('#faAddress').value = def.address || '';
+            CC.toast('From Address reset to factory defaults.', 'ok');
+          }
+        });
+      });
+    }
 
     // Hero Media Upload logic
     var heroInput = root.querySelector('#heroMediaInput');
     var heroName = root.querySelector('#heroMediaName');
     var heroBtn = root.querySelector('#btnUploadHeroMedia');
-    if (heroInput) {
+    if (heroInput && heroBtn) {
       heroInput.addEventListener('change', function () {
         if (this.files && this.files[0]) {
           heroName.textContent = this.files[0].name;
@@ -433,37 +441,43 @@
     updateNotifUI();
 
     // Sign out button click
-    root.querySelector('#logoutBtn').addEventListener('click', function () {
-      CC.confirmModal({
-        title: 'Sign out?',
-        body: 'You will need to sign in again to access the console.',
-        ok: 'Sign out',
-        danger: true
-      }).then(function (ok) {
-        if (ok) global.App.logout();
+    var logoutBtn = root.querySelector('#logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function () {
+        CC.confirmModal({
+          title: 'Sign out?',
+          body: 'You will need to sign in again to access the console.',
+          ok: 'Sign out',
+          danger: true
+        }).then(function (ok) {
+          if (ok) global.App.logout();
+        });
       });
-    });
+    }
 
     // Super admin add member
     if (isSuper) {
-      root.querySelector('#addMember').addEventListener('click', function () {
-        var tmName = root.querySelector('#tmName').value.trim();
-        var tmEmail = root.querySelector('#tmEmail').value.trim();
-        var tmPassword = root.querySelector('#tmPass').value;
-        var roleVal = root.querySelector('#tmRole').value;
-        if (tmName.length < 2) { CC.toast('Name must be at least 2 characters', 'bad'); return; }
-        if (!/^\S+@\S+\.\S+$/.test(tmEmail)) { CC.toast('Enter a valid email', 'bad'); return; }
-        if (tmPassword.length < 6) { CC.toast('Password must be at least 6 characters', 'bad'); return; }
-        var btn = root.querySelector('#addMember'); btn.disabled = true;
-        CC.API.post('/admin/register', { name: tmName, email: tmEmail, password: tmPassword, role: roleVal })
-          .then(function () {
-            CC.toast('Team member created');
-            root.querySelector('#tmName').value = '';
-            root.querySelector('#tmEmail').value = '';
-            root.querySelector('#tmPass').value = '';
-          }).catch(function (e) { CC.toast(e.message, 'bad'); })
-          .then(function () { btn.disabled = false; });
-      });
+      var addMemberBtn = root.querySelector('#addMember');
+      if (addMemberBtn) {
+        addMemberBtn.addEventListener('click', function () {
+          var tmName = (root.querySelector('#tmName') ? root.querySelector('#tmName').value : '').trim();
+          var tmEmail = (root.querySelector('#tmEmail') ? root.querySelector('#tmEmail').value : '').trim();
+          var tmPassword = root.querySelector('#tmPass') ? root.querySelector('#tmPass').value : '';
+          var roleVal = root.querySelector('#tmRole') ? root.querySelector('#tmRole').value : 'admin';
+          if (tmName.length < 2) { CC.toast('Name must be at least 2 characters', 'bad'); return; }
+          if (!/^\S+@\S+\.\S+$/.test(tmEmail)) { CC.toast('Enter a valid email', 'bad'); return; }
+          if (tmPassword.length < 6) { CC.toast('Password must be at least 6 characters', 'bad'); return; }
+          addMemberBtn.disabled = true;
+          CC.API.post('/admin/register', { name: tmName, email: tmEmail, password: tmPassword, role: roleVal })
+            .then(function () {
+              CC.toast('Team member created');
+              if (root.querySelector('#tmName')) root.querySelector('#tmName').value = '';
+              if (root.querySelector('#tmEmail')) root.querySelector('#tmEmail').value = '';
+              if (root.querySelector('#tmPass')) root.querySelector('#tmPass').value = '';
+            }).catch(function (e) { CC.toast(e.message, 'bad'); })
+            .then(function () { addMemberBtn.disabled = false; });
+        });
+      }
     }
   }
 
