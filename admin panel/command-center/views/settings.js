@@ -111,7 +111,24 @@
       '<button class="btn ghost" onclick="document.getElementById(\'heroMediaInput\').click()">' + icon('upload') + 'Choose File</button>' +
       '<span id="heroMediaName" class="cell-sub" style="font-size:13px">No file chosen</span>' +
       '</div>' +
-      '<button class="btn primary" id="btnUploadHeroMedia" disabled>' + icon('check') + 'Upload & Save</button>' +
+      // Storefront URL Panel
+      '<div class="panel" style="margin-bottom:20px">' +
+      '<div class="panel-head">' +
+      '<h3>' + icon('external') + 'Storefront Public URL</h3>' +
+      '</div>' +
+      '<div class="panel-pad">' +
+      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;">' +
+      'The public domain where customers access your storefront. Review links and customer links are generated using this URL.' +
+      '</p>' +
+      '<div class="field" style="max-width:520px">' +
+      '<label>Storefront Base URL</label>' +
+      '<input class="input mono" id="sfPublicUrl" value="' + esc(CC.getStorefrontUrl()) + '" placeholder="e.g. http://localhost:3001 or https://chromvault.vercel.app">' +
+      '<span class="hint">Currently active: <code>' + esc(CC.getStorefrontUrl()) + '</code></span>' +
+      '</div>' +
+      '<div style="display:flex;gap:12px;margin-top:14px">' +
+      '<button class="btn primary" id="btnSaveStorefrontUrl">' + icon('check') + 'Save Storefront URL</button>' +
+      '<button class="btn ghost" id="btnResetStorefrontUrl" style="color:var(--ink-3)">' + icon('refresh') + 'Auto-Detect</button>' +
+      '</div>' +
       '</div></div>' +
 
       // Team Management (super admin only)
@@ -219,6 +236,31 @@
             heroBtn.innerHTML = icon('check') + 'Upload & Save';
           });
       });
+    }
+
+    // Storefront URL logic
+    var btnSaveSf = root.querySelector('#btnSaveStorefrontUrl');
+    var btnResetSf = root.querySelector('#btnResetStorefrontUrl');
+    var sfInput = root.querySelector('#sfPublicUrl');
+    if (btnSaveSf && sfInput) {
+      btnSaveSf.addEventListener('click', function () {
+        var val = (sfInput.value || '').trim();
+        if (!val) {
+          localStorage.removeItem('chromvault_storefront_url');
+          sfInput.value = CC.getStorefrontUrl();
+          CC.toast('Storefront URL set to auto-detect: ' + CC.getStorefrontUrl(), 'ok');
+        } else {
+          localStorage.setItem('chromvault_storefront_url', val.replace(/\/+$/, ''));
+          CC.toast('Storefront URL saved!', 'ok');
+        }
+      });
+      if (btnResetSf) {
+        btnResetSf.addEventListener('click', function () {
+          localStorage.removeItem('chromvault_storefront_url');
+          sfInput.value = CC.getStorefrontUrl();
+          CC.toast('Reverted to auto-detected URL: ' + sfInput.value, 'ok');
+        });
+      }
     }
 
     // Sign out button click

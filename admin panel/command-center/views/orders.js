@@ -576,30 +576,29 @@
     // Request Review
     var reviewBtns = containerEl.querySelectorAll('.btn-request-review');
     reviewBtns.forEach(function (btn) {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function (e) {
+        if (e) e.stopPropagation();
         var pid = btn.getAttribute('data-product-id');
         btn.disabled = true;
         var originalHtml = btn.innerHTML;
-        btn.innerHTML = UI.spinner() + ' Generating…';
+        btn.innerHTML = UI.spinner() + ' Copying…';
         
         CC.API.post('/reviews/request/' + o._id, { productId: pid }).then(function (res) {
-          var url = 'https://chromvault.in/review?token=' + esc(res.token);
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).catch(function(){});
-          } else {
-            var ta = document.createElement('textarea');
-            ta.value = url;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-          }
-          btn.innerHTML = icon('check') + ' Copied';
-          CC.toast('Review link copied to clipboard', 'ok');
-          setTimeout(function() {
-            btn.innerHTML = originalHtml;
-            btn.disabled = false;
-          }, 3000);
+          var storeUrl = CC.getStorefrontUrl();
+          var url = storeUrl + '/review?token=' + encodeURIComponent(res.token);
+          
+          CC.copy(url).then(function () {
+            btn.innerHTML = icon('check') + ' Copied!';
+            btn.style.borderColor = 'var(--ok)';
+            btn.style.color = 'var(--ok)';
+            CC.toast('Review link copied to clipboard!', 'ok');
+            setTimeout(function() {
+              btn.innerHTML = originalHtml;
+              btn.disabled = false;
+              btn.style.borderColor = '';
+              btn.style.color = '';
+            }, 3000);
+          });
         }).catch(function (err) {
           CC.toast(err.message || 'Failed to generate review link', 'bad');
           btn.disabled = false;

@@ -13,7 +13,7 @@
  *   - Navigations: network-first with an offline fallback to the cached shell,
  *     so a fresh deploy is picked up immediately when online.
  */
-const CACHE_VERSION = 'chromvault-admin-v3';
+const CACHE_VERSION = 'chromvault-admin-v4';
 const SHELL_URLS = [
   '/',
   '/index.html',

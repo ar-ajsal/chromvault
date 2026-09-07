@@ -231,13 +231,67 @@
     var t; return function () { var a = arguments, ctx = this; clearTimeout(t); t = setTimeout(function () { fn.apply(ctx, a); }, wait); };
   }
 
+  // ---- Robust Clipboard Copy ------------------------------------------------
+  function copy(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return fallbackCopy(text);
+      });
+    }
+    return Promise.resolve(fallbackCopy(text));
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.left = '-9999px';
+    ta.style.opacity = '0';
+    ta.style.pointerEvents = 'none';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    var ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch (e) {
+      ok = false;
+    }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  // ---- Storefront URL Resolution --------------------------------------------
+  function getStorefrontUrl() {
+    var saved = localStorage.getItem('chromvault_storefront_url');
+    if (saved && saved.trim()) return saved.trim().replace(/\/+$/, '');
+
+    var host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+      return window.location.protocol + '//' + host + ':3001';
+    }
+
+    if (host.endsWith('.vercel.app')) {
+      var storeHost = host.replace(/-admin\b/i, '').replace(/\badmin-/i, '');
+      if (storeHost !== host) {
+        return window.location.protocol + '//' + storeHost;
+      }
+    }
+
+    return window.location.origin;
+  }
+
   global.CC = {
     API: API, Session: Session, authHeaders: authHeaders,
     el: el, esc: esc, qs: qs, qsa: qsa,
     money: money, num: num, compact: compact, moneyCompact: moneyCompact,
     timeAgo: timeAgo, dateShort: dateShort, dateLong: dateLong, pct: pct, locName: locName,
     ORDER_STATUS: ORDER_STATUS, orderBadgeClass: orderBadgeClass,
-    toast: toast, confirmModal: confirmModal, debounce: debounce
+    toast: toast, confirmModal: confirmModal, debounce: debounce,
+    copy: copy, getStorefrontUrl: getStorefrontUrl
   };
   global.Views = global.Views || {};
 })(window);
