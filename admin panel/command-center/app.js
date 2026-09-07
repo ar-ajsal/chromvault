@@ -283,6 +283,17 @@
   }
 
   function init() {
+    // Public customer review route check
+    var path = window.location.pathname;
+    var hash = window.location.hash || '';
+    var isReview = path.startsWith('/review') || hash.startsWith('#/review');
+    if (isReview) {
+      if (global.PublicReview && typeof global.PublicReview.init === 'function') {
+        global.PublicReview.init();
+        return;
+      }
+    }
+
     // Icon-only buttons need their glyphs
     qs('#toggleSidebar').innerHTML = icon('sidebar');
     qs('#openSidebar').innerHTML = icon('menu');

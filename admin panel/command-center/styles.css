@@ -86,6 +86,43 @@ body::before {
   mask-image: radial-gradient(circle at 30% 10%, #000 0%, transparent 75%);
 }
 
+/* Drag and Drop Styles */
+.dragging {
+  opacity: 0.5;
+}
+.drag-over {
+  border: 2px dashed var(--lime);
+  background: rgba(200, 255, 0, 0.05);
+}
+.up-thumb[draggable="true"], .prod-card[draggable="true"], tr[draggable="true"] {
+  cursor: grab;
+}
+.up-thumb[draggable="true"]:active, .prod-card[draggable="true"]:active, tr[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* ============================ PUBLIC SCREEN (REVIEWS) ===================== */
+.public-screen {
+  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px;
+  background: radial-gradient(900px 600px at 50% -10%, rgba(200,255,0,0.06), transparent 60%), var(--void);
+  overflow-y: auto;
+}
+.public-screen[hidden] { display: none !important; }
+.public-card {
+  width: min(520px, 100%); background: linear-gradient(180deg, var(--graphite), var(--charcoal));
+  border: 1px solid var(--line); border-radius: var(--r-xl); padding: 34px 28px; box-shadow: var(--shadow-pop);
+}
+.star-rating {
+  display: flex; gap: 10px; font-size: 34px; cursor: pointer; color: var(--line); user-select: none;
+}
+.star-rating span {
+  transition: transform 0.15s ease, color 0.15s ease;
+  display: inline-block;
+}
+.star-rating span:hover {
+  transform: scale(1.22);
+}
+
 /* Toast & Notification Stack */
 .toast-stack {
   position: fixed;
@@ -1098,27 +1135,3 @@ svg.chart text { font-family: var(--font-mono); fill: var(--ink-3); }
 .inv-modal-body {
   flex: 1; padding: 14px; background: var(--void);
 }
-
- / *   D r a g   a n d   D r o p   S t y l e s   * / 
- . d r a g g i n g   { 
-     o p a c i t y :   0 . 5 ; 
- } 
- . d r a g - o v e r   { 
-     b o r d e r :   2 p x   d a s h e d   v a r ( - - b r a n d ) ; 
-     b a c k g r o u n d :   r g b a ( v a r ( - - b r a n d - r g b ,   0 , 0 , 0 ) ,   0 . 0 5 ) ; 
- } 
- . u p - t h u m b [ d r a g g a b l e = \  
- t r u e \ ]   { 
-     c u r s o r :   g r a b ; 
- } 
- . u p - t h u m b [ d r a g g a b l e = \ t r u e \ ] : a c t i v e   { 
-     c u r s o r :   g r a b b i n g ; 
- } 
- . p r o d - c a r d [ d r a g g a b l e = \ t r u e \ ] ,   t r [ d r a g g a b l e = \ t r u e \ ]   { 
-     c u r s o r :   g r a b ; 
- } 
- . p r o d - c a r d [ d r a g g a b l e = \ t r u e \ ] : a c t i v e ,   t r [ d r a g g a b l e = \ t r u e \ ] : a c t i v e   { 
-     c u r s o r :   g r a b b i n g ; 
- } 
-  
- 

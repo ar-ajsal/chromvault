@@ -47,6 +47,11 @@
     </div>
   </div>
 
+  <!-- Public screen (e.g. Leave a Review) -->
+  <div class="public-screen" id="publicScreen" hidden>
+    <div class="public-card" id="publicCard"></div>
+  </div>
+
   <!-- App shell (shown when authenticated) -->
   <div id="app" hidden>
     <!-- Sidebar -->
@@ -122,18 +127,19 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-messaging-compat.js"></script>
   <script src="firebase-config.js?v=2.3"></script>
   <script src="icons.js?v=2.3"></script>
-  <script src="core.js?v=2.4"></script>
-  <script src="components.js?v=2.4"></script>
-  <script src="notifications.js?v=2.4"></script>
-  <script src="invoice.js?v=2.4"></script>
-  <script src="views/dashboard.js?v=2.4"></script>
-  <script src="views/orders.js?v=2.4"></script>
-  <script src="views/products.js?v=2.4"></script>
-  <script src="views/customers.js?v=2.4"></script>
-  <script src="views/categories.js?v=2.4"></script>
-  <script src="views/reviews.js?v=2.4"></script>
-  <script src="views/settings.js?v=2.4"></script>
-  <script src="app.js?v=2.4"></script>
+  <script src="core.js?v=2.5"></script>
+  <script src="components.js?v=2.5"></script>
+  <script src="notifications.js?v=2.5"></script>
+  <script src="invoice.js?v=2.5"></script>
+  <script src="views/dashboard.js?v=2.5"></script>
+  <script src="views/orders.js?v=2.5"></script>
+  <script src="views/products.js?v=2.5"></script>
+  <script src="views/customers.js?v=2.5"></script>
+  <script src="views/categories.js?v=2.5"></script>
+  <script src="views/reviews.js?v=2.5"></script>
+  <script src="views/settings.js?v=2.5"></script>
+  <script src="views/public-review.js?v=2.5"></script>
+  <script src="app.js?v=2.5"></script>
 
   <!-- Register the admin PWA service worker so the dashboard is installable and
        loads offline. API traffic is never cached (see service-worker.js). -->

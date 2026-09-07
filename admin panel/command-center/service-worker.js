@@ -21,7 +21,7 @@ try {
   console.warn('[SW] Could not load Firebase scripts inside service worker:', err);
 }
 
-const CACHE_VERSION = 'chromvault-admin-v6';
+const CACHE_VERSION = 'chromvault-admin-v7';
 const SHELL_URLS = [
   '/',
   '/index.html',
