@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/v1/:path*",
-      "destination": "http://YOUR_AWS_EC2_IP:5000/v1/:path*"
+      "destination": "http://13.201.137.97:5000/v1/:path*"
     },
     {
       "source": "/(.*)",
