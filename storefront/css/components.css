@@ -201,6 +201,11 @@
   /* Removed box-shadow so it blends with site background */
   transition: box-shadow var(--d-3) var(--e-out);
 }
+@media (max-width: 768px) {
+  .pcard-media {
+    aspect-ratio: 1 / 1;
+  }
+}
 @media (hover: hover) and (pointer: fine) {
   .pcard:hover .pcard-media {
     /* Removed hover box-shadow */
@@ -706,6 +711,9 @@ textarea.input { min-height: 96px; resize: vertical; line-height: 1.5; }
 }
 @keyframes sheen { to { transform: translate3d(100%, 0, 0); } }
 .sk-media { aspect-ratio: 4 / 5; }
+@media (max-width: 768px) {
+  .sk-media { aspect-ratio: 1 / 1; }
+}
 .sk-line { height: 11px; border-radius: var(--r-1); }
 .sk-line.w75 { width: 75%; }
 .sk-line.w70 { width: 70%; }
