@@ -1,9 +1,4 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/v1/(.*)", "destination": "https://CHANGE_ME_AWS_BACKEND_URL/v1/$1" },
-    { "source": "/admin", "destination": "/admin panel/command-center/index.html" },
-    { "source": "/admin/(.*)", "destination": "/admin panel/command-center/$1" },
-    { "source": "/(.*)", "destination": "/storefront/$1" }
-  ]
+  "_comment": "This root vercel.json is NOT used for deployment. Deploy storefront/ and admin panel/command-center/ as separate Vercel projects. See DEPLOYMENT.md for instructions.",
+  "rewrites": []
 }
