@@ -275,10 +275,15 @@
       return initFirebaseMessaging();
     }).then(function (msg) {
       return navigator.serviceWorker.ready.then(function (registration) {
-        return msg.getToken({
-          vapidKey: FIREBASE_WEB_CONFIG.vapidKey,
-          serviceWorkerRegistration: registration
-        });
+        var vapid = (FIREBASE_WEB_CONFIG && FIREBASE_WEB_CONFIG.vapidKey) || '';
+        try {
+          var customVapid = localStorage.getItem('chromvault_vapid_key');
+          if (customVapid && customVapid.trim()) vapid = customVapid.trim();
+        } catch (e) {}
+
+        var opts = { serviceWorkerRegistration: registration };
+        if (vapid) opts.vapidKey = vapid;
+        return msg.getToken(opts);
       });
     }).then(function (token) {
       if (!token) throw new Error('Could not retrieve FCM device token.');

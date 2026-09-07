@@ -166,6 +166,17 @@
       '<button class="btn ghost" id="btnTestSound">' + icon('volume') + 'Test Sound</button>' +
       '</div>' +
 
+      // Web Push Certificate (VAPID Key) Configuration
+      '<div style="padding-top:14px;border-top:1px solid var(--line-soft)">' +
+      '<div class="field">' +
+      '<label style="font-size:12px;color:var(--ink-2)">Firebase Web Push Certificate (VAPID Key Pair)</label>' +
+      '<div style="display:flex;gap:10px">' +
+      '<input class="input mono" id="txtVapidKey" style="font-size:12px" value="' + esc(localStorage.getItem('chromvault_vapid_key') || (global.FIREBASE_WEB_CONFIG && global.FIREBASE_WEB_CONFIG.vapidKey) || '') + '" placeholder="Paste key pair from Firebase Console → Cloud Messaging → Web Push certificates">' +
+      '<button class="btn ghost" id="btnSaveVapid" style="flex:none">' + icon('check') + 'Save Key</button>' +
+      '</div>' +
+      '<span class="hint">Copy from: Firebase Console → Project Settings → Cloud Messaging → Web configuration → Web Push certificates</span>' +
+      '</div></div>' +
+
       '</div></div></div>' +
 
       // Storefront URL Panel
@@ -435,6 +446,22 @@
             btnTestN.disabled = false;
             btnTestN.innerHTML = prev;
           });
+      });
+    }
+
+    var btnSaveVapid = root.querySelector('#btnSaveVapid');
+    var txtVapid = root.querySelector('#txtVapidKey');
+    if (btnSaveVapid && txtVapid) {
+      btnSaveVapid.addEventListener('click', function () {
+        var val = (txtVapid.value || '').trim();
+        if (val) {
+          localStorage.setItem('chromvault_vapid_key', val);
+          if (global.FIREBASE_WEB_CONFIG) global.FIREBASE_WEB_CONFIG.vapidKey = val;
+          CC.toast('Web Push Certificate (VAPID Key) saved! Now click "Register Device".', 'ok');
+        } else {
+          localStorage.removeItem('chromvault_vapid_key');
+          CC.toast('VAPID key reset to default.', 'ok');
+        }
       });
     }
 

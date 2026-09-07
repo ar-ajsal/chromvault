@@ -25,7 +25,14 @@
     (typeof global !== 'undefined' && global.__FIREBASE_CONFIG__) || {}
   );
 
-  var resolvedVapid = (typeof global !== 'undefined' && global.__FIREBASE_VAPID_KEY__) || VAPID_KEY;
+  var customVapid = '';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      customVapid = localStorage.getItem('chromvault_vapid_key') || '';
+    }
+  } catch (e) {}
+
+  var resolvedVapid = customVapid || (typeof global !== 'undefined' && global.__FIREBASE_VAPID_KEY__) || VAPID_KEY;
 
   var exportObj = {
     config: resolvedConfig,
