@@ -4,7 +4,10 @@ const {
   registerAdmin,
   loginAdmin,
   getSetting,
-  saveSetting
+  saveSetting,
+  registerPushToken,
+  unregisterPushToken,
+  testPushNotification
 } = require('../controllers/adminController');
 const { protectAdmin, requireRole } = require('../middleware/authMiddleware');
 
@@ -18,5 +21,10 @@ router.post('/register', protectAdmin, requireRole('super admin'), registerAdmin
 // Protected: admin settings (e.g. From Address for invoice dispatch)
 router.get('/settings/:key', protectAdmin, getSetting);
 router.put('/settings/:key', protectAdmin, saveSetting);
+
+// Protected: push notifications (FCM device token management & testing)
+router.post('/notifications/register', protectAdmin, registerPushToken);
+router.post('/notifications/unregister', protectAdmin, unregisterPushToken);
+router.post('/notifications/test', protectAdmin, testPushNotification);
 
 module.exports = router;

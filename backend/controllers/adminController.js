@@ -109,9 +109,80 @@ const saveSetting = async (req, res) => {
   }
 };
 
+const AdminPushToken = require('../models/AdminPushToken');
+const { sendTestNotification } = require('../services/notificationService');
+
+const registerPushToken = async (req, res) => {
+  try {
+    const { token, device, userAgent } = req.body;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).send({ message: 'Valid FCM token is required.' });
+    }
+
+    const adminId = req.admin._id;
+
+    // Upsert token to prevent duplicates across sessions
+    const record = await AdminPushToken.findOneAndUpdate(
+      { token: token.trim() },
+      {
+        adminId: adminId,
+        token: token.trim(),
+        device: device || 'Admin Browser',
+        userAgent: userAgent || req.headers['user-agent'] || '',
+        enabled: true,
+        lastUsedAt: new Date()
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(200).send({
+      success: true,
+      message: 'FCM push token registered successfully.',
+      tokenId: record._id
+    });
+  } catch (err) {
+    sendError(res, err, 'Failed to register push token.');
+  }
+};
+
+const unregisterPushToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).send({ message: 'Token is required.' });
+    }
+
+    await AdminPushToken.deleteOne({ token: token.trim(), adminId: req.admin._id });
+
+    res.status(200).send({
+      success: true,
+      message: 'FCM push token removed.'
+    });
+  } catch (err) {
+    sendError(res, err, 'Failed to unregister push token.');
+  }
+};
+
+const testPushNotification = async (req, res) => {
+  try {
+    const result = await sendTestNotification(req.admin._id);
+    res.status(200).send({
+      success: true,
+      message: `Test notification sent (${result.delivered} delivered).`,
+      result
+    });
+  } catch (err) {
+    res.status(400).send({ message: err.message || 'Failed to send test notification.' });
+  }
+};
+
 module.exports = {
   registerAdmin,
   loginAdmin,
   getSetting,
-  saveSetting
+  saveSetting,
+  registerPushToken,
+  unregisterPushToken,
+  testPushNotification
 };
+

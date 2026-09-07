@@ -64,6 +64,12 @@ CLOUDINARY_API_SECRET=your_api_secret
 RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
+# Firebase Cloud Messaging (Admin Order Push Notifications)
+# Get from: Firebase Console -> Project Settings -> Service accounts -> Generate new private key
+FIREBASE_PROJECT_ID=chromvault-f804e
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@chromvault-f804e.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n"
+
 # Replace with your actual Vercel URLs after Step 2
 CORS_ORIGINS=https://YOUR_STOREFRONT.vercel.app,https://YOUR_ADMIN.vercel.app
 ```

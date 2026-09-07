@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { computeOrderPricing } = require('../utils/pricing');
+const notificationService = require('../services/notificationService');
 
 
 const getRazorpayInstance = () => {
@@ -222,6 +223,12 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
     }
 
     await deductStock(pricing.lineItems);
+
+    // Phase 7 & 8: Real-time push notification to active admin devices.
+    // Safe asynchronous dispatch — never blocks or disrupts customer order response.
+    notificationService.sendNewOrderNotification(newOrder).catch((err) => {
+      console.error('[Notification] Error dispatching order push notification:', err.message);
+    });
 
     res.status(201).send({
       success: true,

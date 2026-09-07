@@ -104,7 +104,8 @@ const CUSTOMER_ROUTES = [
   /^\/(?:returns|return-replacement-policy|returns-policy)\/?$/,
   /^\/(?:privacy|privacy-policy|privacy-policy-2)\/?$/,
   /^\/(?:terms|terms-conditions|terms-and-conditions)\/?$/,
-  /^\/about\/?$/
+  /^\/about\/?$/,
+  /^\/review\/?$/
 ];
 
 /* WordPress plumbing that the scrape exposed and the new site has no analogue

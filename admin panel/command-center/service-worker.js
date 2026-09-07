@@ -1,25 +1,105 @@
-/* Chromvault Admin PWA service worker.
+/* Chromvault Admin PWA service worker with Firebase Cloud Messaging (FCM).
  *
  * Strategy:
  *   - Precache the app shell + hashed build assets so the dashboard is
  *     installable and loads offline.
  *   - NEVER cache API traffic ("/api/…"): those requests are authenticated and
  *     must always hit the network so the admin sees live, correct data.
- *   - App code (JS/CSS): network-first with a cache fallback. The command-center
- *     is buildless, so these URLs are NOT content-hashed (core.js, app.js …);
- *     cache-first would pin stale admin code forever. Network-first keeps the
- *     dashboard fresh online and still works offline from the last good copy.
+ *   - App code (JS/CSS): network-first with a cache fallback.
  *   - Images/fonts: cache-first (rarely change, safe to serve from cache).
- *   - Navigations: network-first with an offline fallback to the cached shell,
- *     so a fresh deploy is picked up immediately when online.
+ *   - Navigations: network-first with an offline fallback to the cached shell.
+ *   - Push notifications: receive background FCM messages, display system notifications,
+ *     and route clicks to the active order page.
  */
-const CACHE_VERSION = 'chromvault-admin-v4';
+
+// Import Firebase compat scripts inside Service Worker context
+try {
+  importScripts('https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/10.13.1/firebase-messaging-compat.js');
+  importScripts('/firebase-config.js');
+} catch (err) {
+  console.warn('[SW] Could not load Firebase scripts inside service worker:', err);
+}
+
+const CACHE_VERSION = 'chromvault-admin-v5';
 const SHELL_URLS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/favicon.png'
+  '/favicon.png',
+  '/firebase-config.js',
+  '/notifications.js'
 ];
+
+// Initialize Firebase Messaging in Service Worker if SDK is present
+if (typeof firebase !== 'undefined' && self.FIREBASE_WEB_CONFIG) {
+  try {
+    if (!firebase.apps || !firebase.apps.length) {
+      firebase.initializeApp(self.FIREBASE_WEB_CONFIG.config);
+    }
+    const messaging = firebase.messaging();
+
+    messaging.onBackgroundMessage(function (payload) {
+      console.log('[SW] Background FCM message received:', payload);
+      const data = payload.data || {};
+      const notification = payload.notification || {};
+
+      const orderId = data.orderId || '';
+      const orderNumber = data.orderNumber || orderId || '';
+      const total = data.total ? '₹' + data.total : '';
+
+      const title = notification.title || '🛍️ New Order';
+      const body = notification.body || (orderNumber ? `New order #${orderNumber}${total ? ' — ' + total : ''}` : 'New customer order received');
+
+      const targetUrl = data.url || (orderId ? `/#/orders/${orderId}` : '/#/orders');
+
+      const options = {
+        body: body,
+        icon: '/icon-192x192.png',
+        badge: '/icon-192x192.png',
+        tag: orderId ? `order-${orderId}` : `notification-${Date.now()}`,
+        renotify: true,
+        requireInteraction: true,
+        data: {
+          url: targetUrl,
+          orderId: orderId,
+          type: data.type || 'NEW_ORDER'
+        }
+      };
+
+      return self.registration.showNotification(title, options);
+    });
+  } catch (e) {
+    console.error('[SW] Firebase messaging init failed in SW:', e);
+  }
+}
+
+// Notification Click Handler: Focus existing Command Center or open order details
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url)
+    ? event.notification.data.url
+    : '/#/orders';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+      // Look for an existing open window/tab from this origin
+      for (let i = 0; i < clientList.length; i++) {
+        let client = clientList[i];
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      // If no tab is open, open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

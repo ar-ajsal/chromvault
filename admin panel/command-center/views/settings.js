@@ -111,6 +111,60 @@
       '<button class="btn ghost" onclick="document.getElementById(\'heroMediaInput\').click()">' + icon('upload') + 'Choose File</button>' +
       '<span id="heroMediaName" class="cell-sub" style="font-size:13px">No file chosen</span>' +
       '</div>' +
+      // Push Notifications Panel
+      '<div class="panel" style="margin-bottom:20px">' +
+      '<div class="panel-head">' +
+      '<h3>' + icon('bell') + 'Push Notifications &amp; Order Alerts</h3>' +
+      '<span id="notifStatusBadge" class="badge neutral"><i class="d"></i>Checking…</span>' +
+      '</div>' +
+      '<div class="panel-pad">' +
+      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;max-width:700px">' +
+      'Receive instant real-time alerts when customers place new orders. When active, hear an order chime; when minimized or backgrounded, receive system push notifications.' +
+      '</p>' +
+
+      '<div style="display:flex;flex-direction:column;gap:16px;max-width:680px">' +
+
+      // Main Switch Row
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--near-black);border:1px solid var(--line-soft);border-radius:var(--r-md);flex-wrap:wrap;gap:12px">' +
+      '<div>' +
+      '<div class="cell-strong" style="font-size:14px">Device Push Notifications</div>' +
+      '<div class="cell-sub" id="notifStatusDesc" style="font-size:12px;margin-top:2px">Configure this browser to receive real-time order alerts</div>' +
+      '</div>' +
+      '<button class="btn primary" id="btnToggleNotifications">' + icon('zap') + 'Enable Notifications</button>' +
+      '</div>' +
+
+      // Controls Grid (Order Alerts & Sound)
+      '<div class="grid grid-2" style="gap:14px">' +
+      // Order Alerts Toggle
+      '<div style="padding:14px;background:var(--near-black);border:1px solid var(--line-soft);border-radius:var(--r-md)">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+      '<label class="cell-strong" style="font-size:13px;cursor:pointer" for="chkOrderAlerts">Order Popup Alerts</label>' +
+      '<input type="checkbox" id="chkOrderAlerts" style="width:18px;height:18px;cursor:pointer"' + ((global.Notifications && global.Notifications.isOrderAlertsEnabled()) ? ' checked' : '') + '>' +
+      '</div>' +
+      '<div class="cell-sub" style="font-size:12px">Show visual popup banner when new orders arrive</div>' +
+      '</div>' +
+
+      // Sound Toggle & Volume
+      '<div style="padding:14px;background:var(--near-black);border:1px solid var(--line-soft);border-radius:var(--r-md)">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+      '<label class="cell-strong" style="font-size:13px;cursor:pointer" for="chkSoundAlerts">Order Chime Sound</label>' +
+      '<input type="checkbox" id="chkSoundAlerts" style="width:18px;height:18px;cursor:pointer"' + ((global.Notifications && global.Notifications.isSoundEnabled()) ? ' checked' : '') + '>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-top:10px">' +
+      '<span class="cell-sub" style="font-size:11px">Volume</span>' +
+      '<input type="range" id="rngVolume" min="0" max="1" step="0.05" value="' + (global.Notifications ? global.Notifications.getSoundVolume() : 0.8) + '" style="flex:1;cursor:pointer">' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+
+      // Action Buttons (Test Notification & Test Sound)
+      '<div style="display:flex;align-items:center;gap:12px;padding-top:4px;flex-wrap:wrap">' +
+      '<button class="btn ghost" id="btnTestNotif">' + icon('bell') + 'Test Notification</button>' +
+      '<button class="btn ghost" id="btnTestSound">' + icon('volume') + 'Test Sound</button>' +
+      '</div>' +
+
+      '</div></div></div>' +
+
       // Storefront URL Panel
       '<div class="panel" style="margin-bottom:20px">' +
       '<div class="panel-head">' +
@@ -262,6 +316,121 @@
         });
       }
     }
+
+    // Push Notifications logic
+    var btnToggleNotif = root.querySelector('#btnToggleNotifications');
+    var badgeNotif = root.querySelector('#notifStatusBadge');
+    var descNotif = root.querySelector('#notifStatusDesc');
+    var chkAlerts = root.querySelector('#chkOrderAlerts');
+    var chkSound = root.querySelector('#chkSoundAlerts');
+    var rngVol = root.querySelector('#rngVolume');
+    var btnTestN = root.querySelector('#btnTestNotif');
+    var btnTestS = root.querySelector('#btnTestSound');
+
+    function updateNotifUI() {
+      if (!global.Notifications) return;
+      var status = global.Notifications.getPermissionStatus();
+      var enabled = global.Notifications.isEnabled();
+
+      if (status === 'granted' && enabled) {
+        badgeNotif.className = 'badge ok';
+        badgeNotif.innerHTML = '<i class="d"></i>Notifications active';
+        descNotif.textContent = 'This device is actively registered for real-time order alerts.';
+        btnToggleNotif.innerHTML = icon('check') + 'Active (Re-register)';
+        btnToggleNotif.className = 'btn ghost';
+      } else if (status === 'granted') {
+        badgeNotif.className = 'badge ok';
+        badgeNotif.innerHTML = '<i class="d"></i>Permission granted';
+        descNotif.textContent = 'Browser permission granted. Click below to register this device.';
+        btnToggleNotif.innerHTML = icon('zap') + 'Register Device';
+        btnToggleNotif.className = 'btn primary';
+      } else if (status === 'denied') {
+        badgeNotif.className = 'badge bad';
+        badgeNotif.innerHTML = '<i class="d"></i>Notifications blocked';
+        descNotif.textContent = 'Notifications are blocked. Click the lock/site settings in your address bar to allow.';
+        btnToggleNotif.innerHTML = icon('alert') + 'Blocked by Browser';
+        btnToggleNotif.className = 'btn ghost';
+        btnToggleNotif.disabled = true;
+      } else {
+        badgeNotif.className = 'badge neutral';
+        badgeNotif.innerHTML = '<i class="d"></i>Not enabled';
+        descNotif.textContent = 'Click below to allow instant order notifications on this browser.';
+        btnToggleNotif.innerHTML = icon('zap') + 'Enable Notifications';
+        btnToggleNotif.className = 'btn primary';
+      }
+    }
+
+    if (btnToggleNotif) {
+      btnToggleNotif.addEventListener('click', function () {
+        btnToggleNotif.disabled = true;
+        btnToggleNotif.innerHTML = UI.spinner() + ' Requesting…';
+
+        global.Notifications.enable()
+          .then(function () {
+            updateNotifUI();
+            CC.toast('Push notifications enabled for this device!', 'ok');
+          })
+          .catch(function (err) {
+            updateNotifUI();
+            CC.toast(err.message || 'Could not enable notifications', 'bad');
+          })
+          .then(function () {
+            btnToggleNotif.disabled = false;
+          });
+      });
+    }
+
+    if (chkAlerts) {
+      chkAlerts.addEventListener('change', function () {
+        global.Notifications.setOrderAlertsEnabled(this.checked);
+        CC.toast('Order alerts ' + (this.checked ? 'enabled' : 'disabled'), 'ok');
+      });
+    }
+
+    if (chkSound) {
+      chkSound.addEventListener('change', function () {
+        global.Notifications.setSoundEnabled(this.checked);
+        CC.toast('Order chime ' + (this.checked ? 'enabled' : 'disabled'), 'ok');
+      });
+    }
+
+    if (rngVol) {
+      rngVol.addEventListener('input', function () {
+        global.Notifications.setSoundVolume(this.value);
+      });
+    }
+
+    if (btnTestS) {
+      btnTestS.addEventListener('click', function () {
+        global.Notifications.testSound();
+        CC.toast('Playing test order chime…', 'ok');
+      });
+    }
+
+    if (btnTestN) {
+      btnTestN.addEventListener('click', function () {
+        btnTestN.disabled = true;
+        var prev = btnTestN.innerHTML;
+        btnTestN.innerHTML = UI.spinner() + ' Sending…';
+
+        // Play active alert immediately in active session for testing
+        global.Notifications.playOrderSound();
+
+        global.Notifications.test()
+          .then(function (res) {
+            CC.toast('Test notification dispatched! Check your notifications.', 'ok');
+          })
+          .catch(function (err) {
+            CC.toast(err.message || 'Test push notification failed', 'bad');
+          })
+          .then(function () {
+            btnTestN.disabled = false;
+            btnTestN.innerHTML = prev;
+          });
+      });
+    }
+
+    updateNotifUI();
 
     // Sign out button click
     root.querySelector('#logoutBtn').addEventListener('click', function () {
