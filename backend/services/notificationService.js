@@ -40,8 +40,13 @@ function initFirebase() {
       privateKey = privateKey.replace(/\\n/g, '\n');
     }
 
+    const certFn = (admin.credential && admin.credential.cert) || admin.cert;
+    if (!certFn) {
+      throw new Error('Firebase cert helper is unavailable in installed SDK.');
+    }
+
     admin.initializeApp({
-      credential: admin.credential.cert({
+      credential: certFn({
         projectId: projectId,
         clientEmail: clientEmail,
         privateKey: privateKey
