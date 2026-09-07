@@ -95,6 +95,7 @@
   height: 24px;
   width: auto;
   display: block;
+  mix-blend-mode: multiply;
 }
 @media (min-width: 900px) {
   .header-logo { height: 28px; }
@@ -102,6 +103,7 @@
 .mnav-logo {
   height: 20px;
   width: auto;
+  mix-blend-mode: multiply;
 }
 .mainnav { display: none; }
 @media (min-width: 1000px) {
@@ -1401,6 +1403,7 @@
   height: auto;
   display: block;
   opacity: 0.9;
+  mix-blend-mode: multiply;
 }
 
 /* ── Bottom meta ────────────────────────────────────────────────────────── */
