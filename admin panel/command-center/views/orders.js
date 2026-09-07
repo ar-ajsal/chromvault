@@ -582,7 +582,7 @@
         var originalHtml = btn.innerHTML;
         btn.innerHTML = UI.spinner() + ' Generating…';
         
-        CC.API.post('/admin/reviews/request/' + o._id, { productId: pid }).then(function (res) {
+        CC.API.post('/reviews/request/' + o._id, { productId: pid }).then(function (res) {
           btn.innerHTML = icon('check') + ' Link Generated';
           CC.confirmModal({
             title: 'Review Link Generated',
