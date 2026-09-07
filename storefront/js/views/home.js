@@ -57,7 +57,6 @@
       paintNew(r);
       paintSale(r.products);
       paintFeatured(r.products);
-      paintHeroSpec(r);
     }).catch(function (err) {
       if (Router.stale(t)) return;
       Views.fill('#homeNewGrid', '');
@@ -92,18 +91,6 @@
           '<source src="/assets/hero-video.mp4" type="video/mp4">' +
         '</video>' +
       '</section>';
-  }
-
-  function paintHeroSpec(r) {
-    var inStock = r.products.filter(U.inStock).length;
-    // r.total counts every visible product; the in-stock figure is what a
-    // shopper can actually buy, so that is the one we lead with.
-    var cats = Shell.categories().length;
-    Views.fill('#heroSpec',
-      specCell(String(inStock || r.total || 0), inStock ? 'Pieces in stock' : 'Pieces listed') +
-      specCell(cats ? String(cats) : '—', 'Categories') +
-      specCell('Free', 'Shipping in India')
-    );
   }
 
   /* ── Marquee band ──────────────────────────────────────────────────────── */
@@ -187,7 +174,8 @@
       return U.discountPct(b) - U.discountPct(a);
     }).slice(0, 8);
 
-    if (!sale.length) { host.innerHTML = ''; return; }
+    // Section hidden — no real sale products currently
+    host.innerHTML = ''; return;
 
     var top = U.discountPct(sale[0]);
     Views.fill(host,

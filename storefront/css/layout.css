@@ -618,11 +618,24 @@
 .slot {
   position: relative;
   aspect-ratio: 4 / 5;
-  border-radius: var(--r-3);
-  overflow: hidden;
-  background: var(--paper-sink);
 }
-.slot img { width: 100%; height: 100%; object-fit: cover; }
+.hero-video-wrap {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  height: clamp(500px, 80vh, 900px);
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
 /* Asset-pending state: chrome sheen + label. Deliberately abstract so it never
    looks like a broken image or fake product photography. */
 .slot-pending {
@@ -1486,19 +1499,20 @@
 .helprow .arw { color: var(--ink-4); display: inline-flex; flex: none; transition: transform var(--d-2) var(--e-out); }
 .helprow:hover .arw { transform: translateX(3px); color: var(--ink); }
 
-
- . h e r o - v i d e o - w r a p   { 
-     w i d t h :   1 0 0 % ; 
-     p o s i t i o n :   r e l a t i v e ; 
-     o v e r f l o w :   h i d d e n ; 
-     h e i g h t :   c l a m p ( 5 0 0 p x ,   8 0 v h ,   9 0 0 p x ) ; 
-     b a c k g r o u n d :   v a r ( - - p a p e r - s i n k ) ; 
- } 
- . h e r o - v i d e o   { 
-     w i d t h :   1 0 0 % ; 
-     h e i g h t :   1 0 0 % ; 
-     o b j e c t - f i t :   c o v e r ; 
-     d i s p l a y :   b l o c k ; 
- } 
-  
- 
+.hero-video-wrap {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  height: clamp(500px, 80vh, 900px);
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
