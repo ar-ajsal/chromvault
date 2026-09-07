@@ -43,7 +43,8 @@
     { re: /^\/(returns|return-replacement-policy|returns-policy)\/?$/, fn: function () { return Views.doc('returns'); } },
     { re: /^\/(privacy|privacy-policy|privacy-policy-2)\/?$/, fn: function () { return Views.doc('privacy'); } },
     { re: /^\/(terms|terms-conditions|terms-and-conditions)\/?$/, fn: function () { return Views.doc('terms'); } },
-    { re: /^\/about\/?$/,                      fn: function () { return Views.doc('about'); } }
+    { re: /^\/about\/?$/,                      fn: function () { return Views.doc('about'); } },
+    { re: /^\/review\/?$/,                     fn: function () { return Views.review(); } }
   ];
 
   function dec(s) {

@@ -22,6 +22,7 @@
     { section: 'Catalog' },
     { id: 'products', label: 'Products', icon: 'box' },
     { id: 'categories', label: 'Categories', icon: 'layers' },
+    { id: 'reviews', label: 'Reviews', icon: 'star' },
     { section: 'People' },
     { id: 'customers', label: 'Customers', icon: 'users' },
     { section: 'System' },

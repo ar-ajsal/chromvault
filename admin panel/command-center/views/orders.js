@@ -304,6 +304,7 @@
           '</div>' +
           '<div class="order-item-qty">×' + it.quantity + '</div>' +
           '<div class="order-item-price">' + money(it.price * it.quantity) + '</div>' +
+          '<div style="margin-left:16px"><button class="btn sm ghost btn-request-review" data-product-id="' + esc(it.id) + '">' + icon('star') + 'Request Review</button></div>' +
           '</div>';
       }).join('') : '<div class="cell-sub" style="padding:14px;text-align:center">No line items attached to this order.</div>') +
       '</div>' +
@@ -571,6 +572,31 @@
         });
       });
     }
+
+    // Request Review
+    var reviewBtns = containerEl.querySelectorAll('.btn-request-review');
+    reviewBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pid = btn.getAttribute('data-product-id');
+        btn.disabled = true;
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = UI.spinner() + ' Generating…';
+        
+        CC.API.post('/admin/reviews/request/' + o._id, { productId: pid }).then(function (res) {
+          btn.innerHTML = icon('check') + ' Link Generated';
+          CC.confirmModal({
+            title: 'Review Link Generated',
+            body: '<p>Copy this secure link and send it to the customer. Replace YOUR_STOREFRONT_URL with your actual storefront domain:</p>' +
+                  '<div class="field" style="margin-top:12px"><input class="input mono" readonly value="https://YOUR_STOREFRONT_URL/review?token=' + esc(res.token) + '" onclick="this.select(); document.execCommand(\'copy\'); CC.toast(\'Link copied!\');"></div>',
+            ok: 'Done'
+          });
+        }).catch(function (err) {
+          CC.toast(err.message || 'Failed to generate review link', 'bad');
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        });
+      });
+    });
   }
 
   // ---- Slide-over Drawer Mode -----------------------------------------------

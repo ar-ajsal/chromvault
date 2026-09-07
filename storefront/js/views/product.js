@@ -121,11 +121,13 @@
           infoHtml(p) +
         '</div>' +
       '</div>' +
+      '<div id="pdpReviews" class="wrap" style="margin-top:var(--s6)"></div>' +
       '<div id="pdpRelated"></div>'
     );
 
     wire(p);
     paintBuyBar(p);
+    loadReviews(p);
     loadRelated(p);
   }
 
@@ -570,4 +572,65 @@
       if (host) host.innerHTML = '';
     });
   }
+
+  /* ── Reviews ─────────────────────────────────────────────────────────────── */
+
+  function loadReviews(p) {
+    var host = U.$('#pdpReviews');
+    if (!host) return;
+    var t = S.token;
+    var pid = U.pid(p);
+
+    API.get('/reviews/' + pid).then(function (r) {
+      if (!S || Router.stale(t)) return;
+      var reviews = (r && r.reviews) || [];
+      if (!reviews.length) { host.innerHTML = ''; return; }
+
+      var sum = 0;
+      reviews.forEach(function(rev) { sum += rev.rating; });
+      var avg = (sum / reviews.length).toFixed(1);
+
+      var stars = '';
+      var numStars = Math.round(avg);
+      for (var i = 1; i <= 5; i++) {
+        stars += '<span style="color:' + (i <= numStars ? '#FFD700' : 'var(--line)') + '">' + ICON('star', 20) + '</span>';
+      }
+
+      var html = '<section class="section"><div class="wrap">' +
+        Views.head({ eyebrow: 'Verified Buyers', title: 'Customer Reviews' }) +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:var(--s5)">' +
+          '<div style="font-size:32px;font-weight:700;font-family:var(--f-display)">' + avg + '</div>' +
+          '<div>' +
+            '<div style="display:flex;gap:4px">' + stars + '</div>' +
+            '<div style="color:var(--ink-3);font-size:13px;margin-top:4px">Based on ' + reviews.length + ' review' + (reviews.length === 1 ? '' : 's') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:var(--s4)">' +
+        reviews.map(function(rev) {
+          var revStars = '';
+          for (var i = 1; i <= 5; i++) {
+            revStars += '<span style="color:' + (i <= rev.rating ? '#FFD700' : 'var(--line)') + ';font-size:14px">★</span>';
+          }
+          var name = rev.orderId ? rev.orderId.customerName : 'Verified Buyer';
+          var date = new Date(rev.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+          return '<div style="background:var(--paper-sink);border-radius:var(--r-3);padding:var(--s4)">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">' +
+              '<div>' +
+                '<div style="font-weight:600">' + U.esc(name) + '</div>' +
+                '<div style="color:var(--ink-3);font-size:12px;margin-top:2px">' + date + '</div>' +
+              '</div>' +
+              '<div style="display:flex">' + revStars + '</div>' +
+            '</div>' +
+            '<p style="color:var(--ink-2);line-height:1.5;font-size:14px;margin:0">"' + U.esc(rev.text) + '"</p>' +
+          '</div>';
+        }).join('') +
+        '</div></div></section>';
+        
+      Views.fill(host, html);
+    }).catch(function (e) {
+      console.warn('Failed to load reviews:', e);
+      if (host) host.innerHTML = '';
+    });
+  }
+
 })();
