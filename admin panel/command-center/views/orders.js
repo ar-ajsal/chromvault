@@ -587,7 +587,10 @@
           CC.confirmModal({
             title: 'Review Link Generated',
             body: '<p>Send this link to the customer to collect their review:</p>' +
-                  '<div class="field" style="margin-top:12px"><input class="input mono" id="reviewLinkInput" readonly value="https://chromvault.in/review?token=' + esc(res.token) + '" onclick="this.select(); navigator.clipboard.writeText(this.value).then(() => CC.toast(\'Link copied!\'));"></div>',
+                  '<div style="display:flex; gap:8px; margin-top:12px; align-items:center;">' +
+                  '<input class="input mono" id="revLinkInput" readonly style="flex:1" value="https://chromvault.in/review?token=' + esc(res.token) + '">' +
+                  '<button class="btn ghost" onclick="var i=document.getElementById(\'revLinkInput\'); i.select(); if(navigator.clipboard){navigator.clipboard.writeText(i.value);}else{document.execCommand(\'copy\');} CC.toast(\'Link copied!\');">Copy</button>' +
+                  '</div>',
             ok: 'Done'
           });
         }).catch(function (err) {
