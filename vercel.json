@@ -1,0 +1,9 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/v1/(.*)", "destination": "https://CHANGE_ME_AWS_BACKEND_URL/v1/$1" },
+    { "source": "/admin", "destination": "/admin panel/command-center/index.html" },
+    { "source": "/admin/(.*)", "destination": "/admin panel/command-center/$1" },
+    { "source": "/(.*)", "destination": "/storefront/$1" }
+  ]
+}
