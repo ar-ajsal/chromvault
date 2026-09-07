@@ -16,7 +16,7 @@ if (!process.env.MONGODB_URI) {
 const app = express();
 app.set('trust proxy', 1); // behind a reverse proxy in production (correct client IP / protocol)
 
-// ─── CORS: restrict to configured origins ──────────────────
+// ─── CORS: allow configured origins, Vercel deployments, localhost ──────────
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
   .map((o) => o.trim())
@@ -26,9 +26,42 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow same-origin / non-browser requests (no Origin header) e.g. curl, server-to-server.
     if (!origin) return callback(null, true);
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+
+    // Allow if no CORS_ORIGINS configured or wildcard "*" present
+    if (allowedOrigins.length === 0 || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+
+    try {
+      const url = new URL(origin);
+      const host = url.hostname;
+
+      // Allow localhost and local IPs on any port
+      if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '[::1]') {
+        return callback(null, true);
+      }
+
+      // Allow any Vercel deployment (*.vercel.app)
+      if (host.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
+      // Allow custom store domains
+      if (host === 'chromvault.in' || host.endsWith('.chromvault.in')) {
+        return callback(null, true);
+      }
+
+      // Check for wildcard pattern matching in allowedOrigins (e.g. *.yourdomain.com)
+      for (const allowed of allowedOrigins) {
+        if (allowed.startsWith('*.')) {
+          const rootDomain = allowed.slice(2);
+          if (host.endsWith('.' + rootDomain) || host === rootDomain) {
+            return callback(null, true);
+          }
+        }
+      }
+    } catch (e) {}
+
     return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true
