@@ -151,7 +151,10 @@
     bust: function () {
       cache = Object.create(null);
       inflight = Object.create(null);
-    }
+    },
+
+    get: function (path) { return req(path); },
+    post: function (path, body) { return req(path, { method: 'POST', body: body }); }
   };
 
   // Hidden records must never reach the storefront. The admin sets

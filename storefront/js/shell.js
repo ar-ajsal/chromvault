@@ -297,7 +297,7 @@
         '</div>' +
 
         /* Mega wordmark */
-        '<div class="ftr-wordmark" aria-label="Chromvault">CHROMVAULT</div>' +
+        '<div class="ftr-logo-wrap"><img src="/assets/logo.png" alt="Chromvault" class="ftr-logo" /></div>' +
 
         /* Bottom meta */
         '<div class="ftr-meta">' +
