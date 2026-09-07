@@ -16,7 +16,7 @@
     appId: "1:858396685129:web:05c3a5bbc49fad1c2ca098"
   };
 
-  var VAPID_KEY = "BML3FN9u89QMXnc1260q_ZE_ThBNBgqSt2dJ0lzip5WpACbx-Ss8TeMxgsqsjbKXVlza95-_qhST2uJAK3ta6QE";
+  var VAPID_KEY = "BML3FN9u89QMXnc1260q_ZE_ThBNBgqSt2dJOlzip5WpACbx-Ss8TeMxgsqsjbKXVlza95-_qhST2uJAK3ta6QE";
 
   // Allow environment injection from server or window override if configured
   var resolvedConfig = Object.assign(
