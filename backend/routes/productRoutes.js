@@ -7,7 +7,8 @@ const {
   getProductById, getProductBySlug,
   updateProduct,
   updateStatus,
-  deleteProduct
+  deleteProduct,
+  reorderProducts
 } = require('../controllers/productController');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
@@ -21,6 +22,7 @@ router.post('/add', protectAdmin, addProduct);
 router.post('/all', protectAdmin, addAllProducts);
 router.post('/:id', protectAdmin, getProductById);
 router.patch('/:id', protectAdmin, updateProduct);
+router.put('/reorder', protectAdmin, reorderProducts);
 router.put('/status/:id', protectAdmin, updateStatus);
 router.delete('/:id', protectAdmin, deleteProduct);
 

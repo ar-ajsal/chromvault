@@ -63,7 +63,7 @@ const getAllProducts = async (req, res) => {
 
     const [products, totalDoc] = await Promise.all([
       Product.find(query)
-        .sort({ createdAt: -1 })
+        .sort({ order: 1, createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .populate('category'),
@@ -168,6 +168,31 @@ const getProductBySlug = async (req, res) => {
   }
 };
 
+const reorderProducts = async (req, res) => {
+  try {
+    const { productIds } = req.body;
+    if (!Array.isArray(productIds)) {
+      return res.status(400).send({ message: 'productIds array is required.' });
+    }
+    
+    // Bulk update to set the new order for these specific items on this page
+    const ops = productIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { order: index } }
+      }
+    }));
+
+    if (ops.length > 0) {
+      await Product.bulkWrite(ops);
+    }
+    
+    res.status(200).send({ message: 'Products reordered successfully!' });
+  } catch (err) {
+    sendError(res, err, 'Failed to reorder products.');
+  }
+};
+
 module.exports = {
   getProductBySlug,
   addProduct,
@@ -176,5 +201,6 @@ module.exports = {
   getProductById,
   updateProduct,
   updateStatus,
-  deleteProduct
+  deleteProduct,
+  reorderProducts
 };

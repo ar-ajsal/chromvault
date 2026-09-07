@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#F2F1EE" />
+<title>Chromora — Rare Streetwear &amp; Chrome Accessories</title>
+
+<meta name="description" content="Chromora is an independent label dealing in rare streetwear and chrome-finished accessories. Limited pieces, single runs, shipped across India." />
+<meta property="og:title" content="Chromora — Rare Streetwear &amp; Chrome Accessories" />
+<meta property="og:description" content="Independent label. Rare streetwear and chrome-finished accessories. Limited pieces, shipped across India." />
+<meta property="og:type" content="website" />
+
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64" />
+<link rel="icon" type="image/png" href="/icon-192x192.png" sizes="192x192" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter+Tight:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="/css/tokens.css" />
+<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="/css/components.css" />
+<link rel="stylesheet" href="/css/layout.css" />
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to products</a>
+
+<!-- ==========================================================================
+     SVG filter defs. The turbulence/displacement pair is what turns the
+     rotating conic gradients into liquid metal rather than a pinwheel. It is
+     static (no animated attributes) so it rasterises once.
+     ====================================================================== -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <defs>
+    <filter id="liquid-distort" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.014" numOctaves="3" seed="7" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="46" xChannelSelector="R" yChannelSelector="G" result="disp" />
+      <feGaussianBlur in="disp" stdDeviation="0.4" />
+    </filter>
+  </defs>
+</svg>
+
+<!-- Announcement ticker -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="hdr" id="hdr">
+  <div class="wrap hdr-in">
+    <div class="hdr-left">
+      <button class="icon-btn mob-only" id="menuBtn" aria-label="Open menu" aria-expanded="false" data-ic="menu"></button>
+      <nav class="mainnav" id="mainnav" aria-label="Main"></nav>
+    </div>
+
+    <a class="wordmark chrome-text" href="/" aria-label="Chromora — home">CHROMORA</a>
+
+    <div class="hdr-right">
+      <button class="icon-btn" id="searchBtn" aria-label="Search products" data-ic="search"></button>
+      <button class="icon-btn cart-btn" id="cartBtn" aria-label="Open cart" data-ic="bag">
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== ROUTED VIEW ===================== -->
+<main id="main">
+  <div id="view"></div>
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="ftr" id="ftr"></footer>
+
+<!-- ===================== MOBILE NAV ===================== -->
+<div class="mnav-scrim" id="mnavScrim"></div>
+<aside class="mnav" id="mnav" aria-label="Menu" aria-hidden="true">
+  <div class="mnav-head">
+    <span class="wordmark chrome-text">CHROMORA</span>
+    <button class="icon-btn" id="mnavClose" aria-label="Close menu" data-ic="x"></button>
+  </div>
+  <div class="mnav-body" id="mnavBody"></div>
+</aside>
+
+<!-- ===================== SEARCH ===================== -->
+<div class="search-scrim" id="searchScrim" role="dialog" aria-modal="true" aria-label="Search products">
+  <div class="search-panel">
+    <div class="search-bar">
+      <span data-ic="search"></span>
+      <input id="searchInput" type="search" placeholder="Search the archive…" autocomplete="off" spellcheck="false" aria-label="Search products" />
+      <span class="kbd">ESC</span>
+    </div>
+    <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
+  </div>
+</div>
+
+<!-- ===================== CART / CHECKOUT PANEL ===================== -->
+<div class="panel-scrim" id="panelScrim"></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Cart" aria-hidden="true">
+  <div class="panel-head">
+    <div class="stack" style="gap:6px">
+      <span class="panel-title" id="panelTitle">Cart</span>
+      <div class="steps" id="panelSteps" aria-hidden="true"></div>
+    </div>
+    <button class="icon-btn" id="panelClose" aria-label="Close" data-ic="x"></button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+  <div class="panel-foot" id="panelFoot"></div>
+</aside>
+
+<!-- Sticky mobile buy bar (product page only) -->
+<div class="buybar" id="buybar"></div>
+
+<!-- Toasts -->
+<div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ==========================================================================
+     Scripts — buildless, dependency-free, ordered by dependency.
+     ====================================================================== -->
+<script src="/assets/js/config.js?v=1"></script>
+<script src="/js/icons.js?v=1"></script>
+<script src="/js/util.js?v=1"></script>
+<script src="/js/api.js?v=1"></script>
+<script src="/js/cart.js?v=1"></script>
+<script src="/js/product-card.js?v=1"></script>
+<script src="/js/chrome-fx.js?v=1"></script>
+<script src="/js/shell.js?v=1"></script>
+<script src="/js/panel.js?v=1"></script>
+<script src="/js/checkout.js?v=1"></script>
+<script src="/js/views/core.js?v=1"></script>
+<script src="/js/views/home.js?v=1"></script>
+<script src="/js/views/shop.js?v=1"></script>
+<script src="/js/views/product.js?v=1"></script>
+<script src="/js/views/cart.js?v=1"></script>
+<script src="/js/views/pages.js?v=1"></script>
+<script src="/js/app.js?v=1"></script>
+
+<script>
+  // Storefront PWA. The service worker never caches /api or /v1 responses —
+  // see service-worker.js. Registration is deferred to after load so it never
+  // competes with first-paint or the initial product fetch.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/service-worker.js').catch(function (err) {
+        console.warn('Storefront SW registration failed:', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>

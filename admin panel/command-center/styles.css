@@ -963,3 +963,27 @@ svg.chart text { font-family: var(--font-mono); fill: var(--ink-3); }
 .inv-modal-body {
   flex: 1; padding: 14px; background: var(--void);
 }
+
+ / *   D r a g   a n d   D r o p   S t y l e s   * / 
+ . d r a g g i n g   { 
+     o p a c i t y :   0 . 5 ; 
+ } 
+ . d r a g - o v e r   { 
+     b o r d e r :   2 p x   d a s h e d   v a r ( - - b r a n d ) ; 
+     b a c k g r o u n d :   r g b a ( v a r ( - - b r a n d - r g b ,   0 , 0 , 0 ) ,   0 . 0 5 ) ; 
+ } 
+ . u p - t h u m b [ d r a g g a b l e = \  
+ t r u e \ ]   { 
+     c u r s o r :   g r a b ; 
+ } 
+ . u p - t h u m b [ d r a g g a b l e = \ t r u e \ ] : a c t i v e   { 
+     c u r s o r :   g r a b b i n g ; 
+ } 
+ . p r o d - c a r d [ d r a g g a b l e = \ t r u e \ ] ,   t r [ d r a g g a b l e = \ t r u e \ ]   { 
+     c u r s o r :   g r a b ; 
+ } 
+ . p r o d - c a r d [ d r a g g a b l e = \ t r u e \ ] : a c t i v e ,   t r [ d r a g g a b l e = \ t r u e \ ] : a c t i v e   { 
+     c u r s o r :   g r a b b i n g ; 
+ } 
+  
+ 

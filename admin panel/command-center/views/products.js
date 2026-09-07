@@ -112,7 +112,7 @@
     return '<div class="prod-grid">' + products.map(function (p) {
       var img = (p.image && p.image[0]) ? '<img src="' + esc(p.image[0]) + '" alt="">' : '<div class="ph">' + icon('box') + '</div>';
       var hidden = (p.status || 'show') !== 'show';
-      return '<div class="prod-card" data-id="' + esc(p._id) + '">' +
+      return '<div class="prod-card" data-id="' + esc(p._id) + '" draggable="true">' +
         '<div class="prod-media">' + img +
         '<div class="prod-stockflag">' + stockBadge(p.stock) + '</div>' +
         (hidden ? '<div class="prod-visflag"><span class="badge neutral">' + icon('eye-off') + 'Hidden</span></div>' : '') +
@@ -136,7 +136,7 @@
         var img = (p.image && p.image[0]) ? '<img class="thumb" src="' + esc(p.image[0]) + '" alt="">' : '<div class="thumb thumb-ph">' + icon('box') + '</div>';
         var hidden = (p.status || 'show') !== 'show';
         var catName = catFor(p);
-        return '<tr data-id="' + esc(p._id) + '">' +
+        return '<tr data-id="' + esc(p._id) + '" draggable="true">' +
           '<td data-label="Product"><div style="display:flex;align-items:center;gap:12px">' + img +
           '<span class="cell-strong">' + esc(locName(p.title, 'Untitled')) + '</span></div></td>' +
           '<td data-label="Category">' + esc(catName) + '</td>' +
@@ -185,9 +185,53 @@
           });
       });
     });
-    // click card/row body → edit
+    // click card/row body → edit and drag-and-drop
+    var draggedRow = null;
     box.querySelectorAll('[data-id]').forEach(function (c) {
       c.addEventListener('click', function () { openEditor(c.getAttribute('data-id')); });
+
+      c.addEventListener('dragstart', function (e) {
+        draggedRow = this;
+        e.dataTransfer.effectAllowed = 'move';
+        this.classList.add('dragging');
+      });
+      c.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+      });
+      c.addEventListener('dragleave', function () {
+        this.classList.remove('drag-over');
+      });
+      c.addEventListener('drop', function (e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        if (draggedRow && draggedRow !== this) {
+          var parent = this.parentNode;
+          var rect = this.getBoundingClientRect();
+          var isAfter = (q.view === 'table') 
+            ? (e.clientY > rect.top + rect.height / 2) 
+            : (e.clientX > rect.left + rect.width / 2);
+            
+          if (isAfter) {
+            parent.insertBefore(draggedRow, this.nextSibling);
+          } else {
+            parent.insertBefore(draggedRow, this);
+          }
+          
+          var newOrder = [];
+          parent.querySelectorAll('[data-id]').forEach(function(el) {
+            newOrder.push(el.getAttribute('data-id'));
+          });
+          
+          CC.API.put('/products/reorder', { productIds: newOrder })
+            .then(function() { CC.toast('Products reordered'); })
+            .catch(function(e) { CC.toast(e.message, 'bad'); load(root); });
+        }
+      });
+      c.addEventListener('dragend', function () {
+        this.classList.remove('dragging');
+      });
     });
   }
 
@@ -273,13 +317,44 @@
     function renderUploader() {
       var host = body.querySelector('#uploader');
       host.innerHTML = images.map(function (url, i) {
-        return '<div class="up-thumb"><img src="' + esc(url) + '" alt="">' +
+        return '<div class="up-thumb" draggable="true" data-index="' + i + '"><img src="' + esc(url) + '" alt="">' +
           '<button class="rm" data-rm="' + i + '" title="Remove">' + icon('x') + '</button></div>';
       }).join('') +
         '<label class="up-slot" title="Upload image">' + icon('upload') +
         '<input type="file" accept="image/*" hidden id="fileInput"></label>';
+        
       host.querySelectorAll('[data-rm]').forEach(function (b) {
         b.addEventListener('click', function () { images.splice(+b.getAttribute('data-rm'), 1); renderUploader(); });
+      });
+
+      var draggedIdx = null;
+      host.querySelectorAll('.up-thumb').forEach(function (thumb) {
+        thumb.addEventListener('dragstart', function (e) {
+          draggedIdx = +this.getAttribute('data-index');
+          e.dataTransfer.effectAllowed = 'move';
+          this.classList.add('dragging');
+        });
+        thumb.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          this.classList.add('drag-over');
+        });
+        thumb.addEventListener('dragleave', function () {
+          this.classList.remove('drag-over');
+        });
+        thumb.addEventListener('drop', function (e) {
+          e.preventDefault();
+          this.classList.remove('drag-over');
+          var targetIdx = +this.getAttribute('data-index');
+          if (draggedIdx !== null && draggedIdx !== targetIdx) {
+            var item = images.splice(draggedIdx, 1)[0];
+            images.splice(targetIdx, 0, item);
+            renderUploader();
+          }
+        });
+        thumb.addEventListener('dragend', function () {
+          this.classList.remove('dragging');
+        });
       });
       var fi = host.querySelector('#fileInput');
       fi.addEventListener('change', function () {

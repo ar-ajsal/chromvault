@@ -6,9 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "web": "node frontendServer.js",
+    "web:legacy": "node -e \"process.env.STOREFRONT_LEGACY='1';require('./frontendServer.js')\"",
     "seed": "node seed.js",
     "seed:admin": "node seedAdmin.js",
-    "test": "node tests/auth.test.js && node tests/pricing.test.js && node tests/controllers.test.js"
+    "test": "node tests/auth.test.js && node tests/pricing.test.js && node tests/controllers.test.js && node tests/storefront.test.js"
   },
   "engines": {
     "node": ">=18"

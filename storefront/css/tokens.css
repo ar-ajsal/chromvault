@@ -1,0 +1,175 @@
+/* ============================================================================
+   CHROMORA — DESIGN TOKENS
+   ----------------------------------------------------------------------------
+   The material system: a warm-neutral paper canvas, near-black ink, and a
+   single precious material (polished chrome) used as punctuation. Nothing here
+   is decorative for its own sake — every ramp exists because a real surface
+   needs it.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* ── Canvas ──────────────────────────────────────────────────────────────
+     Pure white canvas so product images with white backgrounds blend seamlessly
+     into the page background. */
+  --paper:        #FFFFFF;
+  --paper-lift:   #FFFFFF;   /* raised cards */
+  --paper-sink:   #F7F7F7;   /* recessed wells, image beds */
+  --paper-edge:   #EAEAEA;   /* hairlines on paper */
+
+  /* ── Ink ─────────────────────────────────────────────────────────────── */
+  --ink:          #0A0A0B;   /* headlines, primary controls */
+  --ink-2:        #26262B;   /* body copy */
+  --ink-3:        #6E6E74;   /* secondary / meta */
+  --ink-4:        #A3A3A9;   /* tertiary / disabled */
+  --ink-hair:     rgba(10, 10, 11, 0.12);
+  --ink-hair-2:   rgba(10, 10, 11, 0.06);
+
+  /* ── Chrome ──────────────────────────────────────────────────────────────
+     A real polished-metal ramp has FIVE stops, not two: a blown highlight, a
+     bright body, a mid, a dark rolloff, and a reflected-light kick at the
+     bottom. Two-stop gradients are what make fake chrome look like plastic. */
+  --chrome-spec:  #FFFFFF;
+  --chrome-hi:    #F4F6F8;
+  --chrome-lit:   #D6DBE1;
+  --chrome-mid:   #A8AEB8;
+  --chrome-low:   #6B7178;
+  --chrome-deep:  #3C4148;
+  --chrome-bounce:#C4CBD3;   /* light bouncing back up from below */
+
+  /* Controlled iridescence — desaturated, never rainbow. Two hues only. */
+  --irid-cool:    #B8C6FF;
+  --irid-warm:    #FFC9E4;
+
+  /* The canonical polished-chrome ramp. Used for surfaces. */
+  --chrome-ramp: linear-gradient(
+    172deg,
+    var(--chrome-hi)     0%,
+    var(--chrome-spec)   9%,
+    var(--chrome-lit)    23%,
+    var(--chrome-mid)    41%,
+    var(--chrome-deep)   54%,
+    var(--chrome-low)    63%,
+    var(--chrome-lit)    79%,
+    var(--chrome-bounce) 92%,
+    var(--chrome-mid)    100%
+  );
+
+  /* Same material, rotated for text fills so the horizon lands mid-glyph. */
+  --chrome-ramp-text: linear-gradient(
+    178deg,
+    var(--chrome-spec)   0%,
+    var(--chrome-lit)    18%,
+    var(--chrome-mid)    38%,
+    var(--chrome-deep)   51%,
+    var(--chrome-low)    58%,
+    var(--chrome-lit)    74%,
+    var(--chrome-spec)   88%,
+    var(--chrome-bounce) 100%
+  );
+
+  /* Edge lighting for chrome-framed objects. */
+  --chrome-edge: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(168, 174, 184, 0.35) 38%,
+    rgba(60, 65, 72, 0.5) 52%,
+    rgba(255, 255, 255, 0.8)
+  );
+
+  /* ── Semantics ───────────────────────────────────────────────────────── */
+  --ok:           #0E7C5A;
+  --ok-soft:      #E6F4EE;
+  --warn:         #9A6B00;
+  --warn-soft:    #FBF2DC;
+  --alert:        #B3261E;
+  --alert-soft:   #FBE9E7;
+  --sale:         #0A0A0B;   /* sale is ink + weight, never a red sticker */
+
+  /* ── Type ────────────────────────────────────────────────────────────────
+     Archivo at extended width for display (an industrial grotesque that goes
+     genuinely wide, not just bold), Inter Tight for body density, DM Mono for
+     data — prices, SKUs, sizes, counts. */
+  --f-display: 'Archivo', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --f-body:    'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --f-mono:    'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Fluid display scale. Clamped so 360px never blows out. */
+  --t-mega:  clamp(3.4rem, 15.5vw, 15rem);
+  --t-xxl:   clamp(2.6rem, 8.2vw, 6.6rem);
+  --t-xl:    clamp(2rem, 5.4vw, 3.9rem);
+  --t-lg:    clamp(1.5rem, 3.2vw, 2.3rem);
+  --t-md:    clamp(1.13rem, 1.7vw, 1.4rem);
+  --t-body:  1rem;
+  --t-sm:    0.875rem;
+  --t-xs:    0.75rem;
+  --t-micro: 0.6875rem;
+
+  /* Eyebrow / label treatment used throughout. */
+  --track-label: 0.16em;
+  --track-mega: -0.035em;
+
+  /* ── Space ───────────────────────────────────────────────────────────── */
+  --s1: 4px;   --s2: 8px;   --s3: 12px;  --s4: 16px;
+  --s5: 24px;  --s6: 32px;  --s7: 48px;  --s8: 64px;
+  --s9: 96px;  --s10: 128px; --s11: 176px;
+
+  --gutter: clamp(16px, 4.2vw, 56px);
+  --maxw: 1560px;
+  --maxw-text: 68ch;
+
+  /* ── Form ────────────────────────────────────────────────────────────────
+     Radius is near-zero on structure (editorial, architectural) and generous
+     only on the pill controls, so the contrast itself reads as intentional. */
+  --r-0: 0px;
+  --r-1: 2px;
+  --r-2: 6px;
+  --r-3: 14px;
+  --r-pill: 999px;
+
+  /* ── Depth ───────────────────────────────────────────────────────────────
+     Soft, low-contrast, ambient. Metal sits on paper; it does not float. */
+  --sh-1: 0 1px 2px rgba(10, 10, 11, 0.05);
+  --sh-2: 0 2px 6px rgba(10, 10, 11, 0.05), 0 12px 28px -14px rgba(10, 10, 11, 0.14);
+  --sh-3: 0 4px 12px rgba(10, 10, 11, 0.06), 0 28px 60px -26px rgba(10, 10, 11, 0.22);
+  --sh-4: 0 8px 20px rgba(10, 10, 11, 0.08), 0 48px 96px -32px rgba(10, 10, 11, 0.3);
+  --sh-metal: 0 1px 0 rgba(255, 255, 255, 0.7) inset,
+              0 -1px 0 rgba(60, 65, 72, 0.25) inset,
+              0 10px 30px -12px rgba(10, 10, 11, 0.35);
+
+  /* ── Motion ──────────────────────────────────────────────────────────────
+     One ease for everything that moves under a finger, one for reveals. */
+  --e-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --e-in:   cubic-bezier(0.7, 0, 0.84, 0);
+  --e-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --d-1: 120ms;
+  --d-2: 220ms;
+  --d-3: 420ms;
+  --d-4: 720ms;
+
+  /* ── Layers ──────────────────────────────────────────────────────────── */
+  --z-base: 1;
+  --z-sticky: 40;
+  --z-header: 60;
+  --z-buybar: 70;
+  --z-scrim: 200;
+  --z-panel: 210;
+  --z-search: 240;
+  --z-toast: 300;
+}
+
+/* Respect the OS. Every transition below is opt-in, not opt-out. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --d-1: 1ms; --d-2: 1ms; --d-3: 1ms; --d-4: 1ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

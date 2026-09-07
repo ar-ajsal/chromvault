@@ -1,0 +1,786 @@
+/* ============================================================================
+   CHROMORA — COMPONENTS
+   Controls, product cards, badges, forms, skeletons, empty/error states, toast.
+   ========================================================================== */
+
+/* ── Buttons ──────────────────────────────────────────────────────────────
+   Exactly three ranks, so CTA hierarchy is never ambiguous on a page:
+     .btn-primary   solid ink   — the one action that makes money
+     .btn-ghost     hairline    — secondary paths
+     .btn-metal     chrome      — reserved for campaign moments only
+   ---------------------------------------------------------------------- */
+
+.btn {
+  --btn-h: 52px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: var(--btn-h);
+  padding: 0 var(--s6);
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform var(--d-2) var(--e-out),
+              box-shadow var(--d-2) var(--e-out),
+              background-color var(--d-2) var(--e-soft),
+              color var(--d-2) var(--e-soft),
+              border-color var(--d-2) var(--e-soft),
+              opacity var(--d-1) linear;
+}
+.btn:active { transform: translateY(1px) scale(0.995); }
+.btn[disabled], .btn.is-busy {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.btn-sm { --btn-h: 40px; padding-inline: var(--s5); }
+.btn-lg { --btn-h: 60px; padding-inline: var(--s7); font-size: var(--t-sm); }
+.btn-block { width: 100%; }
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper-lift);
+  box-shadow: var(--sh-2);
+}
+/* The magnetic-feeling hover: a chrome wipe crossing the button once. Uses
+   transform on a pseudo-element, so it's compositor-only. */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    100deg,
+    transparent 34%,
+    rgba(255, 255, 255, 0.34) 47%,
+    rgba(184, 198, 255, 0.26) 53%,
+    transparent 66%
+  );
+  transform: translate3d(-115%, 0, 0);
+  transition: transform var(--d-3) var(--e-out);
+  z-index: -1;
+}
+.btn-primary:hover { box-shadow: var(--sh-3); transform: translateY(-1px); }
+.btn-primary:hover::before { transform: translate3d(115%, 0, 0); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink-hair);
+}
+.btn-ghost:hover {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  background: rgba(10, 10, 11, 0.035);
+}
+
+.btn-metal {
+  background: var(--chrome-ramp);
+  color: var(--ink);
+  box-shadow: var(--sh-metal);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.btn-metal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(112deg,
+    rgba(255,255,255,0) 30%,
+    rgba(255,255,255,0.8) 47%,
+    rgba(255,255,255,0) 64%);
+  mix-blend-mode: screen;
+  transform: translate3d(-40%, 0, 0);
+  transition: transform var(--d-4) var(--e-out);
+  z-index: -1;
+}
+.btn-metal:hover::before { transform: translate3d(40%, 0, 0); }
+.btn-metal:hover { box-shadow: var(--sh-metal), var(--sh-3); }
+
+/* Text link with a rule that draws in from the left. */
+.btn-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink);
+  padding-block: var(--s2);
+  position: relative;
+}
+.btn-text::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 1px; width: 100%;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--d-2) var(--e-out);
+}
+.btn-text:hover::after { transform: scaleX(1); }
+.btn-text .arw { transition: transform var(--d-2) var(--e-out); }
+.btn-text:hover .arw { transform: translateX(3px); }
+
+/* Icon button — 44px minimum touch target everywhere. */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  position: relative;
+  transition: background-color var(--d-2) var(--e-soft), color var(--d-2) var(--e-soft);
+}
+.icon-btn:hover { background: rgba(10, 10, 11, 0.055); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* ── Badges ───────────────────────────────────────────────────────────────
+   Badges carry stock and sale truth only. They are never decorative, so a
+   badge on a card always means something the shopper can act on. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 var(--s2);
+  font-family: var(--f-mono);
+  font-size: var(--t-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: var(--r-1);
+  white-space: nowrap;
+}
+.badge-ink   { background: var(--ink); color: var(--paper); }
+.badge-metal { background: var(--chrome-ramp); color: var(--ink); box-shadow: var(--sh-1); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+.badge-out   { background: var(--paper-sink); color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--ink-hair); }
+.badge-low   { background: var(--warn-soft); color: var(--warn); }
+.badge-ok    { background: var(--ok-soft); color: var(--ok); }
+
+/* ── Product card ─────────────────────────────────────────────────────────
+   Image is the unconditional hero.
+
+   Design system:
+     - Chrome atmosphere background on every image bed — the product reads
+       like a professionally photographed campaign object, not a white box.
+     - Card lifts on hover (compositor-only: transform on the article).
+     - Specular highlight tracks the pointer (set by chrome-fx.js).
+     - Single CTA slides up on desktop hover; always visible on touch.
+     - Badges carry real truths only: % discount, low stock, sold-out.
+   ---------------------------------------------------------------------- */
+
+.pcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  transition: transform var(--d-3) var(--e-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .pcard:hover { transform: translateY(-5px); }
+}
+
+/* ── Image container ─────────────────────────────────────────────────── */
+
+.pcard-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: var(--r-2);
+  isolation: isolate;
+  /* Removed box-shadow so it blends with site background */
+  transition: box-shadow var(--d-3) var(--e-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .pcard:hover .pcard-media {
+    /* Removed hover box-shadow */
+  }
+}
+
+/* Chrome atmosphere removed to match site background as requested. */
+.pcard-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: transparent; /* Or var(--paper) if preferred, transparent lets site bg show through */
+}
+
+/* Hairline chrome frame — hidden to match flat layout */
+.pcard-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-2);
+  pointer-events: none;
+  z-index: 5;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pcard:hover .pcard-media::after {
+    /* Hidden */
+  }
+}
+
+
+/* ── Product images ─────────────────────────────────────────────────── */
+
+.pcard-img-scroller {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.pcard-img-scroller::-webkit-scrollbar { display: none; }
+
+.pcard-img-pane {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  position: relative;
+}
+
+.pcard-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform var(--d-4) var(--e-out), opacity var(--d-2) linear;
+}
+
+/* Second image cross-fades on hover when the product has one */
+@media (hover: hover) and (pointer: fine) {
+  .pcard-img-scroller {
+    overflow: hidden; /* Prevent manual scrolling on desktop */
+  }
+  .pcard-img-alt-pane {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity var(--d-3) var(--e-soft);
+    pointer-events: none;
+  }
+  .pcard:hover .pcard-img-alt-pane { opacity: 1; }
+  .pcard:hover .pcard-img { transform: scale(1.04); }
+}
+
+/* ── Specular highlight (pointer-tracked via chrome-fx.js) ───────────── */
+
+.pcard-spec {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--d-2) var(--e-soft);
+  background: radial-gradient(
+    40% 40% at var(--mx, 50%) var(--my, 50%),
+    rgba(255,255,255,0.6),
+    rgba(184,198,255,0.18) 44%,
+    transparent 72%
+  );
+  mix-blend-mode: soft-light;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pcard:hover .pcard-spec { opacity: 1; }
+}
+/* ── Sold-out overlay ─────────────────────────────────────────────────── */
+
+.pcard-sold-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(242,241,238,0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.pcard-sold-overlay span {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 var(--s3);
+  font-family: var(--f-mono);
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--paper-lift);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px var(--ink-hair), var(--sh-1);
+}
+
+/* ── Badges ───────────────────────────────────────────────────────────── */
+
+.pcard-flags {
+  position: absolute;
+  top: var(--s2);
+  left: var(--s2);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.pcard-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--s2);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.pcard-badge-sale { background: var(--ink); color: var(--paper); }
+.pcard-badge-low  { background: var(--warn-soft); color: var(--warn); }
+.pcard-badge-feat {
+  background: var(--chrome-ramp);
+  color: var(--ink);
+  box-shadow: var(--sh-1);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+}
+
+/* ── Add-to-cart CTA ──────────────────────────────────────────────────── */
+
+.pcard-cta {
+  position: absolute;
+  left: var(--s2);
+  right: var(--s2);
+  bottom: var(--s2);
+  z-index: 7;
+}
+.pcard-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  width: 100%;
+  height: 46px;
+  padding: 0 var(--s4);
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: rgba(10,10,11,0.88);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  border: 0;
+  transition:
+    transform var(--d-2) var(--e-out),
+    background-color var(--d-2) var(--e-soft),
+    box-shadow var(--d-2) var(--e-out);
+  box-shadow: 0 2px 8px rgba(10,10,11,0.25), 0 1px 0 rgba(255,255,255,0.06) inset;
+}
+/* Chrome wipe on hover — compositor-only */
+.pcard-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255,255,255,0.3)  46%,
+    rgba(184,198,255,0.22) 54%,
+    transparent 70%
+  );
+  transform: translate3d(-120%, 0, 0);
+  transition: transform var(--d-3) var(--e-out);
+  z-index: -1;
+}
+.pcard-btn:hover {
+  background: rgba(10,10,11,0.96);
+  box-shadow: 0 4px 16px rgba(10,10,11,0.35), 0 1px 0 rgba(255,255,255,0.08) inset;
+}
+.pcard-btn:hover::before { transform: translate3d(120%, 0, 0); }
+.pcard-btn:active { transform: scale(0.975); }
+.pcard-btn:focus-visible { outline: 2px solid var(--paper); outline-offset: -3px; }
+.pcard-btn-icon { display: flex; align-items: center; }
+
+/* Desktop: CTA slides up from below. Always visible on touch (hover-only buy
+   controls are lost sales on mobile). */
+@media (hover: hover) and (pointer: fine) {
+  .pcard-cta {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+    transition: opacity var(--d-2) var(--e-out), transform var(--d-2) var(--e-out);
+  }
+  .pcard:hover .pcard-cta,
+  .pcard-cta:focus-within { opacity: 1; transform: none; }
+}
+
+/* ── Info block ──────────────────────────────────────────────────────── */
+
+.pcard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: var(--s3);
+}
+.pcard-cat {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  line-height: 1;
+}
+.pcard-title {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--d-1) linear;
+}
+.pcard-title:hover { color: var(--ink-2); }
+.pcard-prices {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.pcard-prices .price { font-size: var(--t-sm); }
+.pcard-prices .price-on-sale { color: var(--ink); }
+.pcard-prices .price-was { text-decoration-thickness: 1.5px; }
+
+/* Sold-out card: image fades but stays — the archive remembers */
+.pcard.is-out .pcard-img { opacity: 0.52; filter: grayscale(0.35); }
+
+/* ── Product grid ─────────────────────────────────────────────────────── */
+/* 2-up on the smallest phones is correct for fashion — bigger images than a
+   1-up list, and thumb-reachable on 360px. */
+.pgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(var(--s4), 2.8vw, var(--s6)) clamp(var(--s2), 1.6vw, var(--s4));
+}
+@media (min-width: 600px) { 
+  .pgrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } 
+}
+
+/* Horizontal rail for homepage sections. Scroll-snap so it feels native on
+   touch and still works with a trackpad. */
+.rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(232px, 1fr);
+  gap: var(--s4);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  /* Bleed to the screen edge on mobile so the row reads as continuous. */
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+  padding-bottom: var(--s2);
+}
+.rail::-webkit-scrollbar { display: none; }
+.rail > * { scroll-snap-align: start; }
+@media (min-width: 900px) {
+  .rail { grid-auto-columns: minmax(280px, 1fr); }
+}
+
+/* ── Forms ────────────────────────────────────────────────────────────────
+   16px minimum font-size on inputs — anything smaller triggers iOS zoom on
+   focus, which throws the user out of the checkout layout.
+   ---------------------------------------------------------------------- */
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label {
+  font-family: var(--f-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.field .opt { color: var(--ink-4); text-transform: none; letter-spacing: 0; }
+
+.input {
+  width: 100%;
+  min-height: 50px;
+  padding: 13px var(--s4);
+  font-size: 16px;
+  background: var(--paper-lift);
+  color: var(--ink);
+  border: 0;
+  border-radius: var(--r-2);
+  box-shadow: inset 0 0 0 1px var(--ink-hair);
+  transition: box-shadow var(--d-2) var(--e-soft), background-color var(--d-2) var(--e-soft);
+}
+.input::placeholder { color: var(--ink-4); }
+.input:hover { box-shadow: inset 0 0 0 1px rgba(10,10,11,0.2); }
+.input:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px var(--ink), 0 0 0 4px rgba(10, 10, 11, 0.06);
+}
+.input:disabled {
+  background: var(--paper-sink);
+  color: var(--ink-4);
+  box-shadow: inset 0 0 0 1px var(--ink-hair-2);
+  cursor: not-allowed;
+}
+/* Validity is communicated by the field itself, not only by an alert. */
+.input[data-valid="true"] { box-shadow: inset 0 0 0 1.5px var(--ok); }
+.input.is-bad { box-shadow: inset 0 0 0 1.5px var(--alert); }
+
+.field-msg { font-size: var(--t-xs); line-height: 1.4; min-height: 1em; }
+.field-msg.ok    { color: var(--ok); }
+.field-msg.bad   { color: var(--alert); }
+.field-msg.warn  { color: var(--warn); }
+.field-msg.muted { color: var(--ink-3); }
+
+.form-row { display: grid; gap: var(--s3); grid-template-columns: 1fr; }
+@media (min-width: 480px) {
+  .form-row.two { grid-template-columns: 1fr 1fr; }
+  .form-row.two-one { grid-template-columns: 2fr 1fr; }
+}
+
+textarea.input { min-height: 96px; resize: vertical; line-height: 1.5; }
+
+.cform { display: flex; flex-direction: column; gap: var(--s4); }
+.cform-legend {
+  font-family: var(--f-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding-top: var(--s2);
+}
+
+/* ── Searchable select (state / district) ─────────────────────────────────
+   A native <select> cannot be typed into, and a <datalist> is unreliable
+   across mobile browsers — both matter for a 36-state / 700-district list on
+   a phone. This is a text input plus a filtered listbox, so the field is
+   always searchable and always keyboard-navigable.
+   ---------------------------------------------------------------------- */
+.combo { position: relative; }
+.combo-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  left: 0; right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  border-radius: var(--r-2);
+  box-shadow: inset 0 0 0 1px var(--ink-hair), var(--sh-3);
+  padding: 5px;
+}
+.combo-list[hidden] { display: none; }
+.combo-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px var(--s3);
+  border-radius: var(--r-1);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.combo-opt:hover, .combo-opt[aria-selected="true"] { background: var(--paper-sink); color: var(--ink); }
+.combo-opt mark { background: none; color: var(--ink); font-weight: 600; }
+.combo-none { padding: 10px var(--s3); font-size: var(--t-xs); color: var(--ink-4); }
+
+/* Chip / filter pill */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 var(--s4);
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: var(--paper-lift);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px var(--ink-hair);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: box-shadow var(--d-2) var(--e-soft), color var(--d-2) var(--e-soft),
+              background var(--d-2) var(--e-soft);
+}
+.chip:hover { box-shadow: inset 0 0 0 1px rgba(10,10,11,0.28); }
+.chip[aria-pressed="true"], .chip.is-on {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: none;
+}
+.chip .n { color: var(--ink-4); font-size: var(--t-micro); }
+.chip[aria-pressed="true"] .n, .chip.is-on .n { color: rgba(255,255,255,0.6); }
+
+/* Horizontal chip strip that scrolls instead of wrapping on mobile. */
+.chip-strip {
+  display: flex;
+  gap: var(--s2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+}
+.chip-strip::-webkit-scrollbar { display: none; }
+@media (min-width: 900px) {
+  .chip-strip { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+}
+
+/* Quantity stepper */
+.qty {
+  display: inline-flex;
+  align-items: center;
+  background: var(--paper-lift);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px var(--ink-hair);
+  overflow: hidden;
+}
+.qty button {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  color: var(--ink);
+  transition: background var(--d-1) linear;
+}
+.qty button:hover { background: rgba(10,10,11,0.06); }
+.qty button[disabled] { color: var(--ink-4); pointer-events: none; }
+.qty output {
+  min-width: 34px;
+  text-align: center;
+  font-family: var(--f-mono);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ── Skeletons ────────────────────────────────────────────────────────────
+   A metal sheen sweeping the placeholder — the loading state is on-material
+   instead of the usual grey pulse. */
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-sink);
+  border-radius: var(--r-2);
+}
+.sk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.75) 48%,
+    rgba(184, 198, 255, 0.2) 56%,
+    transparent 80%
+  );
+  transform: translate3d(-100%, 0, 0);
+  animation: sheen 1.35s var(--e-soft) infinite;
+}
+@keyframes sheen { to { transform: translate3d(100%, 0, 0); } }
+.sk-media { aspect-ratio: 4 / 5; }
+.sk-line { height: 11px; border-radius: var(--r-1); }
+.sk-line.w75 { width: 75%; }
+.sk-line.w70 { width: 70%; }
+.sk-line.w45 { width: 45%; }
+.sk-line.w40 { width: 40%; }
+.sk-card { display: flex; flex-direction: column; gap: var(--s2); }
+@media (prefers-reduced-motion: reduce) {
+  .sk::after { animation: none; opacity: 0.4; transform: none; }
+}
+
+/* ── Empty / error states ─────────────────────────────────────────────────
+   Both give the shopper a way forward. An empty state is an invitation. */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--s4);
+  padding: clamp(var(--s8), 10vw, var(--s10)) var(--s4);
+}
+.state-mark {
+  width: 68px; height: 68px;
+  border-radius: var(--r-pill);
+  background: var(--chrome-ramp);
+  box-shadow: var(--sh-metal);
+  display: grid; place-items: center;
+  color: var(--ink);
+}
+.state-mark svg { width: 26px; height: 26px; }
+.state h3 { font-size: var(--t-lg); font-family: var(--f-display); font-stretch: 112%; text-transform: uppercase; letter-spacing: -0.02em; }
+.state p { color: var(--ink-3); max-width: 42ch; }
+.state .row { gap: var(--s3); flex-wrap: wrap; justify-content: center; }
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+.toast-host {
+  position: fixed;
+  left: 50%; bottom: calc(var(--s5) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex; flex-direction: column; gap: var(--s2);
+  align-items: center;
+  width: min(440px, calc(100vw - 2 * var(--s4)));
+  pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: var(--s3);
+  width: 100%;
+  padding: var(--s3) var(--s4);
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--r-3);
+  box-shadow: var(--sh-4);
+  font-size: var(--t-sm);
+  pointer-events: auto;
+  animation: toast-in var(--d-3) var(--e-out) both;
+}
+.toast.bad { background: var(--alert); }
+.toast img {
+  width: 38px; height: 38px;
+  object-fit: cover;
+  border-radius: var(--r-1);
+  background: var(--ink-3);
+  flex: none;
+}
+.toast .grow { line-height: 1.3; }
+.toast b { display: block; font-size: var(--t-xs); font-weight: 600; }
+.toast span { font-size: var(--t-micro); color: rgba(255,255,255,0.65); }
+.toast a {
+  font-family: var(--f-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+  flex: none;
+}
+.toast.out { animation: toast-out var(--d-2) var(--e-in) both; }
+@keyframes toast-in  { from { opacity: 0; transform: translate3d(0, 14px, 0); } }
+@keyframes toast-out { to   { opacity: 0; transform: translate3d(0, 8px, 0); } }

@@ -21,6 +21,7 @@ const productSchema = new mongoose.Schema({
   variants: [{ type: Object }],
   status: { type: String, default: 'show' },
   isFeatured: { type: Boolean, default: false },
+  order: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // ─── Indexes for common queries ────────────────────────────
@@ -30,8 +31,8 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ slug: 1 }, { sparse: true });
 // Legacy string productId used by the pricing resolver fallback.
 productSchema.index({ productId: 1 }, { sparse: true });
-// Admin/storefront list is sorted newest-first and filtered by category.
-productSchema.index({ createdAt: -1 });
+// Admin/storefront list is sorted by order then newest-first and filtered by category.
+productSchema.index({ order: 1, createdAt: -1 });
 productSchema.index({ categories: 1 });
 
 module.exports = mongoose.model('Product', productSchema);
