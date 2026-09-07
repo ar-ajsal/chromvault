@@ -33,6 +33,7 @@
     Views.mount(
       heroHtml() +
       bandHtml() +
+      '<section class="section-sm" id="homeCats"><div class="wrap">' + catsSkeleton() + '</div></section>' +
       '<section class="section" id="homeNew">' +
         '<div class="wrap">' +
           Views.head({
@@ -44,7 +45,6 @@
           '<div class="pgrid" id="homeNewGrid">' + Card.skeletons(8) + '</div>' +
         '</div>' +
       '</section>' +
-      '<section class="section-sm" id="homeCats"><div class="wrap">' + catsSkeleton() + '</div></section>' +
       '<div id="homeSale"></div>' +
       splitHtml() +
       '<div id="homeFeatured"></div>' +
