@@ -92,16 +92,16 @@
   justify-self: center;
 }
 .header-logo {
-  height: 24px;
+  height: 60px;
   width: auto;
   display: block;
   mix-blend-mode: multiply;
 }
 @media (min-width: 900px) {
-  .header-logo { height: 28px; }
+  .header-logo { height: 80px; }
 }
 .mnav-logo {
-  height: 20px;
+  height: 50px;
   width: auto;
   mix-blend-mode: multiply;
 }
@@ -1398,8 +1398,8 @@
   justify-content: center;
 }
 .ftr-logo {
-  width: 80%;
-  max-width: 600px;
+  width: 100%;
+  max-width: 900px;
   height: auto;
   display: block;
   opacity: 0.9;
