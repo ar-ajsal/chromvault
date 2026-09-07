@@ -583,16 +583,23 @@
         btn.innerHTML = UI.spinner() + ' Generating…';
         
         CC.API.post('/reviews/request/' + o._id, { productId: pid }).then(function (res) {
-          btn.innerHTML = icon('check') + ' Link Generated';
-          CC.confirmModal({
-            title: 'Review Link Generated',
-            body: '<p>Send this link to the customer to collect their review:</p>' +
-                  '<div style="display:flex; gap:8px; margin-top:12px; align-items:center;">' +
-                  '<input class="input mono" id="revLinkInput" readonly style="flex:1" value="https://chromvault.in/review?token=' + esc(res.token) + '">' +
-                  '<button class="btn ghost" onclick="var i=document.getElementById(\'revLinkInput\'); i.select(); if(navigator.clipboard){navigator.clipboard.writeText(i.value);}else{document.execCommand(\'copy\');} CC.toast(\'Link copied!\');">Copy</button>' +
-                  '</div>',
-            ok: 'Done'
-          });
+          var url = 'https://chromvault.in/review?token=' + esc(res.token);
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).catch(function(){});
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.innerHTML = icon('check') + ' Copied';
+          CC.toast('Review link copied to clipboard', 'ok');
+          setTimeout(function() {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+          }, 3000);
         }).catch(function (err) {
           CC.toast(err.message || 'Failed to generate review link', 'bad');
           btn.disabled = false;
