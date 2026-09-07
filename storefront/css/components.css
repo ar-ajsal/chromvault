@@ -512,7 +512,7 @@
 .rail::-webkit-scrollbar { display: none; }
 .rail > * { scroll-snap-align: start; }
 @media (min-width: 900px) {
-  .rail { grid-auto-columns: minmax(280px, 1fr); }
+  .rail { grid-auto-columns: minmax(240px, 320px); }
 }
 
 /* ── Forms ────────────────────────────────────────────────────────────────

@@ -586,8 +586,8 @@
           btn.innerHTML = icon('check') + ' Link Generated';
           CC.confirmModal({
             title: 'Review Link Generated',
-            body: '<p>Copy this secure link and send it to the customer. Replace YOUR_STOREFRONT_URL with your actual storefront domain:</p>' +
-                  '<div class="field" style="margin-top:12px"><input class="input mono" readonly value="https://YOUR_STOREFRONT_URL/review?token=' + esc(res.token) + '" onclick="this.select(); document.execCommand(\'copy\'); CC.toast(\'Link copied!\');"></div>',
+            body: '<p>Send this link to the customer to collect their review:</p>' +
+                  '<div class="field" style="margin-top:12px"><input class="input mono" id="reviewLinkInput" readonly value="https://chromvault.in/review?token=' + esc(res.token) + '" onclick="this.select(); navigator.clipboard.writeText(this.value).then(() => CC.toast(\'Link copied!\'));"></div>',
             ok: 'Done'
           });
         }).catch(function (err) {
