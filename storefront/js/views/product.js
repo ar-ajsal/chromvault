@@ -289,7 +289,7 @@
     var items = [];
 
     var body = descriptionHtml(p);
-    if (body) items.push({ label: 'DESCRIPTION', html: body, open: true });
+    if (body) items.push({ label: 'DESCRIPTION', html: body });
 
     items.push({ label: 'PRODUCT DETAILS', html: detailsHtml(p) });
     items.push({
