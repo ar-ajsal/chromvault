@@ -1,5 +1,5 @@
 /* ============================================================================
-   Chromora Command Center — app shell runtime
+   Chromvault Command Center — app shell runtime
    - Hash router (#/dashboard, #/orders, …) with a view registry
    - Auth gate: no session → login screen; API 401/403 → bounce back to login
    - Sidebar + bottom-nav rendering, breadcrumbs, sidebar collapse (persisted)
@@ -156,9 +156,9 @@
     setActiveNav();
     var crumbText = (view && (view.crumb || view.title)) || parsed.route;
     if (parsed.params && parsed.params.id) {
-      setCrumbs(['Chromora', crumbText, 'Order Details']);
+      setCrumbs(['Chromvault', crumbText, 'Order Details']);
     } else {
-      setCrumbs(['Chromora', crumbText]);
+      setCrumbs(['Chromvault', crumbText]);
     }
     closeSidebarMobile();
 

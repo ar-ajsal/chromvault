@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — VIEW CORE
+   CHROMVAULT — VIEW CORE
    ----------------------------------------------------------------------------
    Shared machinery for every route view:
 
@@ -88,7 +88,7 @@
      Real per-route metadata. Crawlers that execute JS and, more importantly,
      browser history and shared-tab titles all read this. */
   Views.setMeta = function (title, desc) {
-    document.title = title ? (title + ' · Chromora') : 'Chromora — Rare Streetwear & Chrome Accessories';
+    document.title = title ? (title + ' · Chromvault') : 'Chromvault — Rare Streetwear & Chrome Accessories';
     if (desc) {
       var m = document.querySelector('meta[name="description"]');
       if (m) m.setAttribute('content', desc);

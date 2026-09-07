@@ -22,7 +22,7 @@
     var fromSettings = (global.Invoice && global.Invoice.getFromSettings)
       ? global.Invoice.getFromSettings()
       : {
-          storeName: 'CHROMORA',
+          storeName: 'CHROMVAULT',
           phone: '+91 9400 123 456',
           address: 'Hill View Arcade, NH 66, Kakkanchery, Malappuram, Kerala - 671321, India'
         };
@@ -59,7 +59,7 @@
       '</div></div>' +
       '<div class="panel"><div class="panel-head"><h3>' + icon('command') + 'System</h3></div>' +
       '<div class="panel-pad"><dl class="kv">' +
-      '<dt>Console</dt><dd>Chromora Command Center</dd>' +
+      '<dt>Console</dt><dd>Chromvault Command Center</dd>' +
       '<dt>API base</dt><dd class="mono">' + esc(CC.API.base) + '</dd>' +
       '<dt>Build</dt><dd>Buildless · Luxury Engine v1</dd>' +
       '</dl></div></div>' +
@@ -80,7 +80,7 @@
       '<div style="display:flex;flex-direction:column;gap:14px;max-width:680px">' +
       '<div class="grid grid-2" style="gap:14px">' +
       '<div class="field"><label>Store / Sender Name</label>' +
-      '<input class="input" id="faStoreName" value="' + esc(fromSettings.storeName || '') + '" placeholder="e.g. CHROMORA"></div>' +
+      '<input class="input" id="faStoreName" value="' + esc(fromSettings.storeName || '') + '" placeholder="e.g. CHROMVAULT"></div>' +
       '<div class="field"><label>Contact / Dispatch Phone</label>' +
       '<input class="input" id="faPhone" value="' + esc(fromSettings.phone || '') + '" placeholder="e.g. +91 9400 123 456"></div>' +
       '</div>' +
@@ -104,7 +104,7 @@
         '<div class="panel-pad">' +
         '<div class="grid grid-2" style="gap:14px">' +
         '<div class="field"><label>Name</label><input class="input" id="tmName" placeholder="Full name"></div>' +
-        '<div class="field"><label>Email</label><input class="input" id="tmEmail" type="email" placeholder="name@chromora.in"></div>' +
+        '<div class="field"><label>Email</label><input class="input" id="tmEmail" type="email" placeholder="name@chromvault.in"></div>' +
         '<div class="field"><label>Password</label><input class="input" id="tmPass" type="password" placeholder="Min 6 characters"></div>' +
         '<div class="field"><label>Role</label><select class="select" id="tmRole">' +
         '<option value="admin">Admin</option><option value="super admin">Super admin</option></select></div>' +

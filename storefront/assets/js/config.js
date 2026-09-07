@@ -1,13 +1,13 @@
 /* ============================================================================
-   CHROMORA — RUNTIME CONFIG
+   CHROMVAULT — RUNTIME CONFIG
    ----------------------------------------------------------------------------
    Resolves the API base at runtime instead of baking it in at build time (there
    is no build step). Resolution order, most specific first:
 
-     1. window.__CHROMORA_API_BASE__  — injected by frontendServer.js from the
+     1. window.__CHROMVAULT_API_BASE__  — injected by frontendServer.js from the
         STOREFRONT_API_BASE env var. This is how production points the
         storefront at the real API without editing any file.
-     2. <meta name="chromora-api-base" content="…">  — static hosting escape
+     2. <meta name="chromvault-api-base" content="…">  — static hosting escape
         hatch for deploys that never run frontendServer.js.
      3. Hostname heuristic — localhost/127.0.0.1 talks to the local API on
         :5000; anything else assumes the API is reverse-proxied at /v1 on the
@@ -24,9 +24,9 @@
   }
 
   function resolveApiBase() {
-    if (window.__CHROMORA_API_BASE__) return trim(window.__CHROMORA_API_BASE__);
+    if (window.__CHROMVAULT_API_BASE__) return trim(window.__CHROMVAULT_API_BASE__);
 
-    var meta = document.querySelector('meta[name="chromora-api-base"]');
+    var meta = document.querySelector('meta[name="chromvault-api-base"]');
     if (meta && meta.content) return trim(meta.content);
 
     var host = window.location.hostname;
@@ -38,7 +38,7 @@
 
   var API_BASE = resolveApiBase();
 
-  window.CHROMORA_CONFIG = Object.assign(window.CHROMORA_CONFIG || {}, {
+  window.CHROMVAULT_CONFIG = Object.assign(window.CHROMVAULT_CONFIG || {}, {
     API_BASE: API_BASE,
 
     /* Razorpay's checkout script is loaded on demand by js/checkout.js — never
@@ -58,10 +58,10 @@
     /* Optional. Injected by frontendServer.js when VITE_GOOGLE_MAPS_API_KEY is
        configured. When absent, checkout uses manual address entry only —
        Google Maps is never a hard dependency. */
-    MAPS_KEY: window.__CHROMORA_MAPS_KEY__ || '',
+    MAPS_KEY: window.__CHROMVAULT_MAPS_KEY__ || '',
 
     /* Support channels. These are the real details published on the live
-       chromora.in contact page, kept here so the footer, the contact page and
+       chromvault.in contact page, kept here so the footer, the contact page and
        the order-tracking page all read from one place — change them once and
        every surface updates. frontendServer.js can override any of them from
        env (STOREFRONT_WHATSAPP / STOREFRONT_EMAIL / STOREFRONT_INSTAGRAM) so a
@@ -69,9 +69,9 @@
     CONTACT: Object.assign({
       whatsapp: '918086096111',          // digits only, country code first
       whatsappLabel: '+91 80860 96111',
-      email: 'chromoraindia@gmail.com',
-      instagram: 'chromora.in',
+      email: 'chromvaultindia@gmail.com',
+      instagram: 'chromvault.in',
       replyWithin: 'Usually within 24 hours'
-    }, window.__CHROMORA_CONTACT__ || {})
+    }, window.__CHROMVAULT_CONTACT__ || {})
   });
 })();

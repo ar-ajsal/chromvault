@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — REVIEW SUBMISSION
+   CHROMVAULT — REVIEW SUBMISSION
    ========================================================================== */
 (function () {
   'use strict';
@@ -11,7 +11,7 @@
     var p = Router.params();
     var token = p.token;
 
-    Views.setMeta('Leave a Review', 'Share your experience with Chromora.');
+    Views.setMeta('Leave a Review', 'Share your experience with Chromvault.');
 
     if (!token) {
       Views.mount(Views.errorHtml(new Error('Review link is invalid or missing token.')));

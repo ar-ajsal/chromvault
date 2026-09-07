@@ -1,5 +1,5 @@
 /* ============================================================================
-   Chromora Command Center — core runtime
+   Chromvault Command Center — core runtime
    - API client against the same-origin "/api" proxy (→ backend /v1)
    - Admin session: JWT stored in the "adminInfo" cookie (shared convention),
      sent as a Bearer token. 401/403 bounces to the in-app login screen.

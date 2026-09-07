@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — PRODUCT DETAIL
+   CHROMVAULT — PRODUCT DETAIL
    ----------------------------------------------------------------------------
    The conversion page. Structure:
 
@@ -111,7 +111,7 @@
 
     var title = U.text(p.title) || 'Untitled';
     var desc = plain(U.text(p.description)).slice(0, 300);
-    Views.setMeta(title, desc || ('Buy ' + title + ' at Chromora — limited single-run stock, free shipping across India.'));
+    Views.setMeta(title, desc || ('Buy ' + title + ' at Chromvault — limited single-run stock, free shipping across India.'));
 
     Views.mount(
       '<div class="wrap">' +
@@ -194,7 +194,7 @@
         '<div class="stack" style="gap:var(--s3)">' +
           (cat
             ? '<a class="eyebrow" href="/shop" data-nav style="color:var(--ink-3)">' + U.esc(cat) + '</a>'
-            : '<span class="eyebrow">Chromora</span>') +
+            : '<span class="eyebrow">Chromvault</span>') +
           '<h1 class="pdp-title">' + U.esc(title) + '</h1>' +
         '</div>' +
 

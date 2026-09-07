@@ -1,4 +1,4 @@
-/* Chromora Admin PWA service worker.
+/* Chromvault Admin PWA service worker.
  *
  * Strategy:
  *   - Precache the app shell + hashed build assets so the dashboard is
@@ -13,7 +13,7 @@
  *   - Navigations: network-first with an offline fallback to the cached shell,
  *     so a fresh deploy is picked up immediately when online.
  */
-const CACHE_VERSION = 'chromora-admin-v3';
+const CACHE_VERSION = 'chromvault-admin-v3';
 const SHELL_URLS = [
   '/',
   '/index.html',

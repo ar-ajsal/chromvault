@@ -1,4 +1,4 @@
-# Chromora (chromvault)
+# Chromvault (chromvault)
 
 Jewelry e-commerce platform: an Express + MongoDB backend, a static storefront,
 and a React admin dashboard (Dashtar) plus a custom orders console.
@@ -9,7 +9,7 @@ and a React admin dashboard (Dashtar) plus a custom orders console.
   Razorpay payments, Cloudinary uploads.
 - **backend/frontendServer.js** — serves the static storefront (default port
   3001) and the admin panel (default port 3002), and proxies `/api` → backend.
-- **https___chromora.in_/** — static storefront (scraped WooCommerce HTML +
+- **https___chromvault.in_/** — static storefront (scraped WooCommerce HTML +
   hand-written glue JS in `assets/js/`).
 - **admin panel/dashtar-admin.netlify.app/** — prebuilt React admin SPA
   (installable PWA) + custom vanilla-JS orders dashboard (`backend/custom-orders/`).
@@ -55,7 +55,7 @@ The server refuses to start if `JWT_SECRET` or `MONGODB_URI` is missing.
 | --- | --- | --- |
 | `STOREFRONT_PORT` | 3001 | Storefront listen port |
 | `ADMIN_PORT` | 3002 | Admin panel listen port |
-| `API_PROXY_TARGET` | `http://localhost:5000/v1` | Where `/api` is proxied (set to your backend, e.g. `https://api.chromora.in/v1`) |
+| `API_PROXY_TARGET` | `http://localhost:5000/v1` | Where `/api` is proxied (set to your backend, e.g. `https://api.chromvault.in/v1`) |
 | `STOREFRONT_API_BASE` | (blank) | If set, injected as the storefront's API base (otherwise resolved same-origin `/v1`) |
 | `ADMIN_API_BASE` | (blank) | Override the admin SPA API base (defaults to same-origin `/api`) |
 | `ADMIN_URL` | `http://localhost:$ADMIN_PORT` | Public admin URL used for redirects |
@@ -94,8 +94,8 @@ a reverse proxy that terminates TLS.
 cd backend
 NODE_ENV=production npm start        # API
 NODE_ENV=production \
-  API_PROXY_TARGET=https://api.chromora.in/v1 \
-  ADMIN_URL=https://admin.chromora.in \
+  API_PROXY_TARGET=https://api.chromvault.in/v1 \
+  ADMIN_URL=https://admin.chromvault.in \
   node frontendServer.js
 ```
 

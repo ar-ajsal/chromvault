@@ -1,7 +1,7 @@
 /* ============================================================================
-   CHROMORA — CART STORE
+   CHROMVAULT — CART STORE
    ----------------------------------------------------------------------------
-   Same localStorage key ('chromora_cart') and same item shape as the previous
+   Same localStorage key ('chromvault_cart') and same item shape as the previous
    storefront, so a shopper mid-session keeps their cart across the redesign.
 
    The cart holds a DISPLAY price only. It is never the basis for what is
@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  var KEY = 'chromora_cart';
+  var KEY = 'chromvault_cart';
   var subs = [];
 
   /* Line identity. A product with no chosen option keys on its id alone, so

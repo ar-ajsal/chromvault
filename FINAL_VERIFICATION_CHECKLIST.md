@@ -1,4 +1,4 @@
-# Chromora — Final Verification Checklist
+# Chromvault — Final Verification Checklist
 
 Run before going live. Every item is tagged with how far verification has
 already gone, so you know exactly what still needs your machine + accounts.
@@ -68,11 +68,11 @@ Create the first admin, then log in:
 
 ```bash
 cd backend
-node seedAdmin.js "Super Admin" admin@chromora.in "StrongPass123!"
+node seedAdmin.js "Super Admin" admin@chromvault.in "StrongPass123!"
 
 curl -s -X POST http://localhost:5000/v1/admin/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@chromora.in","password":"StrongPass123!"}'
+  -d '{"email":"admin@chromvault.in","password":"StrongPass123!"}'
 # expect: 200 + a JSON body containing "token"
 ```
 
@@ -81,7 +81,7 @@ Save the token:
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:5000/v1/admin/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@chromora.in","password":"StrongPass123!"}' | \
+  -d '{"email":"admin@chromvault.in","password":"StrongPass123!"}' | \
   node -e "process.stdin.on('data',d=>console.log(JSON.parse(d).token))")
 echo "$TOKEN"
 ```
@@ -94,7 +94,7 @@ Wrong-password check:
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:5000/v1/admin/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@chromora.in","password":"wrong"}'
+  -d '{"email":"admin@chromvault.in","password":"wrong"}'
 # expect: 401
 ```
 
@@ -347,7 +347,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:5000/v1/cloudi
 # with token + a file → 200 + a cloudinary URL string
 curl -s -X POST http://localhost:5000/v1/cloudinary \
   -H "Authorization: Bearer $TOKEN" -F "file=@/path/to/local-image.jpg"
-# expect: 200 + "https://res.cloudinary.com/.../chromora/..."
+# expect: 200 + "https://res.cloudinary.com/.../chromvault/..."
 ```
 
 🖥️ Also add a product image via the admin UI uploader and confirm it renders.
@@ -403,7 +403,7 @@ curl -s -o /dev/null -w "icon: %{http_code}\n" http://localhost:3002/icon-192x19
 ```
 
 In Chrome DevTools → **Application**:
-- Manifest: name "Chromora Admin", theme/background `#000000`, icons listed.
+- Manifest: name "Chromvault Admin", theme/background `#000000`, icons listed.
 - Service Workers: `service-worker.js` is "activated and running".
 - An install icon appears in the address bar; install and launch as a standalone window.
 
@@ -427,15 +427,15 @@ No storefront UI changes were made; this is a visual confirmation only.
 
 ## 19. CORS — 🔬 LIVE-HERE + 🖥️ YOU-LOCAL
 
-🔬 Confirmed here (server booted with `CORS_ORIGINS=https://chromora.in`):
-- Allowed origin → response carries `Access-Control-Allow-Origin: https://chromora.in`.
+🔬 Confirmed here (server booted with `CORS_ORIGINS=https://chromvault.in`):
+- Allowed origin → response carries `Access-Control-Allow-Origin: https://chromvault.in`.
 - Disallowed origin → **no** `Access-Control-Allow-Origin` header and the request is rejected (403).
 
 🖥️ Repeat with your real origins:
 
 ```bash
 # allowed
-curl -s -D - -o /dev/null -H "Origin: https://chromora.in" http://localhost:5000/ | grep -i access-control-allow-origin
+curl -s -D - -o /dev/null -H "Origin: https://chromvault.in" http://localhost:5000/ | grep -i access-control-allow-origin
 # disallowed → no ACAO header
 curl -s -D - -o /dev/null -H "Origin: https://evil.example" http://localhost:5000/ | grep -i access-control-allow-origin || echo "blocked (no ACAO)"
 ```
@@ -465,7 +465,7 @@ CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud>
 RAZORPAY_KEY_ID=<live-or-test key id>
 RAZORPAY_KEY_SECRET=<secret>
 RAZORPAY_WEBHOOK_SECRET=          # only if you add a webhook
-CORS_ORIGINS=https://chromora.in,https://admin.chromora.in
+CORS_ORIGINS=https://chromvault.in,https://admin.chromvault.in
 NODE_ENV=production
 ```
 

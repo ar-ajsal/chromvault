@@ -1,6 +1,6 @@
 // API base comes from the shared runtime config (assets/js/config.js), which
 // resolves an env-injected value in production and a localhost default in dev.
-const API_BASE_URL = (window.CHROMORA_CONFIG && window.CHROMORA_CONFIG.API_BASE)
+const API_BASE_URL = (window.CHROMVAULT_CONFIG && window.CHROMVAULT_CONFIG.API_BASE)
   || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:5000/v1'
         : window.location.origin + '/v1');
@@ -19,7 +19,7 @@ async function fetchProducts(params = {}) {
         const data = await response.json();
         return data.products || data || [];
     } catch (error) {
-        console.error('[Chromora] Error fetching products:', error);
+        console.error('[Chromvault] Error fetching products:', error);
         return [];
     }
 }
@@ -31,7 +31,7 @@ async function fetchProductBySlug(slug) {
         if (!response.ok) throw new Error('Product not found');
         return await response.json();
     } catch (error) {
-        console.error('[Chromora] Error fetching product:', error);
+        console.error('[Chromvault] Error fetching product:', error);
         return null;
     }
 }
@@ -94,7 +94,7 @@ function createProductCardHTML(product) {
 async function renderProducts(containerSelector) {
     const container = document.querySelector(containerSelector);
     if (!container) {
-        console.warn('[Chromora] renderProducts: selector not found:', containerSelector);
+        console.warn('[Chromvault] renderProducts: selector not found:', containerSelector);
         return;
     }
 
@@ -111,7 +111,7 @@ async function renderProducts(containerSelector) {
 }
 
 // Expose to global scope
-window.chromoraAPI = {
+window.chromvaultAPI = {
     fetchProducts,
     fetchProductBySlug,
     renderProducts,

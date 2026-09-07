@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — SHOP / CATEGORY / SEARCH
+   CHROMVAULT — SHOP / CATEGORY / SEARCH
    ----------------------------------------------------------------------------
    One view serves /shop, /shop?category=…, /shop?q=…, /shop?sale=1 and the
    legacy /product-category/:category URL shape.
@@ -98,8 +98,8 @@
     var title = heading();
     Views.setMeta(
       title,
-      S.q ? ('Search results for ' + S.q + ' at Chromora.')
-          : 'Browse rare streetwear and chrome-finished accessories at Chromora. Limited single-run pieces, shipped across India.'
+      S.q ? ('Search results for ' + S.q + ' at Chromvault.')
+          : 'Browse rare streetwear and chrome-finished accessories at Chromvault. Limited single-run pieces, shipped across India.'
     );
 
     return '' +
@@ -169,9 +169,9 @@
       var h = U.$('#shopTitle');
       if (h) h.textContent = heading();
     };
-    document.addEventListener('chromora:categories', onCats);
+    document.addEventListener('chromvault:categories', onCats);
     Views.onTeardown(function () {
-      document.removeEventListener('chromora:categories', onCats);
+      document.removeEventListener('chromvault:categories', onCats);
       S = null;
     });
 
@@ -208,12 +208,12 @@
     if (Shell.categories().length) { apply(); return; }
 
     var onCats = function () {
-      document.removeEventListener('chromora:categories', onCats);
+      document.removeEventListener('chromvault:categories', onCats);
       if (Router.stale(S && S.token)) return;
       apply();
     };
-    document.addEventListener('chromora:categories', onCats);
-    Views.onTeardown(function () { document.removeEventListener('chromora:categories', onCats); });
+    document.addEventListener('chromvault:categories', onCats);
+    Views.onTeardown(function () { document.removeEventListener('chromvault:categories', onCats); });
   }
 
   function slugify(s) {

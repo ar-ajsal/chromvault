@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — CART & CHECKOUT PAGES
+   CHROMVAULT — CART & CHECKOUT PAGES
    ----------------------------------------------------------------------------
    The full-page counterparts of the drawer:
 
@@ -71,7 +71,7 @@
   function paintCart() {
     var items = Cart.items();
     Views.setMeta(items.length ? ('Cart · ' + Cart.count() + ' item' + (Cart.count() === 1 ? '' : 's')) : 'Cart',
-      'Review your Chromora cart and check out securely with Razorpay.');
+      'Review your Chromvault cart and check out securely with Razorpay.');
 
     if (!items.length) {
       Views.mount('<div class="wrap" style="padding-top:var(--s7)">' + Panel.emptyHtml() + '</div>');
@@ -177,7 +177,7 @@
   /* ── Confirmation ────────────────────────────────────────────────────────── */
 
   function paintDone(order) {
-    Views.setMeta('Order confirmed', 'Your Chromora order is confirmed.');
+    Views.setMeta('Order confirmed', 'Your Chromvault order is confirmed.');
     if (window.Checkout && Checkout.destroy) Checkout.destroy();
 
     var track = '/track' + (order && order.orderId

@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — HOME
+   CHROMVAULT — HOME
    ----------------------------------------------------------------------------
    Composition, top to bottom:
 
@@ -27,7 +27,7 @@
     var t = Router.token();
     Views.setMeta(
       null,
-      'Chromora is an independent label dealing in rare streetwear and chrome-finished accessories. Limited pieces, single runs, shipped across India.'
+      'Chromvault is an independent label dealing in rare streetwear and chrome-finished accessories. Limited pieces, single runs, shipped across India.'
     );
 
     Views.mount(
@@ -72,9 +72,9 @@
         if (Router.stale(t)) return;
         paintCats(Shell.categories());
       };
-      document.addEventListener('chromora:categories', onCats);
+      document.addEventListener('chromvault:categories', onCats);
       Views.onTeardown(function () {
-        document.removeEventListener('chromora:categories', onCats);
+        document.removeEventListener('chromvault:categories', onCats);
       });
     }
   };

@@ -1,7 +1,7 @@
 {
-  "name": "Chromora Admin",
-  "short_name": "Chromora Admin",
-  "description": "Chromora store administration dashboard",
+  "name": "Chromvault Admin",
+  "short_name": "Chromvault Admin",
+  "description": "Chromvault store administration dashboard",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

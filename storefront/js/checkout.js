@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — CHECKOUT
+   CHROMVAULT — CHECKOUT
    ----------------------------------------------------------------------------
    Renders the customer-details form, validates it, and drives the EXISTING
    backend payment flow. It does not price anything and it does not create
@@ -30,13 +30,13 @@
   'use strict';
 
   var Checkout = {};
-  var CFG = window.CHROMORA_CONFIG || {};
+  var CFG = window.CHROMVAULT_CONFIG || {};
 
   var PHONE_RE = /^[6-9]\d{9}$/;
   var PIN_RE = /^\d{6}$/;
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  var SAVE_KEY = 'chromora_details';
+  var SAVE_KEY = 'chromvault_details';
 
   /* The 28 states and 8 union territories, spelled as api.postalpincode.in and
      Google both return them, so an autofilled value matches a list entry
@@ -725,7 +725,7 @@
     if (mapsLoad) return mapsLoad;
 
     mapsLoad = new Promise(function (resolve, reject) {
-      var cb = '__chromoraMapsReady';
+      var cb = '__chromvaultMapsReady';
       window[cb] = function () { resolve(); };
       var src = 'https://maps.googleapis.com/maps/api/js' +
         '?key=' + encodeURIComponent(key) +
@@ -1031,7 +1031,7 @@
       amount: order.amount,               // paise, from the server
       currency: order.currency || 'INR',
       order_id: order.id,                 // server-created — this is what is charged
-      name: 'Chromora',
+      name: 'Chromvault',
       description: n + (n === 1 ? ' piece' : ' pieces'),
       image: '/icon-192x192.png',
       prefill: { name: f.name, contact: f.phone, email: f.email || '' },

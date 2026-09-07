@@ -173,7 +173,7 @@ When you're ready:
 
 ### On Vercel (for each project):
 1. Go to Project Settings → Domains
-2. Add your custom domain (e.g. `chromora.in` for storefront, `admin.chromora.in` for admin)
+2. Add your custom domain (e.g. `chromvault.in` for storefront, `admin.chromvault.in` for admin)
 3. Vercel gives you a CNAME record to add to GoDaddy
 
 ### On GoDaddy:
@@ -182,7 +182,7 @@ When you're ready:
 
 ### On EC2 (update .env):
 ```env
-CORS_ORIGINS=https://chromora.in,https://www.chromora.in,https://admin.chromora.in
+CORS_ORIGINS=https://chromvault.in,https://www.chromvault.in,https://admin.chromvault.in
 ```
 ```bash
 pm2 restart chromvault-api
@@ -199,7 +199,7 @@ Razorpay requires you to whitelist domains that initiate payments.
 1. Go to Razorpay Dashboard → Settings → Website/App Details
 2. Add both domains:
    - `https://YOUR_STOREFRONT.vercel.app` (temporary)
-   - `https://chromora.in` (when ready)
+   - `https://chromvault.in` (when ready)
 
 ---
 

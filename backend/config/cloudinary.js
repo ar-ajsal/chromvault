@@ -10,7 +10,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'chromora',
+    folder: 'chromvault',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
   }
 });

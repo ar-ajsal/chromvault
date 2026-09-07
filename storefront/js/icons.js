@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — ICONS
+   CHROMVAULT — ICONS
    Inline SVG sprites. 1.6px strokes on a 24 grid: fine enough to feel drawn
    rather than bundled, heavy enough to survive a 20px render.
    Usage: icon('bag') or <span data-ic="bag"></span> (hydrated by shell.js).

@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — SHELL
+   CHROMVAULT — SHELL
    ----------------------------------------------------------------------------
    Everything that persists across routes: icon hydration, header state, nav
    (built from real backend categories), search overlay, mobile menu, footer,
@@ -226,7 +226,7 @@
                    '<img src="' + U.escAttr(U.img(imgs[0])) + '" alt="" loading="lazy" />' +
                    '<div class="grow">' +
                      '<div class="sres-t">' + U.esc(U.text(p.title)) + '</div>' +
-                     '<div class="sres-m">' + U.esc(U.pcat(p) || 'Chromora') +
+                     '<div class="sres-m">' + U.esc(U.pcat(p) || 'Chromvault') +
                        (U.inStock(p) ? '' : ' · Sold out') + '</div>' +
                    '</div>' +
                    '<span class="price">' + U.money(U.price(p)) + '</span>' +
@@ -267,7 +267,7 @@
     var f = U.$('#ftr');
     if (!f) return;
 
-    var C = (window.CHROMORA_CONFIG && window.CHROMORA_CONFIG.CONTACT) || {};
+    var C = (window.CHROMVAULT_CONFIG && window.CHROMVAULT_CONFIG.CONTACT) || {};
     var igHref = C.instagram
       ? 'https://instagram.com/' + encodeURIComponent(C.instagram)
       : 'https://instagram.com/';
@@ -277,7 +277,7 @@
 
         /* Instagram icon — centered, top of footer */
         '<div class="ftr-social">' +
-          '<a class="ftr-ig" href="#" aria-label="Chromora on Instagram">' +
+          '<a class="ftr-ig" href="#" aria-label="Chromvault on Instagram">' +
             '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
               '<rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>' +
               '<path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>' +
@@ -297,11 +297,11 @@
         '</div>' +
 
         /* Mega wordmark */
-        '<div class="ftr-wordmark" aria-label="Chromora">CHROMORA</div>' +
+        '<div class="ftr-wordmark" aria-label="Chromvault">CHROMVAULT</div>' +
 
         /* Bottom meta */
         '<div class="ftr-meta">' +
-          '<span>\u00a9 ' + new Date().getFullYear() + ' Chromora</span>' +
+          '<span>\u00a9 ' + new Date().getFullYear() + ' Chromvault</span>' +
           '<div class="ftr-meta-links">' +
             '<a href="/terms" data-nav>Terms and Policies</a>' +
             '<a href="/privacy" data-nav>Privacy</a>' +
@@ -446,10 +446,10 @@
       Shell.renderNav();
       renderFooter();
       Shell.icons();
-      document.dispatchEvent(new CustomEvent('chromora:categories'));
+      document.dispatchEvent(new CustomEvent('chromvault:categories'));
     }).catch(function (err) {
       console.warn('Categories unavailable:', err && err.message);
-      document.dispatchEvent(new CustomEvent('chromora:categories'));
+      document.dispatchEvent(new CustomEvent('chromvault:categories'));
     });
   };
 

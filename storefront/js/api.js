@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — API CLIENT
+   CHROMVAULT — API CLIENT
    ----------------------------------------------------------------------------
    Thin wrapper over the existing backend. No endpoints were added or changed:
 
@@ -15,7 +15,7 @@
 (function () {
   'use strict';
 
-  var BASE = (window.CHROMORA_CONFIG && window.CHROMORA_CONFIG.API_BASE) ||
+  var BASE = (window.CHROMVAULT_CONFIG && window.CHROMVAULT_CONFIG.API_BASE) ||
     ((location.hostname === 'localhost' || location.hostname === '127.0.0.1')
       ? 'http://localhost:5000/v1'
       : location.origin + '/v1');

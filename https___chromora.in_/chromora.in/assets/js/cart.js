@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize cart in localStorage
-    if (!localStorage.getItem('chromora_cart')) {
-        localStorage.setItem('chromora_cart', JSON.stringify([]));
+    if (!localStorage.getItem('chromvault_cart')) {
+        localStorage.setItem('chromvault_cart', JSON.stringify([]));
     }
 
     // Bind add to cart buttons (event delegation for dynamically loaded products)
@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const image = btn.getAttribute('data-product_image') || '';
             const slug = btn.getAttribute('data-product_slug') || '';
 
-            if (window.chromoraCheckout) {
-                window.chromoraCheckout.add({ _id, id: _id, title, price, image, slug });
+            if (window.chromvaultCheckout) {
+                window.chromvaultCheckout.add({ _id, id: _id, title, price, image, slug });
             } else {
                 addToCart({ _id, id: _id, title, price, image, slug, quantity: 1 });
             }
@@ -39,15 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const qtyInput = document.querySelector('input.qty');
             const quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
 
-            if (window.chromoraCheckout) {
-                window.chromoraCheckout.add({ _id, id: _id, title, price, image, slug, quantity });
+            if (window.chromvaultCheckout) {
+                window.chromvaultCheckout.add({ _id, id: _id, title, price, image, slug, quantity });
             } else {
                 addToCart({ _id, id: _id, title, price, image, slug, quantity });
             }
 
             if (isBuyNow) {
-                if (window.chromoraCheckout) {
-                    window.chromoraCheckout.open('checkout');
+                if (window.chromvaultCheckout) {
+                    window.chromvaultCheckout.open('checkout');
                 } else {
                     window.location.href = '/cart';
                 }
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function addToCart(product) {
-    let cart = JSON.parse(localStorage.getItem('chromora_cart')) || [];
+    let cart = JSON.parse(localStorage.getItem('chromvault_cart')) || [];
 
     const existing = cart.find(item => item._id === product._id);
     if (existing) {
@@ -66,14 +66,14 @@ function addToCart(product) {
         cart.push({ ...product, quantity: (product.quantity || 1) });
     }
 
-    localStorage.setItem('chromora_cart', JSON.stringify(cart));
+    localStorage.setItem('chromvault_cart', JSON.stringify(cart));
     updateCartCount();
 }
 
 function updateCartCount() {
-    let cart = JSON.parse(localStorage.getItem('chromora_cart')) || [];
+    let cart = JSON.parse(localStorage.getItem('chromvault_cart')) || [];
     const count = cart.reduce((total, item) => total + (item.quantity || 1), 0);
 
-    const badges = document.querySelectorAll('.cart-count, .cart-contents .count, #chromora-cart-count');
+    const badges = document.querySelectorAll('.cart-count, .cart-contents .count, #chromvault-cart-count');
     badges.forEach(b => b.innerText = count);
 }

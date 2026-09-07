@@ -1,11 +1,11 @@
 /**
- * Chromora Razorpay Checkout & Cart Drawer System
+ * Chromvault Razorpay Checkout & Cart Drawer System
  */
 
 (function () {
   // API base from shared runtime config (assets/js/config.js). Falls back to a
   // hostname heuristic if config.js failed to load, so checkout never hard-breaks.
-  const API_BASE = (window.CHROMORA_CONFIG && window.CHROMORA_CONFIG.API_BASE)
+  const API_BASE = (window.CHROMVAULT_CONFIG && window.CHROMVAULT_CONFIG.API_BASE)
     || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
           ? 'http://localhost:5000/v1'
           : window.location.origin + '/v1');
@@ -37,7 +37,7 @@
   const style = document.createElement('style');
   style.innerHTML = `
     /* Floating Cart Button */
-    .chromora-floating-cart-btn {
+    .chromvault-floating-cart-btn {
       position: fixed;
       bottom: 30px;
       right: 30px;
@@ -57,12 +57,12 @@
       font-size: 15px;
       letter-spacing: 1px;
     }
-    .chromora-floating-cart-btn:hover {
+    .chromvault-floating-cart-btn:hover {
       transform: translateY(-3px) scale(1.03);
       background: #111;
       box-shadow: 0 14px 40px rgba(255,255,255,0.2);
     }
-    .chromora-cart-badge {
+    .chromvault-cart-badge {
       background: #fff;
       color: #000;
       font-weight: bold;
@@ -76,7 +76,7 @@
     }
 
     /* Cart Drawer Overlay */
-    .chromora-drawer-overlay {
+    .chromvault-drawer-overlay {
       position: fixed;
       top: 0;
       left: 0;
@@ -89,13 +89,13 @@
       visibility: hidden;
       transition: opacity 0.3s ease;
     }
-    .chromora-drawer-overlay.active {
+    .chromvault-drawer-overlay.active {
       opacity: 1;
       visibility: visible;
     }
 
     /* Cart Drawer */
-    .chromora-drawer {
+    .chromvault-drawer {
       position: fixed;
       top: 0;
       right: -480px;
@@ -111,25 +111,25 @@
       flex-direction: column;
       font-family: inherit;
     }
-    .chromora-drawer.active {
+    .chromvault-drawer.active {
       right: 0;
     }
 
-    .chromora-drawer-header {
+    .chromvault-drawer-header {
       padding: 24px;
       border-bottom: 1px solid #222;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .chromora-drawer-title {
+    .chromvault-drawer-title {
       font-size: 20px;
       font-weight: 700;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       margin: 0;
     }
-    .chromora-drawer-close {
+    .chromvault-drawer-close {
       background: none;
       border: none;
       color: #888;
@@ -138,52 +138,52 @@
       line-height: 1;
       transition: color 0.2s;
     }
-    .chromora-drawer-close:hover {
+    .chromvault-drawer-close:hover {
       color: #fff;
     }
 
-    .chromora-drawer-body {
+    .chromvault-drawer-body {
       flex: 1;
       overflow-y: auto;
       padding: 24px;
     }
 
     /* Cart Items */
-    .chromora-cart-item {
+    .chromvault-cart-item {
       display: flex;
       gap: 16px;
       padding: 16px 0;
       border-bottom: 1px solid #1a1a1a;
       align-items: center;
     }
-    .chromora-cart-img {
+    .chromvault-cart-img {
       width: 70px;
       height: 70px;
       object-fit: cover;
       border-radius: 6px;
       background: #151515;
     }
-    .chromora-cart-item-details {
+    .chromvault-cart-item-details {
       flex: 1;
     }
-    .chromora-cart-item-title {
+    .chromvault-cart-item-title {
       font-size: 14px;
       font-weight: 600;
       margin: 0 0 6px 0;
       color: #eee;
     }
-    .chromora-cart-item-price {
+    .chromvault-cart-item-price {
       font-size: 15px;
       font-weight: bold;
       color: #fff;
     }
-    .chromora-qty-wrap {
+    .chromvault-qty-wrap {
       display: flex;
       align-items: center;
       gap: 8px;
       margin-top: 8px;
     }
-    .chromora-qty-btn {
+    .chromvault-qty-btn {
       background: #222;
       color: #fff;
       border: none;
@@ -196,10 +196,10 @@
       justify-content: center;
       font-weight: bold;
     }
-    .chromora-qty-btn:hover {
+    .chromvault-qty-btn:hover {
       background: #333;
     }
-    .chromora-remove-btn {
+    .chromvault-remove-btn {
       background: none;
       border: none;
       color: #e53e3e;
@@ -209,23 +209,23 @@
     }
 
     /* Checkout Form */
-    .chromora-checkout-form {
+    .chromvault-checkout-form {
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
-    .chromora-form-group {
+    .chromvault-form-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .chromora-form-group label {
+    .chromvault-form-group label {
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: #aaa;
     }
-    .chromora-form-group input {
+    .chromvault-form-group input {
       background: #141414;
       border: 1px solid #333;
       color: #fff;
@@ -235,24 +235,24 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .chromora-form-group input:focus {
+    .chromvault-form-group input:focus {
       border-color: #fff;
     }
 
     /* Drawer Footer */
-    .chromora-drawer-footer {
+    .chromvault-drawer-footer {
       padding: 24px;
       border-top: 1px solid #222;
       background: #0d0d0d;
     }
-    .chromora-summary-row {
+    .chromvault-summary-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 10px;
       font-size: 14px;
       color: #aaa;
     }
-    .chromora-summary-total {
+    .chromvault-summary-total {
       font-size: 18px;
       font-weight: bold;
       color: #fff;
@@ -261,7 +261,7 @@
       border-top: 1px dashed #333;
     }
 
-    .chromora-btn-primary {
+    .chromvault-btn-primary {
       width: 100%;
       background: #fff;
       color: #000;
@@ -276,11 +276,11 @@
       margin-top: 18px;
       transition: all 0.2s ease;
     }
-    .chromora-btn-primary:hover {
+    .chromvault-btn-primary:hover {
       background: #e2e2e2;
       transform: translateY(-1px);
     }
-    .chromora-btn-secondary {
+    .chromvault-btn-secondary {
       width: 100%;
       background: transparent;
       color: #888;
@@ -292,17 +292,17 @@
       margin-top: 10px;
       text-align: center;
     }
-    .chromora-btn-secondary:hover {
+    .chromvault-btn-secondary:hover {
       color: #fff;
       border-color: #555;
     }
 
     /* Order Success Card */
-    .chromora-success-card {
+    .chromvault-success-card {
       text-align: center;
       padding: 30px 10px;
     }
-    .chromora-success-icon {
+    .chromvault-success-icon {
       width: 64px;
       height: 64px;
       background: #10b981;
@@ -314,19 +314,19 @@
       font-size: 32px;
       margin: 0 auto 20px auto;
     }
-    .chromora-success-title {
+    .chromvault-success-title {
       font-size: 22px;
       font-weight: bold;
       margin-bottom: 10px;
       color: #fff;
     }
-    .chromora-success-desc {
+    .chromvault-success-desc {
       font-size: 14px;
       color: #aaa;
       margin-bottom: 24px;
       line-height: 1.6;
     }
-    .chromora-receipt {
+    .chromvault-receipt {
       background: #141414;
       border: 1px solid #222;
       border-radius: 8px;
@@ -342,13 +342,13 @@
     const Cart = {
     get() {
       try {
-        return JSON.parse(localStorage.getItem('chromora_cart')) || [];
+        return JSON.parse(localStorage.getItem('chromvault_cart')) || [];
       } catch (e) {
         return [];
       }
     },
     save(cart) {
-      localStorage.setItem('chromora_cart', JSON.stringify(cart));
+      localStorage.setItem('chromvault_cart', JSON.stringify(cart));
       updateUI();
     },
     add(product) {
@@ -375,7 +375,7 @@
       }
     },
     clear() {
-      localStorage.removeItem('chromora_cart');
+      localStorage.removeItem('chromvault_cart');
       updateUI();
     },
     total() {
@@ -385,29 +385,29 @@
 
   // Build Floating Button & Drawer DOM
   const domWrapper = document.createElement('div');
-  domWrapper.id = 'chromora-checkout-root';
+  domWrapper.id = 'chromvault-checkout-root';
   domWrapper.innerHTML = `
     <!-- Floating Cart Button -->
-    <div class="chromora-floating-cart-btn" id="chromora-cart-trigger">
+    <div class="chromvault-floating-cart-btn" id="chromvault-cart-trigger">
       <span>🛒 CART</span>
-      <div class="chromora-cart-badge" id="chromora-cart-count">0</div>
+      <div class="chromvault-cart-badge" id="chromvault-cart-count">0</div>
     </div>
 
     <!-- Drawer Overlay -->
-    <div class="chromora-drawer-overlay" id="chromora-drawer-overlay"></div>
+    <div class="chromvault-drawer-overlay" id="chromvault-drawer-overlay"></div>
 
     <!-- Drawer Panel -->
-    <div class="chromora-drawer" id="chromora-drawer">
-      <div class="chromora-drawer-header">
-        <h3 class="chromora-drawer-title" id="chromora-drawer-title">Shopping Cart</h3>
-        <button class="chromora-drawer-close" id="chromora-drawer-close">&times;</button>
+    <div class="chromvault-drawer" id="chromvault-drawer">
+      <div class="chromvault-drawer-header">
+        <h3 class="chromvault-drawer-title" id="chromvault-drawer-title">Shopping Cart</h3>
+        <button class="chromvault-drawer-close" id="chromvault-drawer-close">&times;</button>
       </div>
 
-      <div class="chromora-drawer-body" id="chromora-drawer-content">
+      <div class="chromvault-drawer-body" id="chromvault-drawer-content">
         <!-- Injected dynamically -->
       </div>
 
-      <div class="chromora-drawer-footer" id="chromora-drawer-footer">
+      <div class="chromvault-drawer-footer" id="chromvault-drawer-footer">
         <!-- Injected dynamically -->
       </div>
     </div>
@@ -421,19 +421,19 @@
   function openDrawer(view = 'cart') {
     currentView = view;
     renderDrawer();
-    document.getElementById('chromora-drawer-overlay').classList.add('active');
-    document.getElementById('chromora-drawer').classList.add('active');
+    document.getElementById('chromvault-drawer-overlay').classList.add('active');
+    document.getElementById('chromvault-drawer').classList.add('active');
   }
 
   function closeDrawer() {
-    document.getElementById('chromora-drawer-overlay').classList.remove('active');
-    document.getElementById('chromora-drawer').classList.remove('active');
+    document.getElementById('chromvault-drawer-overlay').classList.remove('active');
+    document.getElementById('chromvault-drawer').classList.remove('active');
   }
 
   function renderDrawer() {
-    const titleEl = document.getElementById('chromora-drawer-title');
-    const contentEl = document.getElementById('chromora-drawer-content');
-    const footerEl = document.getElementById('chromora-drawer-footer');
+    const titleEl = document.getElementById('chromvault-drawer-title');
+    const contentEl = document.getElementById('chromvault-drawer-content');
+    const footerEl = document.getElementById('chromvault-drawer-footer');
     const cart = Cart.get();
 
     if (currentView === 'cart') {
@@ -448,92 +448,92 @@
           </div>
         `;
         footerEl.innerHTML = `
-          <button class="chromora-btn-primary" onclick="window.location.href='/shop'">Explore Shop</button>
+          <button class="chromvault-btn-primary" onclick="window.location.href='/shop'">Explore Shop</button>
         `;
         return;
       }
 
       contentEl.innerHTML = cart.map(item => `
-        <div class="chromora-cart-item">
-          <img src="${item.image || 'wp-content/uploads/woocommerce-placeholder.png'}" class="chromora-cart-img" />
-          <div class="chromora-cart-item-details">
-            <h4 class="chromora-cart-item-title">${item.title || item.name || 'Product'}</h4>
-            <div class="chromora-cart-item-price">₹${item.price}</div>
-            <div class="chromora-qty-wrap">
-              <button class="chromora-qty-btn" onclick="chromoraCheckout.updateQty('${item._id || item.id}', -1)">-</button>
+        <div class="chromvault-cart-item">
+          <img src="${item.image || 'wp-content/uploads/woocommerce-placeholder.png'}" class="chromvault-cart-img" />
+          <div class="chromvault-cart-item-details">
+            <h4 class="chromvault-cart-item-title">${item.title || item.name || 'Product'}</h4>
+            <div class="chromvault-cart-item-price">₹${item.price}</div>
+            <div class="chromvault-qty-wrap">
+              <button class="chromvault-qty-btn" onclick="chromvaultCheckout.updateQty('${item._id || item.id}', -1)">-</button>
               <span style="font-size: 13px; font-weight: bold; width: 20px; text-align: center;">${item.quantity}</span>
-              <button class="chromora-qty-btn" onclick="chromoraCheckout.updateQty('${item._id || item.id}', 1)">+</button>
-              <button class="chromora-remove-btn" onclick="chromoraCheckout.remove('${item._id || item.id}')">Remove</button>
+              <button class="chromvault-qty-btn" onclick="chromvaultCheckout.updateQty('${item._id || item.id}', 1)">+</button>
+              <button class="chromvault-remove-btn" onclick="chromvaultCheckout.remove('${item._id || item.id}')">Remove</button>
             </div>
           </div>
         </div>
       `).join('');
 
       footerEl.innerHTML = `
-        <div class="chromora-summary-row">
+        <div class="chromvault-summary-row">
           <span>Subtotal</span>
           <span>₹${Cart.total()}</span>
         </div>
-        <div class="chromora-summary-row">
+        <div class="chromvault-summary-row">
           <span>Shipping</span>
           <span style="color: #10b981;">FREE</span>
         </div>
-        <div class="chromora-summary-row chromora-summary-total">
+        <div class="chromvault-summary-row chromvault-summary-total">
           <span>Total</span>
           <span>₹${Cart.total()}</span>
         </div>
-        <button class="chromora-btn-primary" id="chromora-proceed-checkout-btn">Proceed to Checkout</button>
+        <button class="chromvault-btn-primary" id="chromvault-proceed-checkout-btn">Proceed to Checkout</button>
       `;
 
-      document.getElementById('chromora-proceed-checkout-btn').onclick = () => {
+      document.getElementById('chromvault-proceed-checkout-btn').onclick = () => {
         openDrawer('checkout');
       };
     } else if (currentView === 'checkout') {
       titleEl.innerText = 'CHECKOUT DETAILS';
 
       contentEl.innerHTML = `
-        <form id="chromora-checkout-form" class="chromora-checkout-form">
-          <div class="chromora-form-group">
+        <form id="chromvault-checkout-form" class="chromvault-checkout-form">
+          <div class="chromvault-form-group">
             <label>Full Name *</label>
             <input type="text" id="cust-name" placeholder="John Doe" required />
           </div>
-          <div class="chromora-form-group">
+          <div class="chromvault-form-group">
             <label>Phone Number *</label>
             <input type="tel" id="cust-phone" placeholder="10-digit mobile number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required />
           </div>
-          <div class="chromora-form-group">
+          <div class="chromvault-form-group">
             <label>Email Address <span style="color:#888;font-size:12px;">(Optional)</span></label>
             <input type="email" id="cust-email" placeholder="john@example.com" />
           </div>
           <div style="display: flex; gap: 10px;">
-            <div class="chromora-form-group" style="flex: 1;">
+            <div class="chromvault-form-group" style="flex: 1;">
               <label>State *</label>
               <input type="text" id="cust-state" list="state-list" required autocomplete="off" placeholder="Type to search state" style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;" />
               <datalist id="state-list"></datalist>
             </div>
-            <div class="chromora-form-group" style="flex: 1;">
+            <div class="chromvault-form-group" style="flex: 1;">
               <label>District *</label>
               <input type="text" id="cust-district" list="district-list" required disabled autocomplete="off" placeholder="Select state first" style="width:100%; padding: 12px 14px; background: #141414; color: #fff; border: 1px solid #333; border-radius: 6px; outline: none; font-size: 15px;" />
               <datalist id="district-list"></datalist>
             </div>
           </div>
           <div style="display: flex; gap: 10px;">
-            <div class="chromora-form-group" style="flex: 2;">
+            <div class="chromvault-form-group" style="flex: 2;">
               <label>City / Town / Locality *</label>
               <input type="text" id="cust-city" placeholder="Locality" required />
             </div>
-            <div class="chromora-form-group" style="flex: 1;">
+            <div class="chromvault-form-group" style="flex: 1;">
               <label>Pincode *</label>
               <input type="text" id="cust-pincode" placeholder="6-digit" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" required />
               <div id="pincode-msg" style="font-size:11px; margin-top:4px; font-weight:500;"></div>
             </div>
           </div>
-          <div class="chromora-form-group">
+          <div class="chromvault-form-group">
             <label>Street Address / House / Locality *</label>
             <input type="text" id="cust-address" list="address-suggestions" placeholder="Search for your area, street, or building" required />
             <datalist id="address-suggestions"></datalist>
           </div>
-          <div class="chromora-form-group" style="margin-top: 12px; background: #141414; border: 1px solid #333; border-radius: 6px; padding: 12px 14px; color: #aaa; font-size: 13px;">
+          <div class="chromvault-form-group" style="margin-top: 12px; background: #141414; border: 1px solid #333; border-radius: 6px; padding: 12px 14px; color: #aaa; font-size: 13px;">
             💳 Payment via <strong style="color:#fff;">Razorpay</strong> (UPI, Cards, Net Banking, Wallets)
           </div>
         </form>
@@ -696,30 +696,30 @@
       }, 50);
 
       footerEl.innerHTML = `
-        <div class="chromora-summary-row chromora-summary-total" style="margin-top: 0; padding-top: 0; border: none;">
+        <div class="chromvault-summary-row chromvault-summary-total" style="margin-top: 0; padding-top: 0; border: none;">
           <span>Total Payable</span>
           <span>₹${Cart.total()}</span>
         </div>
-        <button class="chromora-btn-primary" id="chromora-pay-btn">Pay Now (₹${Cart.total()})</button>
-        <button class="chromora-btn-secondary" id="chromora-back-cart-btn">Back to Cart</button>
+        <button class="chromvault-btn-primary" id="chromvault-pay-btn">Pay Now (₹${Cart.total()})</button>
+        <button class="chromvault-btn-secondary" id="chromvault-back-cart-btn">Back to Cart</button>
       `;
 
-      document.getElementById('chromora-back-cart-btn').onclick = () => {
+      document.getElementById('chromvault-back-cart-btn').onclick = () => {
         openDrawer('cart');
       };
 
-      document.getElementById('chromora-pay-btn').onclick = handlePayment;
+      document.getElementById('chromvault-pay-btn').onclick = handlePayment;
     } else if (currentView === 'success') {
       titleEl.innerText = 'ORDER CONFIRMED';
 
       contentEl.innerHTML = `
-        <div class="chromora-success-card">
-          <div class="chromora-success-icon">✓</div>
-          <h3 class="chromora-success-title">Thank you for your order!</h3>
-          <p class="chromora-success-desc">
+        <div class="chromvault-success-card">
+          <div class="chromvault-success-icon">✓</div>
+          <h3 class="chromvault-success-title">Thank you for your order!</h3>
+          <p class="chromvault-success-desc">
             Your order was placed successfully. A confirmation has been sent to your email.
           </p>
-          <div class="chromora-receipt">
+          <div class="chromvault-receipt">
             <p><strong>Order ID:</strong> ${lastOrderData?.orderId || 'N/A'}</p>
             <p><strong>Customer:</strong> ${lastOrderData?.customerName || 'Customer'}</p>
             <p><strong>Amount:</strong> ₹${lastOrderData?.total || 0}</p>
@@ -730,7 +730,7 @@
       `;
 
       footerEl.innerHTML = `
-        <button class="chromora-btn-primary" onclick="window.location.href='/'">Continue Shopping</button>
+        <button class="chromvault-btn-primary" onclick="window.location.href='/'">Continue Shopping</button>
       `;
     }
   }
@@ -784,7 +784,7 @@
       alert('Please enter a valid PIN code that matches your selected State and District.');
       return;
     }
-    const payBtn = document.getElementById('chromora-pay-btn');
+    const payBtn = document.getElementById('chromvault-pay-btn');
     payBtn.disabled = true;
     payBtn.innerText = 'Processing...';
     isProcessing = true;
@@ -840,9 +840,9 @@
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'Chromora Jewelry',
+        name: 'Chromvault Jewelry',
         description: 'Order Payment',
-        image: 'https://chromora.in/wp-content/uploads/2026/04/cropped-Group-1-1.png',
+        image: 'https://chromvault.in/wp-content/uploads/2026/04/cropped-Group-1-1.png',
         order_id: orderData.id,
         prefill: { name, email, contact: phone },
         theme: { color: '#000000' },
@@ -899,7 +899,7 @@
   function updateUI() {
     const cart = Cart.get();
     const count = cart.reduce((c, i) => c + (i.quantity || 1), 0);
-    const badge = document.getElementById('chromora-cart-count');
+    const badge = document.getElementById('chromvault-cart-count');
     if (badge) badge.innerText = count;
 
     // Also update any theme-native cart counters
@@ -911,15 +911,15 @@
       }
     });
 
-    if (document.getElementById('chromora-drawer')?.classList.contains('active')) {
+    if (document.getElementById('chromvault-drawer')?.classList.contains('active')) {
       renderDrawer();
     }
   }
 
   // Event Listeners
-  document.getElementById('chromora-cart-trigger').onclick = () => openDrawer('cart');
-  document.getElementById('chromora-drawer-close').onclick = closeDrawer;
-  document.getElementById('chromora-drawer-overlay').onclick = closeDrawer;
+  document.getElementById('chromvault-cart-trigger').onclick = () => openDrawer('cart');
+  document.getElementById('chromvault-drawer-close').onclick = closeDrawer;
+  document.getElementById('chromvault-drawer-overlay').onclick = closeDrawer;
 
   // Intercept any click on header cart links
   document.querySelectorAll('.ast-header-woo-cart, .cart-container, a[href*="/cart"]').forEach(el => {
@@ -930,7 +930,7 @@
   });
 
   // Global Checkout Object
-  window.chromoraCheckout = {
+  window.chromvaultCheckout = {
     open: openDrawer,
     close: closeDrawer,
     add: (item) => Cart.add(item),

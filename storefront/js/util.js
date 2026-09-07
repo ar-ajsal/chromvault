@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — UTILITIES
+   CHROMVAULT — UTILITIES
    DOM helpers, escaping, money, product field normalisation.
 
    Product/category documents come from a WooCommerce migration, so almost

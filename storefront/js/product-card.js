@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — PRODUCT CARD  (v2 — premium redesign)
+   CHROMVAULT — PRODUCT CARD  (v2 — premium redesign)
    ----------------------------------------------------------------------------
    One renderer for every product surface (home rails, shop grid, search,
    related). Cards are built as HTML strings for speed on long grids; all

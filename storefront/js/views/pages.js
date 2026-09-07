@@ -1,10 +1,10 @@
 /* ============================================================================
-   CHROMORA — STATIC DOCUMENTS
+   CHROMVAULT — STATIC DOCUMENTS
    ----------------------------------------------------------------------------
    /track /contact /shipping-policy /returns /privacy /terms /about
 
    The shipping, returns, privacy and contact copy here is the merchant's own
-   published text, carried over verbatim from the live chromora.in pages so the
+   published text, carried over verbatim from the live chromvault.in pages so the
    migration does not quietly rewrite a policy the customer may have relied on.
    Anything I added is additive and factual: a short "what actually happens at
    checkout" note on the policy pages, stating only things that are true of this
@@ -20,7 +20,7 @@
 
   var Views = window.Views = window.Views || {};
 
-  var CFG = window.CHROMORA_CONFIG || {};
+  var CFG = window.CHROMVAULT_CONFIG || {};
   var C = CFG.CONTACT || {};
 
   /* ── Contact link helpers ────────────────────────────────────────────────── */
@@ -53,7 +53,7 @@
                  waHref(subject ? (subject + ' — ') : '')]);
     }
     if (C.instagram) rows.push(['spark', 'Instagram', '@' + C.instagram, igHref()]);
-    if (C.email) rows.push(['mail', 'Email', C.email, mailHref(subject || 'Chromora')]);
+    if (C.email) rows.push(['mail', 'Email', C.email, mailHref(subject || 'Chromvault')]);
     if (!rows.length) return '';
 
     return '' +
@@ -85,7 +85,7 @@
     /* ---------------------------------------------------------------- track */
     track: {
       title: 'Track your order',
-      desc: 'Find your Chromora order number and get a shipping update.',
+      desc: 'Find your Chromvault order number and get a shipping update.',
       html: function () {
         var p = Router.params();
         var pre = p.order || p.id || '';
@@ -145,8 +145,8 @@
         function message() {
           var id = ref();
           return id
-            ? ('Hi Chromora, I would like a shipping update on order ' + id + '.')
-            : 'Hi Chromora, I would like a shipping update on my order. ';
+            ? ('Hi Chromvault, I would like a shipping update on order ' + id + '.')
+            : 'Hi Chromvault, I would like a shipping update on my order. ';
         }
         function need() {
           // Not a hard requirement — the shop can look an order up by phone —
@@ -184,14 +184,14 @@
     /* -------------------------------------------------------------- contact */
     contact: {
       title: 'Contact us',
-      desc: 'WhatsApp, Instagram or email Chromora — usually answered within 24 hours.',
+      desc: 'WhatsApp, Instagram or email Chromvault — usually answered within 24 hours.',
       html: function () {
         return '' +
           '<h1>Contact us</h1>' +
           '<p class="lead" style="font-size:var(--t-sm);color:var(--ink-3);max-width:52ch">' +
             'For orders, support, or collaborations. WhatsApp is the fastest.' +
           '</p>' +
-          helpBlock('Chromora enquiry') +
+          helpBlock('Chromvault enquiry') +
           '<h2>Before you message</h2>' +
           list([
             'Chasing a parcel? Have your order number ready — see <a class="dlink" href="/track" data-nav>track your order</a>.',
@@ -204,7 +204,7 @@
     /* ------------------------------------------------------------- shipping */
     shipping: {
       title: 'Shipping policy',
-      desc: 'Processing times, delivery estimates and shipping charges for Chromora orders in India.',
+      desc: 'Processing times, delivery estimates and shipping charges for Chromvault orders in India.',
       html: function () {
         return '' +
           '<h1>Shipping policy</h1>' +
@@ -244,7 +244,7 @@
     /* -------------------------------------------------------------- returns */
     returns: {
       title: 'Return & replacement policy',
-      desc: 'Chromora replaces damaged or incorrect items reported within 48 hours with unboxing proof.',
+      desc: 'Chromvault replaces damaged or incorrect items reported within 48 hours with unboxing proof.',
       html: function () {
         return '' +
           '<h1>Return &amp; replacement policy</h1>' +
@@ -264,7 +264,7 @@
           '<p>' +
             'Replacement requests without unboxing proof may not be accepted. ' +
             'Customised products are non-returnable and non-refundable. ' +
-            'Chromora reserves the right to reject fraudulent claims.' +
+            'Chromvault reserves the right to reject fraudulent claims.' +
           '</p>' +
 
           '<h2>Why we ask for an unboxing video</h2>' +
@@ -282,7 +282,7 @@
     /* -------------------------------------------------------------- privacy */
     privacy: {
       title: 'Privacy policy',
-      desc: 'What Chromora collects, what it is used for, and who it is shared with.',
+      desc: 'What Chromvault collects, what it is used for, and who it is shared with.',
       html: function () {
         var maps = !!CFG.MAPS_KEY;
         return '' +
@@ -305,7 +305,7 @@
             (maps
               ? '<b>Google Maps Places</b> powers the optional "find my address" field at checkout. If you type in that one field, those keystrokes go to Google to fetch suggestions. Leave it alone and type your address in the boxes below it, and nothing is sent to Google.'
               : '<b>No address autocomplete</b> runs at checkout — the address you type stays in your browser until you submit the order.'),
-            '<b>Your own device</b> holds your cart (<code>chromora_cart</code>) and, if you complete an order, your delivery details (<code>chromora_details</code>) so you do not retype them next time. Both live in this browser\'s local storage, not on our servers. Clearing your browser data removes them.'
+            '<b>Your own device</b> holds your cart (<code>chromvault_cart</code>) and, if you complete an order, your delivery details (<code>chromvault_details</code>) so you do not retype them next time. Both live in this browser\'s local storage, not on our servers. Clearing your browser data removes them.'
           ]) +
 
           '<h2>Your order record</h2>' +
@@ -323,12 +323,12 @@
     /* ---------------------------------------------------------------- terms */
     terms: {
       title: 'Terms & conditions',
-      desc: 'The terms you accept when ordering from Chromora.',
+      desc: 'The terms you accept when ordering from Chromvault.',
       html: function () {
         return '' +
           '<h1>Terms &amp; conditions</h1>' +
           '<p>' +
-            'These terms cover buying from chromora.in. Placing an order means you accept them, ' +
+            'These terms cover buying from chromvault.in. Placing an order means you accept them, ' +
             'along with the ' +
             '<a class="dlink" href="/shipping-policy" data-nav>shipping</a>, ' +
             '<a class="dlink" href="/returns" data-nav>return &amp; replacement</a> and ' +
@@ -359,7 +359,7 @@
 
           '<h2>Use of this website</h2>' +
           list([
-            'Product images and site content belong to Chromora and may not be reused commercially without permission.',
+            'Product images and site content belong to Chromvault and may not be reused commercially without permission.',
             'Do not attempt to interfere with the site, its checkout, or other customers\' orders.',
             'We may refuse or cancel an order we believe to be fraudulent, and will refund any amount already taken on a cancelled order.'
           ]) +
@@ -377,10 +377,10 @@
     /* ---------------------------------------------------------------- about */
     about: {
       title: 'About',
-      desc: 'Chromora is an independent archive of rare streetwear and chrome-finished accessories, shipping across India.',
+      desc: 'Chromvault is an independent archive of rare streetwear and chrome-finished accessories, shipping across India.',
       html: function () {
         return '' +
-          '<h1>About Chromora</h1>' +
+          '<h1>About Chromvault</h1>' +
           '<p class="lead" style="font-size:var(--t-md);color:var(--ink-2);max-width:46ch">' +
             'An independent archive of rare streetwear and chrome-finished accessories.' +
           '</p>' +

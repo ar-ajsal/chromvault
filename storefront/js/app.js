@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — ROUTER + BOOT
+   CHROMVAULT — ROUTER + BOOT
    ----------------------------------------------------------------------------
    A History-API router. Every internal <a> carries data-nav and is intercepted
    in shell.js, which calls Router.go(). Direct entry and refresh work because
@@ -130,7 +130,7 @@
   /* ── Boot ────────────────────────────────────────────────────────────────
      Order matters: the shell wires global handlers and starts the category
      fetch, then the first route renders. Views that need categories listen for
-     the 'chromora:categories' event rather than waiting on it, so the first
+     the 'chromvault:categories' event rather than waiting on it, so the first
      paint is never blocked by the category request. */
   function boot() {
     Shell.init();

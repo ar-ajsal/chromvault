@@ -1,5 +1,5 @@
 /* ============================================================================
-   CHROMORA — PANEL (cart + checkout drawer)
+   CHROMVAULT — PANEL (cart + checkout drawer)
    ----------------------------------------------------------------------------
    The drawer is the primary cart surface: it opens over whatever the shopper is
    browsing, so adding an item never costs them their place in the grid. The

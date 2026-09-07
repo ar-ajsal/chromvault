@@ -80,7 +80,7 @@ app.use('/v1/orders', require('./routes/orderRoutes'));
 app.use('/v1/reviews', require('./routes/reviewRoutes'));
 
 app.get('/', (req, res) => {
-  res.send('Chromora Backend API is running...');
+  res.send('Chromvault Backend API is running...');
 });
 
 // ─── 404 for unknown routes ────────────────────────────────

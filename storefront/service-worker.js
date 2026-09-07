@@ -1,11 +1,11 @@
 /* ============================================================================
-   CHROMORA STOREFRONT — SERVICE WORKER
+   CHROMVAULT STOREFRONT — SERVICE WORKER
    ----------------------------------------------------------------------------
    Scope: the customer site only. The admin Command Center is a separate
-   application with its own service worker ('chromora-admin-v3'), so two rules
+   application with its own service worker ('chromvault-admin-v3'), so two rules
    are absolute here:
 
-     1. Every cache this worker creates is prefixed 'chromora-store-'.
+     1. Every cache this worker creates is prefixed 'chromvault-store-'.
      2. Cleanup only ever deletes keys carrying that prefix. Anything else in
         caches.keys() — the admin's caches included — is left alone.
 
@@ -32,7 +32,7 @@
 
 'use strict';
 
-var PREFIX = 'chromora-store-';
+var PREFIX = 'chromvault-store-';
 var VERSION = 'v1';
 
 var SHELL_CACHE = PREFIX + 'shell-' + VERSION;
@@ -155,7 +155,7 @@ function offlineShell() {
   return new Response(
     '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    '<meta name="theme-color" content="#F2F1EE"><title>Offline — Chromora</title>' +
+    '<meta name="theme-color" content="#F2F1EE"><title>Offline — Chromvault</title>' +
     '<style>html{color-scheme:light}body{margin:0;min-height:100vh;display:grid;' +
     'place-items:center;background:#F2F1EE;color:#0A0A0B;text-align:center;' +
     'padding:24px;font:400 16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",' +
@@ -164,7 +164,7 @@ function offlineShell() {
     'max-width:34ch}button{font:inherit;font-weight:600;padding:12px 22px;' +
     'border:0;border-radius:999px;background:#0A0A0B;color:#F2F1EE;cursor:pointer}' +
     '</style></head><body><div><h1>You are offline</h1>' +
-    '<p>Chromora needs a connection to show live stock and prices.</p>' +
+    '<p>Chromvault needs a connection to show live stock and prices.</p>' +
     '<button onclick="location.reload()">Try again</button></div></body></html>',
     { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
   );
