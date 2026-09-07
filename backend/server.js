@@ -90,14 +90,13 @@ app.use((req, res) => {
 });
 
 // ─── Centralized error handler ─────────────────────────────
-// Catches CORS rejections and any error passed via next(err). Avoids leaking
-// stack traces to clients while logging the full error server-side.
 app.use((err, req, res, next) => {
   console.error('[error]', err && err.message ? err.message : err);
   if (err && /not allowed by CORS/.test(err.message || '')) {
     return res.status(403).send({ message: 'Origin not allowed.' });
   }
-  res.status(500).send({ message: 'Internal server error.' });
+  // Expose the real error message to the frontend for debugging
+  res.status(500).send({ message: err ? err.message : 'Internal server error.' });
 });
 
 const PORT = process.env.PORT || 5000;
