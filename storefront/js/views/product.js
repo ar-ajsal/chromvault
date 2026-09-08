@@ -65,10 +65,10 @@
 
   function skeletonHtml() {
     return '' +
-      '<div class="wrap">' +
+      '<div class="wrap pdp-wrap">' +
         '<div class="pdp">' +
           '<div class="gal">' +
-            '<div class="sk" style="aspect-ratio:4/5;border-radius:var(--r-3)"></div>' +
+            '<div class="sk gal-sk" style="aspect-ratio:1/1;"></div>' +
             '<div class="gal-thumbs">' +
               new Array(4).fill('<div class="sk" style="width:66px;height:82px;border-radius:var(--r-2);flex:none"></div>').join('') +
             '</div>' +
@@ -114,7 +114,7 @@
     Views.setMeta(title, desc || ('Buy ' + title + ' at Chromvault — limited single-run stock, free shipping across India.'));
 
     Views.mount(
-      '<div class="wrap">' +
+      '<div class="wrap pdp-wrap">' +
         crumb(p) +
         '<div class="pdp">' +
           galleryHtml(p) +
@@ -134,7 +134,7 @@
   function crumb(p) {
     var cat = U.pcat(p);
     return '' +
-      '<nav class="crumb" aria-label="Breadcrumb" style="padding-top:var(--s5)">' +
+      '<nav class="crumb pdp-crumb" aria-label="Breadcrumb">' +
         '<a href="/" data-nav>Home</a><span class="sep">/</span>' +
         '<a href="/shop" data-nav>Shop</a>' +
         (cat ? '<span class="sep">/</span><span>' + U.esc(cat) + '</span>' : '') +
@@ -271,14 +271,14 @@
     return '' +
       '<div class="pdp-actions">' +
         '<div class="pdp-actions-row">' +
-          '<div class="qty">' +
+          '<div class="qty" style="border-radius:0;">' +
             '<button data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="16"></button>' +
             '<output id="pdpQty" aria-live="polite">1</output>' +
             '<button data-qty="1" aria-label="Increase quantity" data-ic="plus" data-ic-size="16"></button>' +
           '</div>' +
-          '<button class="btn btn-primary btn-lg" id="pdpAdd">Add to cart</button>' +
+          '<button class="btn btn-lg" id="pdpAdd" style="background:#333;color:#fff;box-shadow:none;border-radius:0;">' + ICON('bag', 18) + ' Add to cart</button>' +
         '</div>' +
-        '<button class="btn btn-metal btn-lg btn-block" id="pdpBuy">Buy it now</button>' +
+        '<button class="btn btn-lg btn-block" id="pdpBuy" style="background:#000;color:#fff;box-shadow:none;border-radius:0;">Buy it now</button>' +
         '<div class="secnote">' + ICON('lock', 12) + 'Secure checkout · Razorpay</div>' +
       '</div>';
   }
@@ -405,6 +405,32 @@
         b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
       });
     });
+
+    // Mobile swipe for gallery
+    var galMain = U.$('#galMain');
+    if (galMain && imgs.length > 1) {
+      var touchStartX = 0;
+      var touchStartY = 0;
+      galMain.addEventListener('touchstart', function (e) {
+        if (e.touches && e.touches[0]) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+      galMain.addEventListener('touchend', function (e) {
+        if (e.changedTouches && e.changedTouches[0]) {
+          var dx = e.changedTouches[0].clientX - touchStartX;
+          var dy = e.changedTouches[0].clientY - touchStartY;
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+            var next = dx < 0
+              ? (S.imgIndex + 1) % imgs.length
+              : (S.imgIndex - 1 + imgs.length) % imgs.length;
+            var targetBtn = U.$('[data-thumb="' + next + '"]', view);
+            if (targetBtn) targetBtn.click();
+          }
+        }
+      }, { passive: true });
+    }
 
     // Broken remote images (Cloudinary miss, dead scraped URL) are handled by
     // the single capture-phase listener in Shell — see initEvents.
