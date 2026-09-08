@@ -32,7 +32,6 @@
 
     Views.mount(
       heroHtml() +
-      bandHtml() +
       '<section class="section-sm" id="homeCats"><div class="wrap">' + catsSkeleton() + '</div></section>' +
       '<section class="section" id="homeNew">' +
         '<div class="wrap">' +
@@ -123,8 +122,6 @@
 
   /* ── New arrivals ──────────────────────────────────────────────────────── */
   function paintNew(r) {
-    initBand();
-
     if (!r.products.length) {
       Views.fill('#homeNew .wrap', Views.stateHtml({
         icon: 'box',
