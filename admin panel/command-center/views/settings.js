@@ -114,6 +114,23 @@
       '<button class="btn primary" id="btnUploadHeroMedia" disabled>' + icon('check') + 'Upload & Save</button>' +
       '</div></div>' +
 
+      // Campaign Media Panel
+      '<div class="panel" style="margin-bottom:20px">' +
+      '<div class="panel-head">' +
+      '<h3>' + icon('image') + 'Storefront Campaign Media</h3>' +
+      '</div>' +
+      '<div class="panel-pad">' +
+      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;">' +
+      'Upload a video (.mp4, .webm) or an image (.jpg, .png, .webp) for the campaign slot on the storefront homepage. (Max 10MB)' +
+      '</p>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">' +
+      '<input type="file" id="campaignMediaInput" accept="video/mp4,video/webm,image/jpeg,image/png,image/webp" style="display:none">' +
+      '<button class="btn ghost" onclick="document.getElementById(\'campaignMediaInput\').click()">' + icon('upload') + 'Choose File</button>' +
+      '<span id="campaignMediaName" class="cell-sub" style="font-size:13px">No file chosen</span>' +
+      '</div>' +
+      '<button class="btn primary" id="btnUploadCampaignMedia" disabled>' + icon('check') + 'Upload & Save</button>' +
+      '</div></div>' +
+
       // Lookbook Slider ("As Seen On 'Yall") Panel
       '<div class="panel" style="margin-bottom:20px">' +
       '<div class="panel-head" style="display:flex;align-items:center;justify-content:space-between">' +
@@ -328,6 +345,45 @@
           .then(function () {
             heroBtn.disabled = true;
             heroBtn.innerHTML = icon('check') + 'Upload & Save';
+          });
+      });
+    }
+
+    // Campaign Media Upload logic
+    var campInput = root.querySelector('#campaignMediaInput');
+    var campName = root.querySelector('#campaignMediaName');
+    var campBtn = root.querySelector('#btnUploadCampaignMedia');
+    if (campInput && campBtn) {
+      campInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+          campName.textContent = this.files[0].name;
+          campBtn.disabled = false;
+        } else {
+          campName.textContent = 'No file chosen';
+          campBtn.disabled = true;
+        }
+      });
+      campBtn.addEventListener('click', function () {
+        var file = campInput.files[0];
+        if (!file) return;
+        campBtn.disabled = true;
+        campBtn.innerHTML = UI.spinner() + ' Uploading...';
+        
+        CC.API.upload(file)
+          .then(function (url) {
+            return CC.API.put('/settings/campaign_media', { value: url });
+          })
+          .then(function () {
+            CC.toast('Campaign media updated successfully!', 'ok');
+            campName.textContent = 'Live on storefront';
+            campInput.value = '';
+          })
+          .catch(function (e) {
+            CC.toast(e.message || 'Upload failed', 'bad');
+          })
+          .then(function () {
+            campBtn.disabled = true;
+            campBtn.innerHTML = icon('check') + 'Upload & Save';
           });
       });
     }

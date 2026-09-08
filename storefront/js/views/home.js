@@ -90,8 +90,25 @@
         }
       }
     }).catch(function(err) {
-      // Ignore if not set or fails, it will just remain empty or fallback
       console.warn('Hero media not loaded', err);
+    });
+
+    // Fetch dynamic campaign media
+    API.get('/settings/campaign_media').then(function(res) {
+      if (Router.stale(t)) return;
+      var campaignContainer = U.$('#homeCampaignMedia');
+      if (!campaignContainer) return;
+      var url = res && res.value;
+      if (url) {
+        var isVideo = url.match(/\.(mp4|webm)$/i) || url.indexOf('/video/') > -1;
+        if (isVideo) {
+          campaignContainer.innerHTML = '<video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;"><source src="' + U.escAttr(url) + '"></video>';
+        } else {
+          campaignContainer.innerHTML = '<img src="' + U.escAttr(url) + '" alt="Campaign Media" style="object-fit:cover;width:100%;height:100%;">';
+        }
+      }
+    }).catch(function(err) {
+      console.warn('Campaign media not loaded', err);
     });
 
     // Categories may already be loaded by the shell; if not, wait for its event.
@@ -410,27 +427,15 @@
     }
   }
 
-  /* ── Editorial split ─────────────────────────────────────────────────────
-     A campaign slot the operator can fill later by dropping an image at
-     /assets/campaign/editorial.jpg. Until then it shows the chrome "asset
-     pending" surface — deliberately abstract, never stock photography. */
+  /* ── Campaign Media ──────────────────────────────────────────────────────
+     A campaign slot the operator can fill via the admin panel.
+     Until then it shows the chrome "asset pending" surface. */
   function splitHtml() {
     return '' +
       '<section class="section-sm">' +
-        '<div class="wrap split reveal">' +
-          '<div class="slot" data-campaign="editorial">' +
+        '<div class="wrap reveal">' +
+          '<div class="slot" id="homeCampaignMedia" data-campaign="editorial">' +
             '<div class="slot-pending"><span>Campaign slot</span></div>' +
-          '</div>' +
-          '<div>' +
-            '<span class="eyebrow">The label</span>' +
-            '<h2 class="display t-xl" style="margin-top:var(--s4)">Bought once,<br />never again</h2>' +
-            '<p class="lead" style="margin-top:var(--s4)">Every piece here was sourced in a single run. ' +
-              'There is no reorder pipeline and no second drop: stock counts on this site are the ' +
-              'literal number of items in hand.</p>' +
-            '<div class="row" style="gap:var(--s3);margin-top:var(--s6);flex-wrap:wrap">' +
-              '<a class="btn btn-primary" href="/shop" data-nav>Browse the archive</a>' +
-              '<a class="btn btn-ghost" href="/shipping-policy" data-nav>Shipping &amp; returns</a>' +
-            '</div>' +
           '</div>' +
         '</div>' +
       '</section>';
