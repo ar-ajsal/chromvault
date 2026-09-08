@@ -115,6 +115,7 @@
     state.badges[route] = count && count > 0 ? count : 0;
     renderNav(); setActiveNav();
   }
+  CC.setBadge = setBadge;
 
   // ---- Breadcrumbs ----------------------------------------------------------
   function setCrumbs(parts) {
@@ -207,10 +208,12 @@
       { group: 'Navigate', title: 'Orders', hint: 'All orders', icon: 'cart', run: function () { navigate('orders'); } },
       { group: 'Navigate', title: 'Products', hint: 'Catalog', icon: 'box', run: function () { navigate('products'); } },
       { group: 'Navigate', title: 'Categories', hint: 'Catalog', icon: 'layers', run: function () { navigate('categories'); } },
+      { group: 'Navigate', title: 'Reviews', hint: 'Feedback & ratings', icon: 'star', run: function () { navigate('reviews'); } },
       { group: 'Navigate', title: 'Customers', hint: 'People', icon: 'users', run: function () { navigate('customers'); } },
       { group: 'Navigate', title: 'Settings', hint: 'System', icon: 'settings', run: function () { navigate('settings'); } },
       { group: 'Actions', title: 'New product', hint: 'Create', icon: 'plus', run: function () { navigate('products', {}); setTimeout(function () { if (global.Views.products.openEditor) global.Views.products.openEditor(); }, 60); } },
       { group: 'Actions', title: 'Pending orders', hint: 'Filter', icon: 'clock', run: function () { navigate('orders', { status: 'Pending' }); } },
+      { group: 'Actions', title: 'Pending reviews', hint: 'Moderate', icon: 'star', run: function () { navigate('reviews', {}); } },
       { group: 'Actions', title: 'Refresh view', hint: 'Reload data', icon: 'refresh', run: function () { render(); } },
       { group: 'Actions', title: 'Sign out', hint: 'End session', icon: 'log-out', run: function () { logout(); } }
     ];

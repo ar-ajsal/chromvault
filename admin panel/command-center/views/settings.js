@@ -114,6 +114,27 @@
       '<button class="btn primary" id="btnUploadHeroMedia" disabled>' + icon('check') + 'Upload & Save</button>' +
       '</div></div>' +
 
+      // Lookbook Slider ("As Seen On 'Yall") Panel
+      '<div class="panel" style="margin-bottom:20px">' +
+      '<div class="panel-head" style="display:flex;align-items:center;justify-content:space-between">' +
+      '<h3>' + icon('layers') + 'Lookbook Slider ("AS SEEN ON \'YALL")</h3>' +
+      '<span class="badge ok"><i class="d"></i>Homepage Slider</span>' +
+      '</div>' +
+      '<div class="panel-pad">' +
+      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;">' +
+      'Manage images displayed in the auto-scrolling lookbook slider under New Arrivals on the storefront homepage.' +
+      '</p>' +
+      '<div id="lookbookPreviewGrid" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;min-height:80px;align-items:center">' +
+      UI.spinner() +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+      '<input type="file" id="lookbookFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none">' +
+      '<button class="btn primary" id="btnChooseLookbook">' + icon('upload') + 'Upload Images</button>' +
+      '<button class="btn ghost" id="btnResetLookbook" style="color:var(--ink-3)">' + icon('refresh') + 'Reset to Defaults</button>' +
+      '<span id="lookbookUploadStatus" class="cell-sub" style="font-size:13px"></span>' +
+      '</div>' +
+      '</div></div>' +
+
       // Push Notifications Panel
       '<div class="panel" style="margin-bottom:20px">' +
       '<div class="panel-head">' +
@@ -308,6 +329,108 @@
             heroBtn.disabled = true;
             heroBtn.innerHTML = icon('check') + 'Upload & Save';
           });
+      });
+    }
+
+    // Lookbook Slider logic
+    var defaultLookbook = [
+      '/assets/lookbook/lookbook-1.jpg',
+      '/assets/lookbook/lookbook-2.jpg',
+      '/assets/lookbook/lookbook-3.jpg',
+      '/assets/lookbook/lookbook-4.jpg',
+      '/assets/lookbook/lookbook-5.jpg'
+    ];
+    var currentLookbook = [];
+    var lookbookGrid = root.querySelector('#lookbookPreviewGrid');
+    var lookbookInput = root.querySelector('#lookbookFileInput');
+    var btnChooseLb = root.querySelector('#btnChooseLookbook');
+    var btnResetLb = root.querySelector('#btnResetLookbook');
+    var lbStatus = root.querySelector('#lookbookUploadStatus');
+
+    function renderLookbookImages(imgs) {
+      if (!lookbookGrid) return;
+      if (!imgs || !imgs.length) {
+        lookbookGrid.innerHTML = '<div class="cell-sub" style="font-size:13px;padding:12px">No images uploaded. Storefront is using default lookbook images.</div>';
+        return;
+      }
+      lookbookGrid.innerHTML = imgs.map(function (url, idx) {
+        return '<div style="position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--bg-card);flex:none;box-shadow:0 2px 8px rgba(0,0,0,0.2)">' +
+          '<img src="' + esc(url) + '" style="width:100%;height:100%;object-fit:cover" />' +
+          '<button type="button" class="btn-del-lb" data-idx="' + idx + '" style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.85);color:#ff5555;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;padding:0;line-height:1;font-weight:bold" title="Delete image">×</button>' +
+        '</div>';
+      }).join('');
+
+      lookbookGrid.querySelectorAll('.btn-del-lb').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          var idx = parseInt(this.getAttribute('data-idx'), 10);
+          currentLookbook.splice(idx, 1);
+          saveLookbook(currentLookbook);
+        });
+      });
+    }
+
+    function saveLookbook(imgs) {
+      if (lbStatus) lbStatus.textContent = 'Saving...';
+      CC.API.put('/settings/lookbook_slider', { value: imgs }).then(function () {
+        CC.toast('Lookbook slider updated successfully!', 'ok');
+        if (lbStatus) lbStatus.textContent = imgs.length + ' image' + (imgs.length === 1 ? '' : 's') + ' live on storefront';
+        renderLookbookImages(imgs);
+      }).catch(function (err) {
+        CC.toast(err.message || 'Failed to save lookbook', 'bad');
+        if (lbStatus) lbStatus.textContent = 'Error saving';
+      });
+    }
+
+    CC.API.get('/settings/lookbook_slider').then(function (res) {
+      var val = (res && res.value && (Array.isArray(res.value) ? res.value : res.value.images)) || defaultLookbook;
+      currentLookbook = (val && val.length) ? val.slice() : defaultLookbook.slice();
+      renderLookbookImages(currentLookbook);
+      if (lbStatus) lbStatus.textContent = currentLookbook.length + ' images configured';
+    }).catch(function () {
+      currentLookbook = defaultLookbook.slice();
+      renderLookbookImages(currentLookbook);
+    });
+
+    if (btnChooseLb && lookbookInput) {
+      btnChooseLb.addEventListener('click', function () { lookbookInput.click(); });
+      lookbookInput.addEventListener('change', function () {
+        var files = Array.from(this.files || []);
+        if (!files.length) return;
+        btnChooseLb.disabled = true;
+        btnChooseLb.innerHTML = UI.spinner() + ' Uploading (' + files.length + ')...';
+        if (lbStatus) lbStatus.textContent = 'Uploading ' + files.length + ' files to Cloudinary...';
+
+        var uploadedUrls = [];
+        var p = Promise.resolve();
+        files.forEach(function (f) {
+          p = p.then(function () {
+            return CC.API.upload(f).then(function (url) {
+              if (url) uploadedUrls.push(url);
+            });
+          });
+        });
+
+        p.then(function () {
+          currentLookbook = currentLookbook.concat(uploadedUrls);
+          saveLookbook(currentLookbook);
+          CC.toast('Uploaded ' + uploadedUrls.length + ' images successfully!', 'ok');
+        }).catch(function (err) {
+          CC.toast(err.message || 'Upload failed', 'bad');
+        }).then(function () {
+          btnChooseLb.disabled = false;
+          btnChooseLb.innerHTML = icon('upload') + 'Upload Images';
+          lookbookInput.value = '';
+        });
+      });
+    }
+
+    if (btnResetLb) {
+      btnResetLb.addEventListener('click', function () {
+        if (confirm('Reset lookbook slider to default 5 rebel images?')) {
+          currentLookbook = defaultLookbook.slice();
+          saveLookbook(currentLookbook);
+        }
       });
     }
 

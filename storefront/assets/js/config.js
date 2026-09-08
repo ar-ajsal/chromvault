@@ -58,7 +58,7 @@
     /* Optional. Injected by frontendServer.js when VITE_GOOGLE_MAPS_API_KEY is
        configured. When absent, checkout uses manual address entry only —
        Google Maps is never a hard dependency. */
-    MAPS_KEY: window.__CHROMVAULT_MAPS_KEY__ || '',
+    MAPS_KEY: window.__CHROMVAULT_MAPS_KEY__ || 'AIzaSyC0QC0Gfsfe1l-1rLVS2Cd5hTyUYXc8OR8',
 
     /* Support channels. These are the real details published on the live
        chromvault.in contact page, kept here so the footer, the contact page and

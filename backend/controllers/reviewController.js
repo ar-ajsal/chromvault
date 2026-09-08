@@ -44,13 +44,28 @@ exports.requestReview = async (req, res) => {
 // GET /v1/admin/reviews
 exports.listReviewsAdmin = async (req, res) => {
   try {
-    const status = req.query.status || 'pending_moderation';
-    const reviews = await Review.find({ status })
-      .populate('productId', 'title image')
-      .populate('orderId', 'customerName')
-      .sort({ createdAt: -1 });
+    const status = req.query.status;
+    const filter = (!status || status === 'all') ? {} : { status };
     
-    res.json({ reviews });
+    const reviews = await Review.find(filter)
+      .populate('productId', 'title image')
+      .populate('orderId', 'customerName customerEmail totalAmount createdAt')
+      .sort({ createdAt: -1 });
+
+    const allReviews = await Review.find({}).lean();
+    const stats = {
+      total: allReviews.length,
+      pending: allReviews.filter(r => r.status === 'pending_moderation').length,
+      approved: allReviews.filter(r => r.status === 'approved').length,
+      rejected: allReviews.filter(r => r.status === 'rejected').length,
+      pendingSubmission: allReviews.filter(r => r.status === 'pending_submission').length,
+      avgRating: (
+        allReviews.filter(r => r.rating).reduce((sum, r) => sum + r.rating, 0) /
+        (allReviews.filter(r => r.rating).length || 1)
+      ).toFixed(1)
+    };
+    
+    res.json({ reviews, stats });
   } catch (err) {
     console.error('listReviewsAdmin error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -61,9 +76,9 @@ exports.listReviewsAdmin = async (req, res) => {
 exports.moderateReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // 'approved' or 'rejected'
+    const { status } = req.body; // 'approved', 'rejected', or 'pending_moderation'
 
-    if (!['approved', 'rejected'].includes(status)) {
+    if (!['approved', 'rejected', 'pending_moderation'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
@@ -73,6 +88,46 @@ exports.moderateReview = async (req, res) => {
     res.json({ review });
   } catch (err) {
     console.error('moderateReview error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// DELETE /v1/reviews/:id
+exports.deleteReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const review = await Review.findByIdAndDelete(id);
+    if (!review) return res.status(404).json({ error: 'Review not found' });
+    res.json({ message: 'Review deleted successfully', id });
+  } catch (err) {
+    console.error('deleteReview error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// POST /v1/reviews/admin/create
+exports.createReviewAdmin = async (req, res) => {
+  try {
+    const { customerName, customerEmail, rating, text, productId, status } = req.body;
+    if (!customerName || !rating || !text) {
+      return res.status(400).json({ error: 'Customer name, rating, and review text are required' });
+    }
+
+    const token = crypto.randomBytes(16).toString('hex');
+    const review = await Review.create({
+      customerName: customerName.trim(),
+      customerEmail: (customerEmail || '').trim(),
+      rating: Number(rating),
+      text: text.trim(),
+      productId: productId || null,
+      status: status || 'approved',
+      token
+    });
+
+    const populated = await Review.findById(review._id).populate('productId', 'title image');
+    res.status(201).json({ message: 'Review created successfully', review: populated });
+  } catch (err) {
+    console.error('createReviewAdmin error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -92,11 +147,12 @@ exports.validateToken = async (req, res) => {
       return res.status(400).json({ error: 'Review already submitted' });
     }
 
-    res.json({ 
-      valid: true, 
-      productId: review.productId._id,
-      productTitle: review.productId.title,
-      productImage: review.productId.image && review.productId.image.length ? review.productId.image[0] : null
+    res.json({
+      product: {
+        id: review.productId._id,
+        title: review.productId.title,
+        image: review.productId.image && review.productId.image[0]
+      }
     });
   } catch (err) {
     console.error('validateToken error:', err);
@@ -144,7 +200,7 @@ exports.getProductReviews = async (req, res) => {
       id: r._id,
       rating: r.rating,
       text: r.text,
-      customerName: r.orderId ? r.orderId.customerName : 'Verified Buyer',
+      customerName: r.customerName || (r.orderId ? r.orderId.customerName : 'Verified Buyer'),
       date: r.updatedAt
     }));
 
@@ -160,14 +216,15 @@ exports.getAllReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ status: 'approved' })
       .populate('orderId', 'customerName')
+      .populate('productId', 'title image')
       .sort({ updatedAt: -1 })
-      .limit(10); // Limit to recent 10 for the homepage
+      .limit(30);
 
     const formattedReviews = reviews.map(r => ({
       id: r._id,
       rating: r.rating,
       text: r.text,
-      customerName: r.orderId ? r.orderId.customerName : 'Verified Buyer',
+      customerName: r.customerName || (r.orderId ? r.orderId.customerName : 'Verified Buyer'),
       date: r.updatedAt
     }));
 

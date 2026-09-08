@@ -39,11 +39,13 @@
             eyebrow: 'Just landed',
             title: 'New arrivals',
             href: '/shop?sort=new',
-            linkLabel: 'All new'
+            linkLabel: 'All new',
+            noRule: true
           }) +
           '<div class="pgrid" id="homeNewGrid">' + Card.skeletons(4) + '</div>' +
         '</div>' +
       '</section>' +
+      lookbookHtml() +
       '<div id="homeSale"></div>' +
       splitHtml() +
       '<div id="homeFeatured"></div>' +
@@ -70,6 +72,8 @@
     }).catch(function(e) {
       console.warn('Failed to load reviews for home:', e);
     });
+
+    loadLookbook(t);
 
     // Fetch dynamic hero media
     API.get('/settings/hero_media').then(function(res) {
@@ -104,6 +108,115 @@
       });
     }
   };
+
+  /* ── Lookbook Slider ("AS SEEN ON 'YALL") ─────────────────────────────────── */
+  var defaultLookbookImages = [
+    '/assets/lookbook/lookbook-1.jpg',
+    '/assets/lookbook/lookbook-2.jpg',
+    '/assets/lookbook/lookbook-3.jpg',
+    '/assets/lookbook/lookbook-4.jpg',
+    '/assets/lookbook/lookbook-5.jpg'
+  ];
+
+  function lookbookHtml() {
+    var tickerPart = "DON'T MISS OUT • ARCHIVE DROP 001 • LIMITED PIECES • ";
+    var repeated = new Array(8).fill(tickerPart).join('');
+    return '' +
+      '<section class="lookbook-section" id="homeLookbook">' +
+        '<div class="lookbook-ticker">' +
+          '<div class="lookbook-ticker-track">' +
+            '<span>' + U.esc(repeated) + '</span>' +
+            '<span>' + U.esc(repeated) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="wrap">' +
+          '<div class="lookbook-head">' +
+            '<h2 class="lookbook-title">AS SEEN ON \'YALL</h2>' +
+            '<p class="lookbook-sub">Built for the rebels!</p>' +
+          '</div>' +
+        '</div>' +
+        '<div class="lookbook-slider-wrap">' +
+          '<div class="lookbook-rail" id="lookbookRail"></div>' +
+        '</div>' +
+      '</section>';
+  }
+
+  function loadLookbook(t) {
+    API.get('/settings/lookbook_slider').then(function (res) {
+      if (Router.stale(t)) return;
+      var val = (res && res.value && (Array.isArray(res.value) ? res.value : res.value.images));
+      var imgs = (val && val.length) ? val : defaultLookbookImages;
+      paintLookbook(imgs);
+    }).catch(function () {
+      if (Router.stale(t)) return;
+      paintLookbook(defaultLookbookImages);
+    });
+  }
+
+  function paintLookbook(images) {
+    var rail = U.$('#lookbookRail');
+    if (!rail || !images || !images.length) return;
+
+    // Multiply images so infinite auto-scroll is seamless and full width
+    var list = images.slice();
+    while (list.length < 15) {
+      list = list.concat(images);
+    }
+
+    rail.innerHTML = list.map(function (src, i) {
+      return '<div class="lookbook-card">' +
+        '<img src="' + U.escAttr(src) + '" alt="Lookbook rebellion ' + (i + 1) + '" loading="lazy" />' +
+      '</div>';
+    }).join('');
+
+    var isDown = false;
+    var startX = 0;
+    var scrollStart = 0;
+    var isHovered = false;
+
+    rail.addEventListener('mouseenter', function () { isHovered = true; });
+    rail.addEventListener('mouseleave', function () { isHovered = false; isDown = false; });
+
+    rail.addEventListener('mousedown', function (e) {
+      isDown = true;
+      startX = e.pageX - rail.offsetLeft;
+      scrollStart = rail.scrollLeft;
+    });
+    window.addEventListener('mouseup', function () { isDown = false; });
+    rail.addEventListener('mousemove', function (e) {
+      if (!isDown) return;
+      e.preventDefault();
+      var x = e.pageX - rail.offsetLeft;
+      var walk = (x - startX) * 1.5;
+      rail.scrollLeft = scrollStart - walk;
+    });
+
+    rail.addEventListener('touchstart', function (e) {
+      isDown = true;
+      startX = e.touches[0].pageX - rail.offsetLeft;
+      scrollStart = rail.scrollLeft;
+    }, { passive: true });
+    rail.addEventListener('touchend', function () { isDown = false; }, { passive: true });
+    rail.addEventListener('touchmove', function (e) {
+      if (!isDown) return;
+      var x = e.touches[0].pageX - rail.offsetLeft;
+      var walk = (x - startX) * 1.5;
+      rail.scrollLeft = scrollStart - walk;
+    }, { passive: true });
+
+    function autoSlide() {
+      if (!isDown && !isHovered && rail && document.body.contains(rail)) {
+        rail.scrollLeft += 1;
+        if (rail.scrollLeft >= (rail.scrollWidth - rail.clientWidth - 4)) {
+          rail.scrollLeft = 0;
+        }
+      }
+      if (document.body.contains(rail)) {
+        requestAnimationFrame(autoSlide);
+      }
+    }
+    requestAnimationFrame(autoSlide);
+  }
 
   /* ── Hero ────────────────────────────────────────────────────────────────
      The signature. Displays the dynamically uploaded video or image from admin. */

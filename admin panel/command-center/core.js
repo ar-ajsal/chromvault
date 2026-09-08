@@ -82,6 +82,7 @@
     put: function (p, b) { return request('PUT', p, b); },
     patch: function (p, b) { return request('PATCH', p, b); },
     del: function (p) { return request('DELETE', p); },
+    delete: function (p) { return request('DELETE', p); },
     // Cloudinary upload (multipart; no JSON content-type)
     upload: function (file) {
       var fd = new FormData();
