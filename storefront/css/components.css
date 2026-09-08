@@ -494,6 +494,8 @@
 }
 .rail::-webkit-scrollbar { display: none; }
 .rail > * { scroll-snap-align: start; }
+.rail--marquee { scroll-snap-type: none; pointer-events: none; }
+.rail--marquee > * { scroll-snap-align: none; pointer-events: all; }
 @media (min-width: 900px) {
   .rail { grid-auto-columns: minmax(240px, 320px); }
 }

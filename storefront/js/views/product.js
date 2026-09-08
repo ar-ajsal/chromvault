@@ -631,7 +631,7 @@
             '<div style="color:var(--ink-3);font-size:13px;margin-top:4px">Based on ' + reviews.length + ' review' + (reviews.length === 1 ? '' : 's') + '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="rail" style="gap:16px">' +
+        '<div class="rail rail--marquee" style="gap:16px">' +
         reviews.map(function(rev) {
           var revStars = '';
           for (var i = 1; i <= 5; i++) {

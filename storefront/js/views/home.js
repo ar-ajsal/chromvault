@@ -102,9 +102,9 @@
       if (url) {
         var isVideo = url.match(/\.(mp4|webm)$/i) || url.indexOf('/video/') > -1;
         if (isVideo) {
-          campaignContainer.innerHTML = '<video autoplay loop muted playsinline style="width:100%;height:100%;max-height:80vh;object-fit:contain;background:#000;"><source src="' + U.escAttr(url) + '"></video>';
+          campaignContainer.innerHTML = '<video autoplay loop muted playsinline style="display:block;width:100%;height:100%;object-fit:cover;"><source src="' + U.escAttr(url) + '"></video>';
         } else {
-          campaignContainer.innerHTML = '<img src="' + U.escAttr(url) + '" alt="Campaign Media" style="width:100%;height:100%;max-height:80vh;object-fit:contain;background:#000;">';
+          campaignContainer.innerHTML = '<img src="' + U.escAttr(url) + '" alt="Campaign Media" style="display:block;width:100%;height:100%;object-fit:cover;">';
         }
       }
     }).catch(function(err) {
@@ -379,7 +379,7 @@
       '<div style="text-align:center;margin-bottom:var(--s5)">' +
         '<h2 class="display t-md" style="font-size:24px;font-weight:400;color:var(--ink)">Loved by Our Customers</h2>' +
       '</div>' +
-      '<div class="rail" style="gap:16px">' +
+      '<div class="rail rail--marquee" style="gap:16px">' +
       reviews.map(function(rev) {
         var revStars = '';
         for (var i = 1; i <= 5; i++) {
@@ -402,24 +402,25 @@
     
     var rail = host.querySelector('.rail');
     if (rail) {
-      var isDown = false;
-      var paused = false;
+      // Duplicate cards for seamless infinite loop
+      Array.from(rail.children).forEach(function(c) {
+        rail.appendChild(c.cloneNode(true));
+      });
       
-      rail.addEventListener('mousedown', function() { isDown = true; });
-      rail.addEventListener('mouseup', function() { isDown = false; });
-      rail.addEventListener('mouseleave', function() { isDown = false; paused = false; });
-      rail.addEventListener('mouseenter', function() { paused = true; });
-      rail.addEventListener('touchstart', function() { isDown = true; });
-      rail.addEventListener('touchend', function() { isDown = false; });
+      var isDown = false;
+      var speed = 1.2;
+      
+      rail.addEventListener('mouseenter', function() { speed = 0; });
+      rail.addEventListener('mouseleave', function() { speed = 1.2; });
+      rail.addEventListener('touchstart', function() { speed = 0; }, { passive: true });
+      rail.addEventListener('touchend', function() { speed = 1.2; });
       
       function autoScroll() {
-        if (!isDown && !paused && rail && document.body.contains(rail)) {
-          rail.scrollLeft += 1;
-          if (rail.scrollLeft >= rail.scrollWidth - rail.clientWidth) {
-            rail.scrollLeft = 0;
+        if (rail && document.body.contains(rail)) {
+          rail.scrollLeft += speed;
+          if (rail.scrollLeft >= rail.scrollWidth / 2) {
+            rail.scrollLeft -= rail.scrollWidth / 2;
           }
-        }
-        if (document.body.contains(rail)) {
           requestAnimationFrame(autoScroll);
         }
       }
