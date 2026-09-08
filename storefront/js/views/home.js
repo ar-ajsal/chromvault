@@ -139,7 +139,7 @@
 
   /* ── Category index ────────────────────────────────────────────────────── */
   function catsSkeleton() {
-    var card = '<div class="cat-card sk-card" aria-hidden="true"><div class="sk sk-media" style="border-radius: 50%; max-width: 120px; margin: 0 auto; aspect-ratio: 1/1;"></div><div class="sk sk-line w40" style="margin: 12px auto 0;"></div></div>';
+    var card = '<div class="cat-card sk-card" aria-hidden="true"><div class="sk sk-media" style="border-radius: 50%; max-width: 100px; margin: 0 auto; aspect-ratio: 1/1;"></div><div class="sk sk-line w40" style="margin: 12px auto 0;"></div></div>';
     return '<div class="cat-grid">' + new Array(4).fill(card).join('') + '</div>';
   }
 
