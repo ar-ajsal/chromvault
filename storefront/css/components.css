@@ -476,7 +476,7 @@
   padding: 0;
 }
 @media (min-width: 600px) {
-  .pgrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .pgrid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 }
 
 /* Horizontal rail for homepage sections. Scroll-snap so it feels native on
