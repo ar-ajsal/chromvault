@@ -631,27 +631,52 @@
             '<div style="color:var(--ink-3);font-size:13px;margin-top:4px">Based on ' + reviews.length + ' review' + (reviews.length === 1 ? '' : 's') + '</div>' +
           '</div>' +
         '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:var(--s4)">' +
+        '<div class="rail" style="gap:16px">' +
         reviews.map(function(rev) {
           var revStars = '';
           for (var i = 1; i <= 5; i++) {
             revStars += '<span style="color:' + (i <= rev.rating ? '#FFD700' : 'var(--ink-hair)') + ';font-size:14px">★</span>';
           }
           var name = rev.customerName || 'Verified Buyer';
-          var date = new Date(rev.date || rev.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
           var initials = name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
-          return '<div style="background:var(--paper-sink);border-radius:var(--r-2);padding:var(--s4)">' +
-            '<div style="display:flex;gap:2px;margin-bottom:8px">' + revStars + '</div>' +
-            '<p style="color:var(--ink-2);line-height:1.6;font-size:14px;margin:0 0 16px">"' + U.esc(rev.text) + '"</p>' +
-            '<div style="display:flex;align-items:center;gap:10px">' +
-              '<div style="width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--f-mono);font-weight:500;flex:none">' + initials + '</div>' +
-              '<div style="font-size:13px;font-weight:500;color:var(--ink)">' + U.esc(name.split(' ')[0]) + '</div>' +
+          return '<div style="background:var(--paper);border:1px solid var(--paper-edge);border-radius:var(--r-2);padding:24px;width:320px;flex:none;display:flex;flex-direction:column">' +
+            '<div style="display:flex;gap:2px;margin-bottom:16px">' + revStars + '</div>' +
+            '<p style="color:var(--ink-2);line-height:1.6;font-size:14px;margin:0 0 24px;flex:1">"' + U.esc(rev.text) + '"</p>' +
+            '<div style="display:flex;align-items:center;gap:12px">' +
+              '<div style="width:36px;height:36px;border-radius:50%;background:var(--warn-soft);color:var(--warn);display:flex;align-items:center;justify-content:center;font-size:13px;font-family:var(--f-mono);font-weight:600;flex:none">' + initials + '</div>' +
+              '<div style="font-size:14px;font-weight:500;color:var(--ink)">' + U.esc(name) + '</div>' +
             '</div>' +
           '</div>';
         }).join('') +
         '</div></div></section>';
         
       Views.fill(host, html);
+
+      var rail = host.querySelector('.rail');
+      if (rail) {
+        var isDown = false;
+        var paused = false;
+        
+        rail.addEventListener('mousedown', function() { isDown = true; });
+        rail.addEventListener('mouseup', function() { isDown = false; });
+        rail.addEventListener('mouseleave', function() { isDown = false; paused = false; });
+        rail.addEventListener('mouseenter', function() { paused = true; });
+        rail.addEventListener('touchstart', function() { isDown = true; });
+        rail.addEventListener('touchend', function() { isDown = false; });
+        
+        function autoScroll() {
+          if (!isDown && !paused && rail && document.body.contains(rail)) {
+            rail.scrollLeft += 1;
+            if (rail.scrollLeft >= rail.scrollWidth - rail.clientWidth) {
+              rail.scrollLeft = 0;
+            }
+          }
+          if (document.body.contains(rail)) {
+            requestAnimationFrame(autoScroll);
+          }
+        }
+        requestAnimationFrame(autoScroll);
+      }
     }).catch(function (e) {
       console.warn('Failed to load reviews:', e);
       if (host) host.innerHTML = '';

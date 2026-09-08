@@ -269,6 +269,32 @@
       '</div></div></section>';
       
     Views.fill(host, html);
+    
+    var rail = host.querySelector('.rail');
+    if (rail) {
+      var isDown = false;
+      var paused = false;
+      
+      rail.addEventListener('mousedown', function() { isDown = true; });
+      rail.addEventListener('mouseup', function() { isDown = false; });
+      rail.addEventListener('mouseleave', function() { isDown = false; paused = false; });
+      rail.addEventListener('mouseenter', function() { paused = true; });
+      rail.addEventListener('touchstart', function() { isDown = true; });
+      rail.addEventListener('touchend', function() { isDown = false; });
+      
+      function autoScroll() {
+        if (!isDown && !paused && rail && document.body.contains(rail)) {
+          rail.scrollLeft += 1;
+          if (rail.scrollLeft >= rail.scrollWidth - rail.clientWidth) {
+            rail.scrollLeft = 0;
+          }
+        }
+        if (document.body.contains(rail)) {
+          requestAnimationFrame(autoScroll);
+        }
+      }
+      requestAnimationFrame(autoScroll);
+    }
   }
 
   /* ── Editorial split ─────────────────────────────────────────────────────
