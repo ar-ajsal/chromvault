@@ -175,7 +175,7 @@
     }).join('');
 
     host.innerHTML = '<div class="wrap">' +
-        Views.head({ eyebrow: 'Browse', title: 'Categories', href: '/shop', linkLabel: 'Everything' }) +
+        Views.head({ eyebrow: 'Browse', title: 'Categories', href: '/shop', linkLabel: 'Everything', noRule: true }) +
         '<div class="cat-grid">' + cards + '</div>' +
       '</div>';
   }

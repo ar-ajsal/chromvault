@@ -174,7 +174,7 @@
             ' <span class="arw">' + ICON('arrow', 14) + '</span></a>'
           : '') +
       '</div>' +
-      '<hr class="chrome-rule" />';
+      (opt.noRule ? '' : '<hr class="chrome-rule" />');
   };
 
   /* Retry / reload buttons rendered by the states above. Delegated once, at the
