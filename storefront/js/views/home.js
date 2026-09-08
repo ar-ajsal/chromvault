@@ -34,8 +34,14 @@
       heroHtml() +
       '<section class="section-sm" id="homeCats"><div class="wrap">' + catsSkeleton() + '</div></section>' +
       '<section class="section" id="homeNew">' +
-        '<div class="wrap" style="padding-top:0">' +
-          '<div class="pgrid" id="homeNewGrid">' + Card.skeletons(8) + '</div>' +
+        '<div class="wrap">' +
+          Views.head({
+            eyebrow: 'Just landed',
+            title: 'New arrivals',
+            href: '/shop?sort=new',
+            linkLabel: 'All new'
+          }) +
+          '<div class="pgrid" id="homeNewGrid">' + Card.skeletons(4) + '</div>' +
         '</div>' +
       '</section>' +
       '<div id="homeSale"></div>' +
@@ -126,8 +132,8 @@
       return;
     }
 
-    // Eight newest. The list is already createdAt-desc from the controller.
-    var newest = r.products.slice(0, 8);
+    // Four newest. The list is already createdAt-desc from the controller.
+    var newest = r.products.slice(0, 4);
     Views.fill('#homeNewGrid', Card.grid(newest, { eager: true, showNew: true }));
   }
 
