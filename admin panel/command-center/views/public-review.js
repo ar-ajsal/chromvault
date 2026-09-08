@@ -33,17 +33,28 @@
   function init() {
     var token = getQueryParam('token');
 
-    // 1. Check if an external storefront URL is saved in Settings
+    // 1. Check if an external storefront URL is saved in Settings or auto-detect it
     try {
+      var targetOrigin = '';
       var saved = localStorage.getItem('chromvault_storefront_url');
       if (saved && saved.trim()) {
-        saved = saved.trim().replace(/\/+$/, '');
-        var parsedOrigin = new URL(saved).origin;
-        if (parsedOrigin !== window.location.origin) {
-          var targetUrl = saved + '/review' + window.location.search;
-          window.location.replace(targetUrl);
-          return;
+        targetOrigin = saved.trim().replace(/\/+$/, '');
+      } else {
+        var host = window.location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1') {
+          targetOrigin = window.location.protocol + '//' + host + ':3000';
+        } else if (host.endsWith('.vercel.app')) {
+          var storeHost = host.replace(/-admin\b/i, '').replace(/\badmin-/i, '');
+          if (storeHost !== host) {
+            targetOrigin = window.location.protocol + '//' + storeHost;
+          }
         }
+      }
+
+      if (targetOrigin && targetOrigin !== window.location.origin) {
+        var targetUrl = targetOrigin + '/review' + window.location.search + window.location.hash;
+        window.location.replace(targetUrl);
+        return;
       }
     } catch (e) {}
 

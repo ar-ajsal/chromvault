@@ -122,7 +122,7 @@ exports.submitReview = async (req, res) => {
 
     review.rating = rating;
     review.text = text;
-    review.status = 'pending_moderation';
+    review.status = 'approved';
     await review.save();
 
     res.json({ message: 'Review submitted successfully' });
