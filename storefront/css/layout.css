@@ -903,12 +903,12 @@
   .pdp-info { position: sticky; top: 104px; }
 }
 .pdp-title {
-  font-family: var(--f-display);
-  font-weight: 800;
-  font-stretch: 118%;
+  font-family: var(--f-body);
+  font-weight: 400;
+  font-stretch: normal;
   font-size: clamp(1.7rem, 4.4vw, 2.7rem);
-  line-height: 0.98;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--ink);
 }
