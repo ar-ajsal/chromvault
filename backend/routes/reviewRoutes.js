@@ -11,5 +11,7 @@ router.put('/:id/moderate', protectAdmin, reviewController.moderateReview);
 // Public routes
 router.get('/validate/:token', reviewController.validateToken);
 router.post('/submit/:token', reviewController.submitReview);
+router.get('/all', reviewController.getAllReviews);
+router.get('/:id', reviewController.getProductReviews);
 
 module.exports = router;

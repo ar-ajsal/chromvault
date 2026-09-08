@@ -47,6 +47,7 @@
       '<div id="homeSale"></div>' +
       splitHtml() +
       '<div id="homeFeatured"></div>' +
+      '<div id="homeReviews"></div>' +
       trustHtml()
     );
 
@@ -61,6 +62,13 @@
       Views.fill('#homeNewGrid', '');
       var sec = U.$('#homeNew .wrap');
       if (sec) Views.fill(sec, Views.errorHtml(err));
+    });
+
+    API.allReviews().then(function(reviews) {
+      if (Router.stale(t)) return;
+      paintReviews(reviews);
+    }).catch(function(e) {
+      console.warn('Failed to load reviews for home:', e);
     });
 
     // Fetch dynamic hero media
@@ -226,6 +234,41 @@
         '</div>' +
       '</section>'
     );
+  }
+
+  /* ── Reviews ───────────────────────────────────────────────────────────── */
+  function paintReviews(reviews) {
+    var host = U.$('#homeReviews');
+    if (!host) return;
+    
+    if (!reviews || !reviews.length) {
+      host.innerHTML = ''; return;
+    }
+
+    var html = '<section class="section"><div class="wrap">' +
+      '<div style="text-align:center;margin-bottom:var(--s5)">' +
+        '<h2 class="display t-md" style="font-size:24px;font-weight:400;color:var(--ink)">Loved by Our Customers</h2>' +
+      '</div>' +
+      '<div class="rail" style="gap:16px">' +
+      reviews.map(function(rev) {
+        var revStars = '';
+        for (var i = 1; i <= 5; i++) {
+          revStars += '<span style="color:' + (i <= rev.rating ? '#FFD700' : 'var(--ink-hair)') + ';font-size:14px">★</span>';
+        }
+        var name = rev.customerName || 'Verified Buyer';
+        var initials = name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
+        return '<div style="background:var(--paper);border:1px solid var(--paper-edge);border-radius:var(--r-2);padding:24px;width:320px;flex:none;display:flex;flex-direction:column">' +
+          '<div style="display:flex;gap:2px;margin-bottom:16px">' + revStars + '</div>' +
+          '<p style="color:var(--ink-2);line-height:1.6;font-size:14px;margin:0 0 24px;flex:1">"' + U.esc(rev.text) + '"</p>' +
+          '<div style="display:flex;align-items:center;gap:12px">' +
+            '<div style="width:36px;height:36px;border-radius:50%;background:var(--warn-soft);color:var(--warn);display:flex;align-items:center;justify-content:center;font-size:13px;font-family:var(--f-mono);font-weight:600;flex:none">' + initials + '</div>' +
+            '<div style="font-size:14px;font-weight:500;color:var(--ink)">' + U.esc(name) + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+      '</div></div></section>';
+      
+    Views.fill(host, html);
   }
 
   /* ── Editorial split ─────────────────────────────────────────────────────

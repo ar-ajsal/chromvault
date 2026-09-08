@@ -616,10 +616,10 @@
       reviews.forEach(function(rev) { sum += rev.rating; });
       var avg = (sum / reviews.length).toFixed(1);
 
-      var stars = '';
+      var starsHtml = '';
       var numStars = Math.round(avg);
       for (var i = 1; i <= 5; i++) {
-        stars += '<span style="color:' + (i <= numStars ? '#FFD700' : 'var(--line)') + '">' + ICON('star', 20) + '</span>';
+        starsHtml += '<span style="color:' + (i <= numStars ? '#FFD700' : 'var(--ink-hair)') + ';font-size:18px">★</span>';
       }
 
       var html = '<section class="section"><div class="wrap">' +
@@ -627,27 +627,26 @@
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:var(--s5)">' +
           '<div style="font-size:32px;font-weight:700;font-family:var(--f-display)">' + avg + '</div>' +
           '<div>' +
-            '<div style="display:flex;gap:4px">' + stars + '</div>' +
+            '<div style="display:flex;gap:2px">' + starsHtml + '</div>' +
             '<div style="color:var(--ink-3);font-size:13px;margin-top:4px">Based on ' + reviews.length + ' review' + (reviews.length === 1 ? '' : 's') + '</div>' +
           '</div>' +
         '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:var(--s4)">' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:var(--s4)">' +
         reviews.map(function(rev) {
           var revStars = '';
           for (var i = 1; i <= 5; i++) {
-            revStars += '<span style="color:' + (i <= rev.rating ? '#FFD700' : 'var(--line)') + ';font-size:14px">★</span>';
+            revStars += '<span style="color:' + (i <= rev.rating ? '#FFD700' : 'var(--ink-hair)') + ';font-size:14px">★</span>';
           }
-          var name = rev.orderId ? rev.orderId.customerName : 'Verified Buyer';
-          var date = new Date(rev.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
-          return '<div style="background:var(--paper-sink);border-radius:var(--r-3);padding:var(--s4)">' +
-            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">' +
-              '<div>' +
-                '<div style="font-weight:600">' + U.esc(name) + '</div>' +
-                '<div style="color:var(--ink-3);font-size:12px;margin-top:2px">' + date + '</div>' +
-              '</div>' +
-              '<div style="display:flex">' + revStars + '</div>' +
+          var name = rev.customerName || 'Verified Buyer';
+          var date = new Date(rev.date || rev.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+          var initials = name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
+          return '<div style="background:var(--paper-sink);border-radius:var(--r-2);padding:var(--s4)">' +
+            '<div style="display:flex;gap:2px;margin-bottom:8px">' + revStars + '</div>' +
+            '<p style="color:var(--ink-2);line-height:1.6;font-size:14px;margin:0 0 16px">"' + U.esc(rev.text) + '"</p>' +
+            '<div style="display:flex;align-items:center;gap:10px">' +
+              '<div style="width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--f-mono);font-weight:500;flex:none">' + initials + '</div>' +
+              '<div style="font-size:13px;font-weight:500;color:var(--ink)">' + U.esc(name.split(' ')[0]) + '</div>' +
             '</div>' +
-            '<p style="color:var(--ink-2);line-height:1.5;font-size:14px;margin:0">"' + U.esc(rev.text) + '"</p>' +
           '</div>';
         }).join('') +
         '</div></div></section>';

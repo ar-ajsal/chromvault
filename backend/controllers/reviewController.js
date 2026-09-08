@@ -154,3 +154,26 @@ exports.getProductReviews = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// GET /v1/reviews/all
+exports.getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ status: 'approved' })
+      .populate('orderId', 'customerName')
+      .sort({ updatedAt: -1 })
+      .limit(10); // Limit to recent 10 for the homepage
+
+    const formattedReviews = reviews.map(r => ({
+      id: r._id,
+      rating: r.rating,
+      text: r.text,
+      customerName: r.orderId ? r.orderId.customerName : 'Verified Buyer',
+      date: r.updatedAt
+    }));
+
+    res.json({ reviews: formattedReviews });
+  } catch (err) {
+    console.error('getAllReviews error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};

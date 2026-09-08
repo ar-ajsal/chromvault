@@ -146,6 +146,13 @@
       return req('/orders/verify-payment', { method: 'POST', body: payload });
     },
 
+    /* ── Reviews ────────────────────────────────────────────────────────── */
+    allReviews: function () {
+      return cachedGet('revs', '/reviews/all').then(function(data) {
+        return (data && data.reviews) || [];
+      });
+    },
+
     /* ── Cache control ────────────────────────────────────────────────────
        Called after a successful order so stock counts re-fetch. */
     bust: function () {
