@@ -591,7 +591,10 @@
             btn.innerHTML = icon('check') + ' Copied!';
             btn.style.borderColor = 'var(--ok)';
             btn.style.color = 'var(--ok)';
-            CC.toast('Review link copied to clipboard!', 'ok');
+            
+            var msg = res.message && res.message !== 'Review request generated' ? res.message : 'Review link copied to clipboard!';
+            CC.toast(msg, 'ok');
+            
             setTimeout(function() {
               btn.innerHTML = originalHtml;
               btn.disabled = false;
