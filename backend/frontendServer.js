@@ -56,7 +56,7 @@ const LEGACY = process.env.STOREFRONT_LEGACY === '1';
    entry, and the privacy page stops claiming Google receives anything. The key
    is read from the environment and injected at request time — never written
    into a shipped file. */
-const MAPS_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const MAPS_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 

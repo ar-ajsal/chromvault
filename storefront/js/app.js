@@ -133,6 +133,14 @@
      the 'chromvault:categories' event rather than waiting on it, so the first
      paint is never blocked by the category request. */
   function boot() {
+    if (typeof Lenis !== 'undefined') {
+      var lenis = new Lenis();
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+    }
     Shell.init();
     Router.render({ scroll: false });
   }

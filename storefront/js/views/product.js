@@ -622,7 +622,7 @@
         starsHtml += '<span style="color:' + (i <= numStars ? '#FFD700' : 'var(--ink-hair)') + ';font-size:18px">★</span>';
       }
 
-      var html = '<section class="section"><div class="wrap">' +
+      var html = '<section class="section" style="padding-bottom:var(--s3);"><div class="wrap">' +
         Views.head({ eyebrow: 'Verified Buyers', title: 'Customer Reviews' }) +
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:var(--s5)">' +
           '<div style="font-size:32px;font-weight:700;font-family:var(--f-display)">' + avg + '</div>' +
@@ -657,6 +657,13 @@
         var isDown = false;
         var paused = false;
         
+        // Clone for seamless loop
+        if (rail.scrollWidth > rail.clientWidth) {
+          Array.from(rail.children).forEach(function(c) {
+            rail.appendChild(c.cloneNode(true));
+          });
+        }
+        
         rail.addEventListener('mousedown', function() { isDown = true; });
         rail.addEventListener('mouseup', function() { isDown = false; });
         rail.addEventListener('mouseleave', function() { isDown = false; paused = false; });
@@ -666,9 +673,9 @@
         
         function autoScroll() {
           if (!isDown && !paused && rail && document.body.contains(rail)) {
-            rail.scrollLeft += 1;
-            if (rail.scrollLeft >= rail.scrollWidth - rail.clientWidth) {
-              rail.scrollLeft = 0;
+            rail.scrollLeft += 1.5;
+            if (rail.scrollLeft >= rail.scrollWidth / 2) {
+              rail.scrollLeft -= rail.scrollWidth / 2;
             }
           }
           if (document.body.contains(rail)) {

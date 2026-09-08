@@ -102,9 +102,9 @@
       if (url) {
         var isVideo = url.match(/\.(mp4|webm)$/i) || url.indexOf('/video/') > -1;
         if (isVideo) {
-          campaignContainer.innerHTML = '<video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;"><source src="' + U.escAttr(url) + '"></video>';
+          campaignContainer.innerHTML = '<video autoplay loop muted playsinline style="width:100%;height:100%;max-height:80vh;object-fit:contain;background:#000;"><source src="' + U.escAttr(url) + '"></video>';
         } else {
-          campaignContainer.innerHTML = '<img src="' + U.escAttr(url) + '" alt="Campaign Media" style="object-fit:cover;width:100%;height:100%;">';
+          campaignContainer.innerHTML = '<img src="' + U.escAttr(url) + '" alt="Campaign Media" style="width:100%;height:100%;max-height:80vh;object-fit:contain;background:#000;">';
         }
       }
     }).catch(function(err) {
@@ -434,7 +434,7 @@
     return '' +
       '<section class="section-sm">' +
         '<div class="wrap reveal">' +
-          '<div class="slot" id="homeCampaignMedia" data-campaign="editorial">' +
+          '<div class="slot" id="homeCampaignMedia" data-campaign="editorial" style="border-radius:var(--r-3);overflow:hidden;background:#000;">' +
             '<div class="slot-pending"><span>Campaign slot</span></div>' +
           '</div>' +
         '</div>' +
