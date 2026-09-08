@@ -68,8 +68,15 @@
       : '';
 
     /* ── Add to cart CTA ─────────────────────────────────────────────────
-       Removed per user request. Only available on product details page. */
-    var cta = '';
+       Small white circle with bag+plus icon, always visible bottom-right. */
+    var cta = !out
+      ? '<div class="pcard-cta">' +
+          '<button class="pcard-btn" data-add="' + U.escAttr(id) + '" aria-label="Add ' + U.escAttr(title) + ' to cart">' +
+            '<span class="pcard-btn-icon">' + ICON('bag', 16) + '</span>' +
+            '<svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true" style="margin-left:-2px;margin-bottom:6px"><path stroke="currentColor" stroke-width="1.8" fill="none" d="M5 2v6M2 5h6"/></svg>' +
+          '</button>' +
+        '</div>'
+      : '';
 
     /* ── Price block ───────────────────────────────────────────────────── */
     var priceHtml =
