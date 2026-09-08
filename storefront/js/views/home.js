@@ -34,13 +34,7 @@
       heroHtml() +
       '<section class="section-sm" id="homeCats"><div class="wrap">' + catsSkeleton() + '</div></section>' +
       '<section class="section" id="homeNew">' +
-        '<div class="wrap">' +
-          Views.head({
-            eyebrow: 'Just landed',
-            title: 'New arrivals',
-            href: '/shop?sort=new',
-            linkLabel: 'All new'
-          }) +
+        '<div class="wrap" style="padding-top:0">' +
           '<div class="pgrid" id="homeNewGrid">' + Card.skeletons(8) + '</div>' +
         '</div>' +
       '</section>' +
