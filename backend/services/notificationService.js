@@ -10,6 +10,7 @@
    ========================================================================== */
 
 const admin = require('firebase-admin');
+const { getMessaging } = require('firebase-admin/messaging');
 const AdminPushToken = require('../models/AdminPushToken');
 
 let isInitialized = false;
@@ -143,7 +144,7 @@ async function sendNewOrderNotification(order) {
       }
     };
 
-    const response = await admin.messaging().sendEachForMulticast(message);
+    const response = await getMessaging().sendEachForMulticast(message);
     console.log(
       `[NotificationService] Order notification sent: ${response.successCount} succeeded, ${response.failureCount} failed.`
     );
@@ -218,7 +219,7 @@ async function sendTestNotification(adminId) {
     }
   };
 
-  const response = await admin.messaging().sendEachForMulticast(message);
+  const response = await getMessaging().sendEachForMulticast(message);
 
   const invalidTokens = [];
   response.responses.forEach((resp, idx) => {
