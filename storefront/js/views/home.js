@@ -369,66 +369,92 @@
     );
   }
 
-  /* ── Reviews ───────────────────────────────────────────────────────────── */
+  /* ── Reviews ───────────────────────────────────────────────────────── */
   function paintReviews(reviews) {
     var host = U.$('#homeReviews');
     if (!host) return;
-    
-    if (!reviews || !reviews.length) {
-      host.innerHTML = ''; return;
+    if (!reviews || !reviews.length) { host.innerHTML = ''; return; }
+
+    function stars(rating) {
+      var s = '';
+      for (var i = 1; i <= 5; i++) {
+        s += '<span style="color:' + (i <= rating ? '#F5A623' : '#ddd') + ';font-size:18px">&#9733;</span>';
+      }
+      return s;
+    }
+    function ago(date) {
+      if (!date) return '';
+      var d = Math.floor((Date.now() - new Date(date)) / 86400000);
+      return d < 1 ? 'Today' : d === 1 ? '1 day ago' : d + ' days ago';
     }
 
-    var html = '<section class="section"><div class="wrap">' +
-      '<div style="text-align:center;margin-bottom:var(--s5)">' +
-        '<h2 class="display t-md" style="font-size:24px;font-weight:400;color:var(--ink)">Loved by Our Customers</h2>' +
-      '</div>' +
-      '<div class="rail rail--marquee" style="gap:16px">' +
-      reviews.map(function(rev) {
-        var revStars = '';
-        for (var i = 1; i <= 5; i++) {
-          revStars += '<span style="color:' + (i <= rev.rating ? '#FFD700' : 'var(--ink-hair)') + ';font-size:14px">★</span>';
-        }
-        var name = rev.customerName || 'Verified Buyer';
-        var initials = name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
-        return '<div style="background:var(--paper);border:1px solid var(--paper-edge);border-radius:var(--r-2);padding:24px;width:320px;flex:none;display:flex;flex-direction:column">' +
-          '<div style="display:flex;gap:2px;margin-bottom:16px">' + revStars + '</div>' +
-          '<p style="color:var(--ink-2);line-height:1.6;font-size:14px;margin:0 0 24px;flex:1">"' + U.esc(rev.text) + '"</p>' +
-          '<div style="display:flex;align-items:center;gap:12px">' +
-            '<div style="width:36px;height:36px;border-radius:50%;background:var(--warn-soft);color:var(--warn);display:flex;align-items:center;justify-content:center;font-size:13px;font-family:var(--f-mono);font-weight:600;flex:none">' + initials + '</div>' +
-            '<div style="font-size:14px;font-weight:500;color:var(--ink)">' + U.esc(name) + '</div>' +
+    var slides = reviews.map(function(rev, i) {
+      var name = rev.customerName || 'Verified Buyer';
+      var initials = name.split(' ').slice(0,2).map(function(w){ return w[0] || ''; }).join('').toUpperCase();
+      var cs = 'var(--paper-sink)';
+      var ce = 'var(--paper-edge)';
+      var ci = 'var(--ink)';
+      var ci3 = 'var(--ink-3)';
+      var ci2 = 'var(--ink-2)';
+      var cp = 'var(--paper)';
+      var productLine = rev.productTitle
+        ? '<div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid ' + ce + ';margin-top:4px">' +
+            (rev.productImage
+              ? '<img src="' + (rev.productImage||'').replace(/"/g,'&quot;') + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:4px;background:' + cs + '">'
+              : '<div style="width:44px;height:44px;border-radius:4px;background:' + cs + '"></div>') +
+            '<span style="font-size:12px;color:' + ci3 + '">' + (rev.productTitle||'').replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</span>' +
+          '</div>'
+        : '';
+      return '<div class="rev-slide' + (i === 0 ? ' is-active' : '') + '">' +
+        '<div class="rev-card">' +
+          '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">' +
+            '<div style="display:flex;align-items:center;gap:12px">' +
+              '<div style="width:42px;height:42px;border-radius:50%;background:' + ci + ';color:' + cp + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex:none">' + initials + '</div>' +
+              '<div>' +
+                '<div style="font-weight:700;font-size:13px;color:' + ci + '">' + U.esc(name) + '</div>' +
+                '<div style="font-size:11px;color:' + ci3 + '">' + ago(rev.date) + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:1px">' + stars(rev.rating) + '</div>' +
           '</div>' +
-        '</div>';
-      }).join('') +
-      '</div></div></section>';
-      
+          '<p style="font-size:13px;color:' + ci2 + ';line-height:1.65;margin:0 0 16px">“' + U.esc(rev.text) + '”</p>' +
+          productLine +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    var dots = reviews.map(function(_, i) {
+      return '<button class="rev-dot' + (i === 0 ? ' is-active' : '') + '" data-idx="' + i + '"></button>';
+    }).join('');
+
+    var cs2 = 'var(--f-display)';
+    var html = '<section class="section"><div class="wrap">' +
+      '<div style="text-align:center;margin-bottom:var(--s6)">' +
+        '<h2 style="font-family:' + cs2 + ';font-size:clamp(1.8rem,5vw,2.4rem);font-weight:900;font-style:italic;text-transform:uppercase;line-height:1.1;color:var(--ink);margin:0 0 8px">Spotted on the<br>Right People!</h2>' +
+        '<p style="font-size:var(--t-body);color:var(--ink-3);margin:0">3000+ Pieces Already In Rotation!</p>' +
+      '</div>' +
+      '<div class="rev-carousel" id="revCarousel">' + slides + '</div>' +
+      '<div class="rev-nav"><button class="rev-arrow" id="revPrev">&#8249;</button>' +
+        '<div class="rev-dots">' + dots + '</div>' +
+        '<button class="rev-arrow" id="revNext">&#8250;</button>' +
+      '</div>' +
+    '</div></section>';
+
     Views.fill(host, html);
-    
-    var rail = host.querySelector('.rail');
-    if (rail) {
-      // Duplicate cards for seamless infinite loop
-      Array.from(rail.children).forEach(function(c) {
-        rail.appendChild(c.cloneNode(true));
-      });
-      
-      var isDown = false;
-      var speed = 1.2;
-      
-      rail.addEventListener('mouseenter', function() { speed = 0; });
-      rail.addEventListener('mouseleave', function() { speed = 1.2; });
-      rail.addEventListener('touchstart', function() { speed = 0; }, { passive: true });
-      rail.addEventListener('touchend', function() { speed = 1.2; });
-      
-      function autoScroll() {
-        if (rail && document.body.contains(rail)) {
-          rail.scrollLeft += speed;
-          if (rail.scrollLeft >= rail.scrollWidth / 2) {
-            rail.scrollLeft -= rail.scrollWidth / 2;
-          }
-          requestAnimationFrame(autoScroll);
-        }
-      }
-      requestAnimationFrame(autoScroll);
+
+    var cur = 0;
+    var sl = host.querySelectorAll('.rev-slide');
+    var dt = host.querySelectorAll('.rev-dot');
+    function goTo(idx) {
+      sl[cur].classList.remove('is-active'); dt[cur].classList.remove('is-active');
+      cur = (idx + sl.length) % sl.length;
+      sl[cur].classList.add('is-active'); dt[cur].classList.add('is-active');
     }
+    host.querySelector('#revPrev').addEventListener('click', function() { goTo(cur - 1); });
+    host.querySelector('#revNext').addEventListener('click', function() { goTo(cur + 1); });
+    host.querySelectorAll('.rev-dot').forEach(function(d) {
+      d.addEventListener('click', function() { goTo(+d.dataset.idx); });
+    });
   }
 
   /* ── Campaign Media ──────────────────────────────────────────────────────

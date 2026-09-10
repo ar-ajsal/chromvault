@@ -220,13 +220,24 @@ exports.getAllReviews = async (req, res) => {
       .sort({ updatedAt: -1 })
       .limit(30);
 
-    const formattedReviews = reviews.map(r => ({
-      id: r._id,
-      rating: r.rating,
-      text: r.text,
-      customerName: r.customerName || (r.orderId ? r.orderId.customerName : 'Verified Buyer'),
-      date: r.updatedAt
-    }));
+    const formattedReviews = reviews.map(r => {
+      let productTitle = null;
+      let productImage = null;
+      if (r.productId) {
+        // Handle localized title object or string
+        productTitle = r.productId.title ? (r.productId.title.en || r.productId.title) : 'Product';
+        productImage = r.productId.image && r.productId.image.length > 0 ? r.productId.image[0] : null;
+      }
+      return {
+        id: r._id,
+        rating: r.rating,
+        text: r.text,
+        customerName: r.customerName || (r.orderId ? r.orderId.customerName : 'Verified Buyer'),
+        date: r.updatedAt,
+        productTitle,
+        productImage
+      };
+    });
 
     res.json({ reviews: formattedReviews });
   } catch (err) {
