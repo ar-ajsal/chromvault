@@ -36,13 +36,13 @@
       '<section class="section" id="homeNew">' +
         '<div class="wrap">' +
           Views.head({
-            eyebrow: 'Just landed',
-            title: 'New arrivals',
-            href: '/shop?sort=new',
-            linkLabel: 'All new',
+            eyebrow: 'Top picks',
+            title: 'Best sellers',
+            href: '/shop',
+            linkLabel: 'Shop all',
             noRule: true
           }) +
-          '<div class="pgrid" id="homeNewGrid">' + Card.skeletons(4) + '</div>' +
+          '<div class="pgrid pgrid--bs" id="homeNewGrid">' + Card.skeletons(4) + '</div>' +
         '</div>' +
       '</section>' +
       lookbookHtml() +
@@ -258,7 +258,9 @@
     FX.marquee(U.$('#homeBand'), html);
   }
 
-  /* ── New arrivals ──────────────────────────────────────────────────────── */
+  /* ── Best sellers ─────────────────────────────────────────────────────
+     Shows isBestSeller-marked products. If fewer than 1 are marked the
+     section falls back to the four newest products so it is never empty. */
   function paintNew(r) {
     if (!r.products.length) {
       Views.fill('#homeNew .wrap', Views.stateHtml({
@@ -270,9 +272,10 @@
       return;
     }
 
-    // Four newest. The list is already createdAt-desc from the controller.
-    var newest = r.products.slice(0, 4);
-    Views.fill('#homeNewGrid', Card.grid(newest, { eager: true, showNew: true }));
+    // Prefer products explicitly marked as best sellers; fall back to newest.
+    var bestSellers = r.products.filter(function (p) { return p.isBestSeller && U.inStock(p); });
+    var toShow = bestSellers.length >= 1 ? bestSellers.slice(0, 8) : r.products.slice(0, 4);
+    Views.fill('#homeNewGrid', Card.grid(toShow, { eager: true, showNew: true }));
   }
 
   /* ── Category index ────────────────────────────────────────────────────── */

@@ -116,10 +116,11 @@
         '<div class="prod-media">' + img +
         '<div class="prod-stockflag">' + stockBadge(p.stock) + '</div>' +
         (hidden ? '<div class="prod-visflag"><span class="badge neutral">' + icon('eye-off') + 'Hidden</span></div>' : '') +
+        (p.isBestSeller ? '<div style="position:absolute;top:8px;left:8px"><span class="badge" style="background:#0A0A0B;color:#fff;font-size:10px">★ Best Seller</span></div>' : '') +
         '</div>' +
         '<div class="prod-body">' +
         '<div class="prod-title">' + esc(locName(p.title, 'Untitled')) + '</div>' +
-        '<div class="prod-meta">' + priceHtml(p) + '</div>' +
+        '<div class="prod-meta">' + priceHtml(p) + (p.isBestSeller ? ' <span class="badge" style="background:#0A0A0B;color:#fff;font-size:9px;vertical-align:middle">Best Seller</span>' : '') + '</div>' +
         '</div>' +
         '<div class="prod-actions">' +
         '<button class="btn sm" data-edit="' + esc(p._id) + '">' + icon('edit') + 'Edit</button>' +
@@ -131,7 +132,7 @@
 
   function tableHtml(products) {
     return '<div class="panel"><div class="tbl-wrap"><table class="tbl"><thead><tr>' +
-      '<th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th>' +
+      '<th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Flags</th><th></th>' +
       '</tr></thead><tbody>' + products.map(function (p) {
         var img = (p.image && p.image[0]) ? '<img class="thumb" src="' + esc(p.image[0]) + '" alt="">' : '<div class="thumb thumb-ph">' + icon('box') + '</div>';
         var hidden = (p.status || 'show') !== 'show';
@@ -143,6 +144,7 @@
           '<td data-label="Price">' + priceHtml(p) + '</td>' +
           '<td data-label="Stock">' + stockBadge(p.stock) + '</td>' +
           '<td data-label="Status"><span class="badge ' + (hidden ? 'neutral' : 'ok') + '">' + (hidden ? 'Hidden' : 'Live') + '</span></td>' +
+          '<td data-label="Flags">' + (p.isBestSeller ? '<span class="badge" style="background:#0A0A0B;color:#fff;font-size:9px">★ Best Seller</span>' : '—') + '</td>' +
           '<td data-label="" class="no-label"><div class="row-actions">' +
           '<button class="mini-btn" data-edit="' + esc(p._id) + '" title="Edit">' + icon('edit') + '</button>' +
           '<button class="mini-btn" data-toggle="' + esc(p._id) + '" title="' + (hidden ? 'Show' : 'Hide') + '">' + icon(hidden ? 'eye' : 'eye-off') + '</button>' +
@@ -303,6 +305,8 @@
       '</select></div>' +
       '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-top:6px">' +
       '<input type="checkbox" id="fFeatured"' + (p.isFeatured ? ' checked' : '') + '> Featured product</label>' +
+      '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-top:6px;font-weight:600">' +
+      '<input type="checkbox" id="fBestSeller"' + (p.isBestSeller ? ' checked' : '') + '> ★ Best Seller <span style="font-weight:400;color:var(--ink-3);font-size:12px">(shows in Best Sellers section on homepage)</span></label>' +
       '</div>';
 
     // footer
@@ -397,7 +401,8 @@
         stock: Math.max(0, parseInt(body.querySelector('#fStock').value, 10) || 0),
         prices: { price: price, originalPrice: orig || price, discount: discount },
         status: body.querySelector('#fStatus').value,
-        isFeatured: body.querySelector('#fFeatured').checked
+        isFeatured: body.querySelector('#fFeatured').checked,
+        isBestSeller: body.querySelector('#fBestSeller').checked
       };
 
       var btn = foot.querySelector('#saveProduct'); btn.disabled = true;

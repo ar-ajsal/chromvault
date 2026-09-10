@@ -21,6 +21,7 @@ const productSchema = new mongoose.Schema({
   variants: [{ type: Object }],
   status: { type: String, default: 'show' },
   isFeatured: { type: Boolean, default: false },
+  isBestSeller: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
 }, { timestamps: true });
 

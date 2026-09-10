@@ -38,18 +38,17 @@
     var cat = U.pcat(p);
     var id = U.pid(p);
 
-    /* ── Badges ──────────────────────────────────────────────────────────
-       One action-truth badge maximum. Discount % leads (strongest signal),
-       low-stock follows, featured last. Sold-out gets the overlay treatment
-       on the image instead — it's more visible and harder to overlook. */
+    /* ── Badges ─────────────────────────────────────────────────────
+       Top-right position. Sold-out and Sale are strongest signals.
+       Low-stock shows as a count. Featured shown only on new-arrivals grids. */
     var topBadge = '';
-    if (!out) {
+    if (out) {
+      topBadge = '<span class="pcard-badge pcard-badge-sold">Sold out</span>';
+    } else {
       if (off >= 5) {
-        topBadge = '<span class="pcard-badge pcard-badge-sale">\u2212' + off + '%</span>';
+        topBadge = '<span class="pcard-badge pcard-badge-sale">Sale</span>';
       } else if (low) {
         topBadge = '<span class="pcard-badge pcard-badge-low">' + stock + ' left</span>';
-      } else if (o.showNew && p.isFeatured) {
-        topBadge = '<span class="pcard-badge pcard-badge-feat">Featured</span>';
       }
     }
 
@@ -62,10 +61,8 @@
                        (imgs.length > 1 ? '<div class="pcard-img-pane pcard-img-alt-pane"><img class="pcard-img" src="' + U.escAttr(imgs[1]) + '" alt="" loading="lazy" decoding="async" aria-hidden="true" /></div>' : '') +
                      '</div>';
 
-    /* ── Sold-out overlay ──────────────────────────────────────────────── */
-    var soldOutOverlay = out
-      ? '<div class="pcard-sold-overlay" aria-hidden="true"><span>Sold out</span></div>'
-      : '';
+    /* ── Sold-out overlay ── not used (badge approach now) */
+    var soldOutOverlay = '';
 
     /* ── Add to cart CTA ─────────────────────────────────────────────────
        Small white circle with bag+plus icon, always visible bottom-right. */
