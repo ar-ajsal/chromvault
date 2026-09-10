@@ -1,4 +1,79 @@
 {
-  "_comment": "This root vercel.json is NOT used for deployment. Deploy storefront/ and admin panel/command-center/ as separate Vercel projects. See DEPLOYMENT.md for instructions.",
-  "rewrites": []
+  "rewrites": [
+    {
+      "source": "/v1/:path*",
+      "destination": "http://13.201.137.97:5000/v1/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "http://13.201.137.97:5000/api/:path*"
+    },
+    {
+      "source": "/",
+      "destination": "/storefront/index.html"
+    },
+    {
+      "source": "/css/:path*",
+      "destination": "/storefront/css/:path*"
+    },
+    {
+      "source": "/js/:path*",
+      "destination": "/storefront/js/:path*"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/storefront/assets/:path*"
+    },
+    {
+      "source": "/tools/:path*",
+      "destination": "/storefront/tools/:path*"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/storefront/favicon.ico"
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "destination": "/storefront/apple-touch-icon.png"
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "destination": "/storefront/manifest.webmanifest"
+    },
+    {
+      "source": "/service-worker.js",
+      "destination": "/storefront/service-worker.js"
+    },
+    {
+      "source": "/razorpay-test.html",
+      "destination": "/storefront/razorpay-test.html"
+    },
+    {
+      "source": "/:icon(icon-.*\\.png)",
+      "destination": "/storefront/:icon"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/storefront/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
 }
