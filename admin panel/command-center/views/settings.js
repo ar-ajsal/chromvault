@@ -397,7 +397,8 @@
           .catch(function (e) {
             CC.toast(e.message || 'Upload failed', 'bad');
           })
-          campBtn.disabled = true;
+          .then(function () {
+            campBtn.disabled = true;
             campBtn.innerHTML = icon('check') + 'Upload & Save';
           });
       });
