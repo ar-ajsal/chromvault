@@ -159,13 +159,19 @@
       '<span class="badge ok"><i class="d"></i>Homepage</span>' +
       '</div>' +
       '<div class="panel-pad">' +
-      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;">Upload a banner image (or video) shown between the Category grid and Best Sellers. Recommended size: 1500×300px (5:1 ratio).</p>' +
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">' +
+      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;">Shown between categories and Best Sellers. Recommended: 1500×400px. Leave empty to hide.</p>' +
+      '<div id="homeBannerPreview" style="margin-bottom:16px;border-radius:8px;overflow:hidden;background:var(--surface-2);display:none">' +
+      '<img id="homeBannerImg" src="" alt="Current banner" style="width:100%;height:auto;display:block;max-height:200px;object-fit:cover">' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">' +
       '<input type="file" id="homeBannerInput" accept="video/mp4,video/webm,image/jpeg,image/png,image/webp" style="display:none">' +
       '<button class="btn ghost" onclick="document.getElementById(\'homeBannerInput\').click()">' + icon('upload') + 'Choose File</button>' +
       '<span id="homeBannerName" class="cell-sub" style="font-size:13px">No file chosen</span>' +
       '</div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
       '<button class="btn primary" id="btnUploadHomeBanner" disabled>' + icon('check') + 'Upload &amp; Save</button>' +
+      '<button class="btn ghost" id="btnDeleteHomeBanner" style="color:var(--red,#e53)">' + icon('trash') + 'Remove Banner</button>' +
+      '</div>' +
       '</div></div>' +
 
       // Push Notifications Panel
@@ -408,6 +414,20 @@
     var bannerInput = root.querySelector('#homeBannerInput');
     var bannerName = root.querySelector('#homeBannerName');
     var bannerBtn = root.querySelector('#btnUploadHomeBanner');
+    var bannerDelBtn = root.querySelector('#btnDeleteHomeBanner');
+    var bannerPreview = root.querySelector('#homeBannerPreview');
+    var bannerImg = root.querySelector('#homeBannerImg');
+
+    // Load existing banner
+    CC.API.get('/settings/home_banner').then(function(res) {
+      var url = res && res.value;
+      if (url && bannerPreview && bannerImg) {
+        bannerImg.src = url;
+        bannerPreview.style.display = 'block';
+        if (bannerName) bannerName.textContent = 'Current banner active';
+      }
+    }).catch(function() {});
+
     if (bannerInput && bannerBtn) {
       bannerInput.addEventListener('change', function () {
         if (this.files && this.files[0]) {
@@ -425,12 +445,13 @@
         bannerBtn.innerHTML = UI.spinner() + ' Uploading...';
         CC.API.upload(file)
           .then(function (url) {
-            return CC.API.put('/settings/home_banner', { value: url });
+            return CC.API.put('/settings/home_banner', { value: url }).then(function() { return url; });
           })
-          .then(function () {
-            CC.toast('Home banner updated successfully!', 'ok');
-            bannerName.textContent = 'Live on storefront';
+          .then(function (url) {
+            CC.toast('Home banner updated!', 'ok');
+            bannerName.textContent = 'Current banner active';
             bannerInput.value = '';
+            if (bannerImg) { bannerImg.src = url; bannerPreview.style.display = 'block'; }
           })
           .catch(function (e) {
             CC.toast(e.message || 'Upload failed', 'bad');
@@ -439,6 +460,21 @@
             bannerBtn.disabled = true;
             bannerBtn.innerHTML = icon('check') + 'Upload & Save';
           });
+      });
+    }
+
+    if (bannerDelBtn) {
+      bannerDelBtn.addEventListener('click', function () {
+        if (!confirm('Remove the home banner?')) return;
+        bannerDelBtn.disabled = true;
+        CC.API.put('/settings/home_banner', { value: '' })
+          .then(function () {
+            CC.toast('Banner removed', 'ok');
+            if (bannerPreview) bannerPreview.style.display = 'none';
+            if (bannerName) bannerName.textContent = 'No banner active';
+          })
+          .catch(function (e) { CC.toast(e.message || 'Failed', 'bad'); })
+          .then(function () { bannerDelBtn.disabled = false; });
       });
     }
 

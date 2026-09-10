@@ -119,10 +119,10 @@
       if (!slot) return;
       var url = res && res.value;
       if (url) {
-        var isVideo = /.(mp4|webm)$/i.test(url);
+        var isVideo = /\.(mp4|webm)$/i.test(url);
         slot.innerHTML = '<div class="home-banner-slot">' + (isVideo
           ? '<video autoplay loop muted playsinline><source src="' + U.escAttr(url) + '"></video>'
-          : '<img src="' + U.escAttr(url) + '" alt="Banner" style="aspect-ratio:5/1;object-fit:cover">') + '</div>';
+          : '<img src="' + U.escAttr(url) + '" alt="Banner" style="width:100%;height:auto;display:block">') + '</div>';
       }
     }).catch(function() {});
 
