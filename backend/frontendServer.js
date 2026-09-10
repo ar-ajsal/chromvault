@@ -226,8 +226,24 @@ function mountStorefront() {
     next();
   });
 
-  /* 3. API proxy. Same-origin /v1 → the backend, so the browser makes no
+  /* 3. API proxy. Same-origin /v1 and /api → the backend, so the browser makes no
         cross-origin request and the backend sees no Origin header. */
+  const apiRootTarget = (process.env.API_PROXY_TARGET || 'http://localhost:5000').replace(/\/v1\/?$/, '');
+  app.use('/api', createProxyMiddleware({
+    target: apiRootTarget,
+    changeOrigin: true,
+    on: {
+      error: (err, req, res) => {
+        console.error(`[proxy] ${req.method} ${req.originalUrl} → ${apiRootTarget}/api: ${err.message}`);
+        if (res && !res.headersSent && res.status) {
+          res.status(502).type('json').send(JSON.stringify({
+            message: 'The API service is unreachable. Please try again.'
+          }));
+        }
+      }
+    }
+  }));
+
   app.use('/v1', createProxyMiddleware({
     target: API_TARGET,
     changeOrigin: true,

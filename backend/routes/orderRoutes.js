@@ -18,6 +18,7 @@ const { protectAdmin } = require('../middleware/authMiddleware');
 // ─── Public storefront checkout (Razorpay only) ────────────
 // Amounts are computed server-side; an order is only persisted after a
 // verified Razorpay signature. (Guest/COD/manual-UPI checkout was removed.)
+router.post('/create-order', createRazorpayOrder);
 router.post('/create-razorpay-order', createRazorpayOrder);
 router.post('/verify-payment', verifyPaymentAndCreateOrder);
 

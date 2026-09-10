@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Razorpay Checkout Integration Test — Chromvault</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    :root {
+      --bg: #0A0A0B;
+      --card-bg: #141417;
+      --border: #26262B;
+      --accent: #E11D48;
+      --accent-hover: #BE123C;
+      --text: #F4F4F5;
+      --muted: #A1A1AA;
+      --success: #10B981;
+      --danger: #EF4444;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 540px;
+      width: 100%;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .header {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(225, 29, 72, 0.15);
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    p.sub {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #1C1C21;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.15s ease, opacity 0.15s ease;
+      margin-top: 24px;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .status-box {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      display: none;
+    }
+    .status-box.active { display: block; }
+    .status-box.info { background: rgba(59, 130, 246, 0.1); border: 1px solid #2563EB; color: #93C5FD; }
+    .status-box.success { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: #6EE7B7; }
+    .status-box.error { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: #FCA5A5; }
+    .log-area {
+      margin-top: 20px;
+      background: #0D0D0E;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      color: #71717A;
+      max-height: 180px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="badge">Standard Web Checkout</div>
+    <h1>Razorpay Integration Test</h1>
+    <p class="sub">Test creating order, opening the Razorpay modal, and verifying the signature.</p>
+  </div>
+
+  <div class="form-group">
+    <label for="amountInput">Amount (₹ INR)</label>
+    <input type="number" id="amountInput" value="500" min="1" step="1" />
+  </div>
+
+  <div class="form-group">
+    <label for="nameInput">Customer Name</label>
+    <input type="text" id="nameInput" value="Demo Customer" />
+  </div>
+
+  <div class="form-group">
+    <label for="emailInput">Customer Email</label>
+    <input type="email" id="emailInput" value="customer@example.com" />
+  </div>
+
+  <div class="form-group">
+    <label for="phoneInput">Phone Number</label>
+    <input type="tel" id="phoneInput" value="9876543210" />
+  </div>
+
+  <button id="payBtn" class="btn" onclick="startCheckout()">
+    <span>Pay with Razorpay</span>
+  </button>
+
+  <div id="statusBox" class="status-box"></div>
+  <div id="logArea" class="log-area" style="display:none;"></div>
+</div>
+
+<script>
+  function log(msg) {
+    var area = document.getElementById('logArea');
+    area.style.display = 'block';
+    area.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+    area.scrollTop = area.scrollHeight;
+    console.log(msg);
+  }
+
+  function setStatus(type, msg) {
+    var box = document.getElementById('statusBox');
+    box.className = 'status-box active ' + type;
+    box.textContent = msg;
+  }
+
+  // Resolve API base url automatically
+  function getApiBase() {
+    var host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      // If served via frontendServer (:3001), /api is proxied. If static, try :5000
+      return window.location.port === '3001' ? '' : 'http://localhost:5000';
+    }
+    return '';
+  }
+
+  async function startCheckout() {
+    var btn = document.getElementById('payBtn');
+    var rupees = Number(document.getElementById('amountInput').value) || 500;
+    var amountPaise = Math.round(rupees * 100);
+    var name = document.getElementById('nameInput').value;
+    var email = document.getElementById('emailInput').value;
+    var contact = document.getElementById('phoneInput').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Creating Order...';
+    setStatus('info', 'Step 1: Contacting backend to create Razorpay order...');
+    log('Requesting POST /api/create-order for ' + rupees + ' INR (' + amountPaise + ' paise)...');
+
+    var apiBase = getApiBase();
+
+    try {
+      // 1. Create Order
+      var res = await fetch(apiBase + '/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: 'test_rcpt_' + Date.now()
+        })
+      });
+
+      var orderData = await res.json();
+      if (!res.ok || !orderData.order_id) {
+        throw new Error((orderData && orderData.message) || 'Failed to create order on server');
+      }
+
+      log('Order created: ' + orderData.order_id + ' (Amount: ' + orderData.amount + ' ' + orderData.currency + ')');
+      setStatus('info', 'Step 2: Order created (' + orderData.order_id + '). Opening Razorpay modal...');
+
+      // 2. Open Razorpay Checkout Modal
+      var options = {
+        key: orderData.key || 'rzp_test_TaKxdzjE7H8ign',
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'Chromvault',
+        description: 'Test Order Payment',
+        image: '/icon-192x192.png',
+        order_id: orderData.order_id,
+        prefill: {
+          name: name,
+          email: email,
+          contact: contact
+        },
+        theme: {
+          color: '#E11D48'
+        },
+        modal: {
+          ondismiss: function() {
+            btn.disabled = false;
+            btn.textContent = 'Pay with Razorpay';
+            setStatus('error', 'Checkout dismissed: You cancelled the payment modal.');
+            log('User cancelled the Razorpay modal.');
+          }
+        },
+        handler: async function(response) {
+          log('Payment authorized by Razorpay! Payment ID: ' + response.razorpay_payment_id);
+          setStatus('info', 'Step 3: Verifying HMAC-SHA256 signature with backend...');
+
+          try {
+            // 3. Verify Signature
+            var verifyRes = await fetch(apiBase + '/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            var verifyData = await verifyRes.json();
+            if (!verifyRes.ok || !verifyData.success) {
+              throw new Error((verifyData && verifyData.message) || 'Signature verification failed');
+            }
+
+            log('Signature verified successfully! ' + JSON.stringify(verifyData));
+            setStatus('success', '✓ Payment Verified Successfully!\nPayment ID: ' + response.razorpay_payment_id + '\nOrder ID: ' + response.razorpay_order_id);
+          } catch(err) {
+            log('Verification error: ' + err.message);
+            setStatus('error', 'Signature verification failed: ' + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = 'Pay with Razorpay';
+          }
+        }
+      };
+
+      var rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function(resp) {
+        log('Payment failed event: ' + ((resp && resp.error && resp.error.description) || 'Failed'));
+        setStatus('error', 'Payment failed: ' + ((resp && resp.error && resp.error.description) || 'Unknown error'));
+        btn.disabled = false;
+        btn.textContent = 'Pay with Razorpay';
+      });
+
+      rzp.open();
+    } catch(e) {
+      log('Error: ' + e.message);
+      setStatus('error', 'Error: ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Pay with Razorpay';
+    }
+  }
+</script>
+
+</body>
+</html>

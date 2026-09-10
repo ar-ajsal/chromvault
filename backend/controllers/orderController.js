@@ -18,37 +18,68 @@ const getRazorpayInstance = () => {
 };
 
 // 1. Create Razorpay Order
-// The amount is ALWAYS computed server-side from the cart against the DB.
-// Any client-supplied `amount` is ignored so the charged sum cannot be tampered with.
+// Supports both direct amount (in paise, >= 100) and storefront cart calculation.
 const createRazorpayOrder = async (req, res) => {
   try {
-    const { cart, currency = 'INR' } = req.body;
+    const { cart, currency = 'INR', amount, receipt } = req.body;
+    let orderAmountPaise;
 
-    const pricing = await computeOrderPricing(cart);
-    if (pricing.error) {
-      return res.status(400).send({ message: pricing.error });
-    }
-    if (!pricing.total || pricing.total <= 0) {
-      return res.status(400).send({ message: 'Invalid order amount' });
+    if (cart && Array.isArray(cart) && cart.length > 0) {
+      // Storefront flow: compute pricing server-side from the DB
+      const pricing = await computeOrderPricing(cart);
+      if (pricing.error) {
+        return res.status(400).send({ message: pricing.error });
+      }
+      if (!pricing.total || pricing.total <= 0) {
+        return res.status(400).send({ message: 'Invalid order amount' });
+      }
+      orderAmountPaise = Math.round(pricing.total * 100);
+    } else if (amount !== undefined && amount !== null) {
+      // Standard API flow: amount provided directly in paise
+      const parsed = Number(amount);
+      if (isNaN(parsed) || parsed < 100) {
+        return res.status(400).send({ message: 'Amount must be at least 100 paise (₹1.00).' });
+      }
+      orderAmountPaise = Math.round(parsed);
+    } else {
+      return res.status(400).send({ message: 'Either amount (in paise) or cart items must be provided.' });
     }
 
-    const razorpay = getRazorpayInstance();
+    if (orderAmountPaise < 100) {
+      return res.status(400).send({ message: 'Amount must be at least 100 paise (₹1.00).' });
+    }
+
+    let razorpay;
+    try {
+      razorpay = getRazorpayInstance();
+    } catch (configErr) {
+      return res.status(500).send({ message: configErr.message });
+    }
+
     const options = {
-      amount: Math.round(pricing.total * 100), // Amount in paise, from server-side total
-      currency,
-      receipt: `rcpt_${Date.now()}`
+      amount: orderAmountPaise,
+      currency: currency || 'INR',
+      receipt: receipt || `rcpt_${Date.now()}`
     };
 
     const order = await razorpay.orders.create(options);
     res.status(200).send({
+      order_id: order.id,
       id: order.id,
       amount: order.amount,
       currency: order.currency,
+      receipt: order.receipt,
       key: process.env.RAZORPAY_KEY_ID
     });
   } catch (err) {
     console.error('Error creating Razorpay order:', err);
-    res.status(500).send({ message: err.message });
+    if (err && (err.statusCode === 401 || (err.error && err.error.code === 'BAD_REQUEST_ERROR' && /auth/i.test(err.error.description || '')))) {
+      return res.status(401).send({ message: 'Razorpay authentication failed. Verify API keys.' });
+    }
+    const statusCode = (err && err.statusCode) ? err.statusCode : 500;
+    res.status(statusCode).send({
+      message: (err && err.error && err.error.description) || err.message || 'Error creating Razorpay order.'
+    });
   }
 };
 
@@ -101,15 +132,47 @@ const restoreStock = async (cart) => {
 // 2. Verify Payment & Create MongoDB Order (For Razorpay)
 const verifyPaymentAndCreateOrder = async (req, res) => {
   try {
+    const razorpay_order_id = req.body.razorpay_order_id || req.body.order_id;
+    const razorpay_payment_id = req.body.razorpay_payment_id || req.body.payment_id;
+    const razorpay_signature = req.body.razorpay_signature || req.body.signature;
     const {
-      razorpay_order_id, razorpay_payment_id, razorpay_signature,
       customerName, phone, email, deliveryAddress,
       cart
     } = req.body;
-    // NOTE: discount and shippingFee are deliberately NOT read from the client.
-    // They are derived server-side by computeOrderPricing below.
 
-    // Backend strict validation
+    // Validate required fields for payment signature verification
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).send({
+        success: false,
+        message: 'Missing required payment verification fields. razorpay_order_id, razorpay_payment_id, and razorpay_signature are required.'
+      });
+    }
+
+    // Verify HMAC SHA256 signature
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return res.status(500).send({ success: false, message: 'Payment verification is not configured. RAZORPAY_KEY_SECRET is missing.' });
+    }
+    const generatedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).send({ success: false, message: 'Invalid payment signature! Transaction verification failed.' });
+    }
+
+    // If pure payment verification request (no storefront cart / customer payload provided)
+    if (!cart && !customerName) {
+      return res.status(200).send({
+        success: true,
+        message: 'Payment verified successfully.',
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id
+      });
+    }
+
+    // Backend strict validation for storefront customer orders
     if (!customerName || customerName.trim().length < 3) {
       return res.status(400).send({ message: 'Invalid customer name.' });
     }
@@ -149,20 +212,6 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
       }
     } catch(err) {
       console.log('PIN validation API failed in backend (ignored due to network):', err.message);
-    }
-
-    // Verify HMAC SHA256 signature
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret) {
-      return res.status(500).send({ message: 'Payment verification is not configured.' });
-    }
-    const generatedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
-
-    if (generatedSignature !== razorpay_signature) {
-      return res.status(400).send({ message: 'Invalid payment signature! Transaction verification failed.' });
     }
 
     // Prevent duplicate orders for same payment

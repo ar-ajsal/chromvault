@@ -103,6 +103,11 @@ mongoose.connect(process.env.MONGODB_URI, { family: 4 })
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
+// Razorpay Standard Checkout API endpoints
+const { createRazorpayOrder, verifyPaymentAndCreateOrder } = require('./controllers/orderController');
+app.post('/api/create-order', createRazorpayOrder);
+app.post('/api/verify-payment', verifyPaymentAndCreateOrder);
+
 // Routes
 app.use('/v1/admin', require('./routes/adminRoutes'));
 app.use('/v1/products', require('./routes/productRoutes'));

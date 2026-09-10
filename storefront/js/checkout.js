@@ -995,9 +995,10 @@
     API.createOrder(items)
       .then(function (order) {
         if (!C) return null;
-        if (!order || !order.id || !order.key) {
+        if (!order || (!order.id && !order.order_id)) {
           throw new Error('The payment gateway did not return an order. Please try again.');
         }
+        if (window.Razorpay) return order;
         return loadScript(CFG.RAZORPAY_SDK, 'razorpay-sdk')
           .catch(function () {
             throw new Error('Could not reach the payment gateway. Check your connection and try again.');
@@ -1027,10 +1028,10 @@
   function openRazorpay(order, items, f) {
     var n = Cart.count();
     var rzp = new window.Razorpay({
-      key: order.key,
+      key: order.key || 'rzp_test_TaKxdzjE7H8ign',
       amount: order.amount,               // paise, from the server
       currency: order.currency || 'INR',
-      order_id: order.id,                 // server-created — this is what is charged
+      order_id: order.order_id || order.id, // server-created order ID
       name: 'Chromvault',
       description: n + (n === 1 ? ' piece' : ' pieces'),
       image: '/icon-192x192.png',
