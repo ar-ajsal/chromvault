@@ -33,6 +33,7 @@
     Views.mount(
       heroHtml() +
       '<section class="section-sm" id="homeCats"><div class="wrap">' + catsSkeleton() + '</div></section>' +
+      '<div id="homeBannerSlot"></div>' +
       '<section class="section" id="homeNew">' +
         '<div class="wrap">' +
           Views.head({
@@ -110,6 +111,20 @@
     }).catch(function(err) {
       console.warn('Campaign media not loaded', err);
     });
+
+    // Load home banner
+    API.get('/settings/home_banner').then(function(res) {
+      if (Router.stale(t)) return;
+      var slot = U.$('#homeBannerSlot');
+      if (!slot) return;
+      var url = res && res.value;
+      if (url) {
+        var isVideo = /.(mp4|webm)$/i.test(url);
+        slot.innerHTML = '<div class="home-banner-slot">' + (isVideo
+          ? '<video autoplay loop muted playsinline><source src="' + U.escAttr(url) + '"></video>'
+          : '<img src="' + U.escAttr(url) + '" alt="Banner" style="aspect-ratio:5/1;object-fit:cover">') + '</div>';
+      }
+    }).catch(function() {});
 
     // Categories may already be loaded by the shell; if not, wait for its event.
     var cats = Shell.categories();
@@ -455,6 +470,21 @@
     host.querySelectorAll('.rev-dot').forEach(function(d) {
       d.addEventListener('click', function() { goTo(+d.dataset.idx); });
     });
+
+    // Auto-slider
+    var autoSlide = setInterval(function() {
+      if (!document.body.contains(host)) return clearInterval(autoSlide);
+      goTo(cur + 1);
+    }, 4000);
+
+    // Pause on hover
+    host.querySelector('#revCarousel').addEventListener('mouseenter', function() { clearInterval(autoSlide); });
+    host.querySelector('#revCarousel').addEventListener('mouseleave', function() {
+      autoSlide = setInterval(function() {
+        if (!document.body.contains(host)) return clearInterval(autoSlide);
+        goTo(cur + 1);
+      }, 4000);
+    });
   }
 
   /* ── Campaign Media ──────────────────────────────────────────────────────
@@ -476,16 +506,15 @@
      Razorpay is the only payment path, stock is finite per piece, and orders are
      trackable. Nothing aspirational. */
   function trustHtml() {
-    var cells = [
-      ['truck', 'Free shipping', 'Across India, calculated at checkout — no minimum.'],
-      ['lock', 'Secure payment', 'Razorpay handles cards, UPI, net banking and wallets.'],
-      ['box', 'Single-run stock', 'Counts shown are real. When a piece sells it is delisted.'],
-      ['ret', 'Returns window', 'Replacement on damaged or incorrect items. See the policy.']
+    var badges = [
+      ['lock', 'Secure Payment'],
+      ['shield', 'SSL Encrypted'],
+      ['truck', 'Express Shipping'],
+      ['check', 'Cult Approved']
     ].map(function (c) {
-      return '<div class="trust-c"><span data-ic="' + c[0] + '"></span><b>' + U.esc(c[1]) +
-             '</b><span>' + U.esc(c[2]) + '</span></div>';
+      return '<div class="trust-c"><span data-ic="' + c[0] + '"></span><b>' + U.esc(c[1]) + '</b><span></span></div>';
     }).join('');
 
-    return '<section class="section-sm"><div class="wrap"><div class="trust">' + cells + '</div></div></section>';
+    return '<section class="section-sm"><div class="wrap"><div class="trust">' + badges + '</div></div></section>';
   }
 })();

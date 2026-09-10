@@ -256,8 +256,9 @@
 .pcard-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
+  padding: 12%; /* Added padding to make the image smaller */
+  object-position: center;
   transition: transform var(--d-4) var(--e-out), opacity var(--d-2) linear;
 }
 

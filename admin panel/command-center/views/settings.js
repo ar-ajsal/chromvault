@@ -152,6 +152,22 @@
       '</div>' +
       '</div></div>' +
 
+      // Home Banner (between categories and best sellers)
+      '<div class="panel" style="margin-bottom:20px">' +
+      '<div class="panel-head" style="display:flex;align-items:center;justify-content:space-between">' +
+      '<h3>' + icon('image') + 'Home Page Banner</h3>' +
+      '<span class="badge ok"><i class="d"></i>Homepage</span>' +
+      '</div>' +
+      '<div class="panel-pad">' +
+      '<p class="cell-sub" style="font-size:13px;margin-bottom:18px;">Upload a banner image (or video) shown between the Category grid and Best Sellers. Recommended size: 1500×300px (5:1 ratio).</p>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">' +
+      '<input type="file" id="homeBannerInput" accept="video/mp4,video/webm,image/jpeg,image/png,image/webp" style="display:none">' +
+      '<button class="btn ghost" onclick="document.getElementById(\'homeBannerInput\').click()">' + icon('upload') + 'Choose File</button>' +
+      '<span id="homeBannerName" class="cell-sub" style="font-size:13px">No file chosen</span>' +
+      '</div>' +
+      '<button class="btn primary" id="btnUploadHomeBanner" disabled>' + icon('check') + 'Upload &amp; Save</button>' +
+      '</div></div>' +
+
       // Push Notifications Panel
       '<div class="panel" style="margin-bottom:20px">' +
       '<div class="panel-head">' +
@@ -381,14 +397,50 @@
           .catch(function (e) {
             CC.toast(e.message || 'Upload failed', 'bad');
           })
-          .then(function () {
-            campBtn.disabled = true;
+          campBtn.disabled = true;
             campBtn.innerHTML = icon('check') + 'Upload & Save';
           });
       });
     }
 
-    // Lookbook Slider logic
+    // Home Banner Upload logic
+    var bannerInput = root.querySelector('#homeBannerInput');
+    var bannerName = root.querySelector('#homeBannerName');
+    var bannerBtn = root.querySelector('#btnUploadHomeBanner');
+    if (bannerInput && bannerBtn) {
+      bannerInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+          bannerName.textContent = this.files[0].name;
+          bannerBtn.disabled = false;
+        } else {
+          bannerName.textContent = 'No file chosen';
+          bannerBtn.disabled = true;
+        }
+      });
+      bannerBtn.addEventListener('click', function () {
+        var file = bannerInput.files[0];
+        if (!file) return;
+        bannerBtn.disabled = true;
+        bannerBtn.innerHTML = UI.spinner() + ' Uploading...';
+        CC.API.upload(file)
+          .then(function (url) {
+            return CC.API.put('/settings/home_banner', { value: url });
+          })
+          .then(function () {
+            CC.toast('Home banner updated successfully!', 'ok');
+            bannerName.textContent = 'Live on storefront';
+            bannerInput.value = '';
+          })
+          .catch(function (e) {
+            CC.toast(e.message || 'Upload failed', 'bad');
+          })
+          .then(function () {
+            bannerBtn.disabled = true;
+            bannerBtn.innerHTML = icon('check') + 'Upload & Save';
+          });
+      });
+    }
+
     var defaultLookbook = [
       '/assets/lookbook/lookbook-1.jpg',
       '/assets/lookbook/lookbook-2.jpg',

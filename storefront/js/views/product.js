@@ -330,7 +330,7 @@
         trustBadge(ICON('lock', 20), 'Secure Payment') +
         trustBadge(shieldCheck, 'SSL Encrypted') +
         trustBadge(ICON('truck', 20), 'Express Shipping') +
-        trustBadge(badgeCheck, 'Certified Quality') +
+        trustBadge(badgeCheck, 'Cult Approved') +
       '</div>';
 
     return banner + acc + badges;
