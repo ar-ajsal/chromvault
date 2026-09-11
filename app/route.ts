@@ -46,10 +46,10 @@ const TRANSPARENT_STYLE = `<style id="vantro-ticker-transparency">
     height: auto !important;
   }
 
-  /* Ticker images: ensure proper fill */
+  /* Ticker images: ensure proper fill without cropping */
   [data-framer-name*="Ticker"] img,
   [data-framer-name="Center Ticker Scroll"] img {
-    object-fit: cover !important;
+    object-fit: contain !important;
     object-position: center !important;
     width: 100% !important;
     height: 100% !important;
