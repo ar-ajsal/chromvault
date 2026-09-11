@@ -118,9 +118,11 @@ const INJECTION_SCRIPT = `<script>
   // 4. Update "Get in Touch" buttons
   function updateGetInTouch() {
     document.querySelectorAll('.framer-1xjt3m-container a, a.framer-phDBw').forEach(function(a) {
-      a.setAttribute('href', INSTA_URL);
-      a.setAttribute('target', '_blank');
-      a.setAttribute('rel', 'noopener noreferrer');
+      if (a.getAttribute('href') !== INSTA_URL) {
+        a.setAttribute('href', INSTA_URL);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      }
     });
   }
 
@@ -130,10 +132,12 @@ const INJECTION_SCRIPT = `<script>
       el.remove();
     });
     document.querySelectorAll('.framer-131q4ey-container a, [data-framer-name="Social Bar"] a').forEach(function(a) {
-      a.setAttribute('href', INSTA_URL);
-      a.setAttribute('target', '_blank');
-      a.setAttribute('rel', 'noopener noreferrer');
-      a.setAttribute('aria-label', 'Follow us on Instagram');
+      if (a.getAttribute('href') !== INSTA_URL) {
+        a.setAttribute('href', INSTA_URL);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+        a.setAttribute('aria-label', 'Follow us on Instagram');
+      }
     });
   }
 
@@ -156,7 +160,16 @@ const INJECTION_SCRIPT = `<script>
   // MutationObserver to enforce changes across React / Framer hydration
   if (window.MutationObserver) {
     var observer = new MutationObserver(function() {
+      // Disconnect observer to avoid infinite loops from our own DOM changes
+      observer.disconnect();
       applyBrandChanges();
+      // Re-observe
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['src', 'href']
+      });
     });
     observer.observe(document.documentElement, {
       childList: true,
