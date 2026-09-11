@@ -67,6 +67,14 @@ const TRANSPARENT_STYLE = `<style id="vantro-ticker-transparency">
     background: transparent !important;
     background-color: transparent !important;
   }
+
+  /* Allow vertical scrolling on mobile over the tickers */
+  [data-framer-name*="Ticker"],
+  [data-framer-name="Center Ticker Scroll"],
+  .ticker-item,
+  [style*="touch-action:pan-x"] {
+    touch-action: auto !important;
+  }
 </style>`
 
 const INJECTION_SCRIPT = `<script>
