@@ -23,11 +23,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
-    // Constant-time comparison to prevent timing attacks
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(password),
-      Buffer.from(expectedPassword)
-    )
+    const passwordBuf = Buffer.from(password)
+    const expectedBuf = Buffer.from(expectedPassword)
+
+    if (passwordBuf.length !== expectedBuf.length) {
+      return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
+    }
+
+    const isValid = crypto.timingSafeEqual(passwordBuf, expectedBuf)
 
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
