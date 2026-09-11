@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
@@ -241,10 +242,19 @@ const INJECTION_SCRIPT = `<script>
 })();
 </script>`
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const filePath = path.join(process.cwd(), 'public', 'framer-page.html')
-    let html = fs.readFileSync(filePath, 'utf-8')
+    let html = ''
+    try {
+      const filePath = path.join(process.cwd(), 'public', 'framer-page.html')
+      html = fs.readFileSync(filePath, 'utf-8')
+    } catch (fsErr) {
+      // Fallback for Vercel where public dir might not be in the serverless function bundle
+      const assetUrl = new URL('/framer-page.html', request.url)
+      const res = await fetch(assetUrl.toString())
+      if (!res.ok) throw new Error('Failed to fetch static HTML: ' + res.statusText)
+      html = await res.text()
+    }
 
     // Fix relative image paths from HTTrack mirror to use Framer CDN directly
     html = html.replace(
@@ -284,8 +294,8 @@ export async function GET() {
         'Cache-Control': 'no-store',
       },
     })
-  } catch (err) {
-    return new NextResponse('<h1>Site loading...</h1>', {
+  } catch (err: any) {
+    return new NextResponse('<h1>Site loading... Error: ' + err.message + ' ' + err.stack + '</h1>', {
       status: 500,
       headers: { 'Content-Type': 'text/html' },
     })
