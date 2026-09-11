@@ -305,6 +305,25 @@ export async function GET(request: NextRequest) {
       'https://www.instagram.com/vantro.accessories/'
     )
 
+    // Inject time warp script to increase animation speed (Tickers)
+    const TIME_WARP_SCRIPT = `<script>
+      (function() {
+        var SPEED_MULTIPLIER = 2.5;
+        var originalNow = performance.now;
+        var startNow = originalNow.call(performance);
+        performance.now = function() {
+          return startNow + (originalNow.call(performance) - startNow) * SPEED_MULTIPLIER;
+        };
+        var originalRAF = window.requestAnimationFrame;
+        window.requestAnimationFrame = function(callback) {
+          return originalRAF(function(time) {
+            callback(startNow + (time - startNow) * SPEED_MULTIPLIER);
+          });
+        };
+      })();
+    </script>`;
+    html = html.replace('<head>', '<head>\n' + TIME_WARP_SCRIPT)
+
     // Inject transparent style in head and dynamic image script just before </body>
     html = html.replace('</head>', TRANSPARENT_STYLE + '\n</head>')
     html = html.replace('</body>', INJECTION_SCRIPT + '\n</body>')
