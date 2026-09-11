@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    outputFileTracingIncludes: {
+      '/': ['./public/framer-page.html'],
+    },
+  },
   images: {
     remotePatterns: [
       {
