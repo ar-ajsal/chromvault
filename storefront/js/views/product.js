@@ -227,13 +227,12 @@
         return '' +
           '<div class="opt-group">' +
             '<div class="opt-head">' +
-              '<span class="label">' + U.esc(v.group) + '</span>' +
-              '<span class="opt" style="all:unset;font-size:var(--t-xs);color:var(--ink-4)" id="optHint_' + groupIdx + '">' + U.esc(v.options[0]) + '</span>' +
+              '<span class="label" style="font-weight:700;font-size:15px;">Select ' + U.esc(v.group) + '</span>' +
             '</div>' +
             '<div class="opt-vals" data-group-idx="' + groupIdx + '">' +
               v.options.map(function(opt, i) {
                 return '<button class="opt" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
-                       (i === 0 ? 'true' : 'false') + '">' + U.esc(opt) + '</button>';
+                       (i === 0 ? 'true' : 'false') + '" style="flex:1;min-height:60px;border-radius:12px;font-size:15px;text-transform:none;font-weight:600;">' + U.esc(opt) + '</button>';
               }).join('') +
             '</div>' +
           '</div>';
@@ -246,13 +245,12 @@
     return '' +
       '<div class="opt-group">' +
         '<div class="opt-head">' +
-          '<span class="label">Option</span>' +
-          '<span class="opt" style="all:unset;font-size:var(--t-xs);color:var(--ink-4)" id="optHint">Select one</span>' +
+          '<span class="label" style="font-weight:700;font-size:15px;">Select Option</span>' +
         '</div>' +
         '<div class="opt-vals" id="optVals">' +
           vals.map(function (v, i) {
             return '<button class="opt" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
-                   (i === 0 ? 'true' : 'false') + '">' + U.esc(v) + '</button>';
+                   (i === 0 ? 'true' : 'false') + '" style="flex:1;min-height:60px;border-radius:12px;font-size:15px;text-transform:none;font-weight:600;">' + U.esc(v) + '</button>';
           }).join('') +
         '</div>' +
       '</div>';
@@ -291,16 +289,16 @@
     }
 
     return '' +
-      '<div class="pdp-actions">' +
-        '<div class="pdp-actions-row">' +
-          '<div class="qty" style="border-radius:0;">' +
+      '<div class="pdp-actions" style="gap:12px;">' +
+        '<button class="btn btn-lg btn-block" id="pdpBuy" style="background:var(--paper-sink);color:var(--ink);border:1px solid var(--ink-hair);font-weight:700;letter-spacing:0.05em;border-radius:12px;text-transform:uppercase;height:54px;">Buy Now</button>' +
+        '<div class="pdp-actions-row" style="gap:12px;">' +
+          '<div class="qty" style="border-radius:12px;border:1px solid var(--ink-hair);background:var(--paper);">' +
             '<button data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="16"></button>' +
             '<output id="pdpQty" aria-live="polite">1</output>' +
             '<button data-qty="1" aria-label="Increase quantity" data-ic="plus" data-ic-size="16"></button>' +
           '</div>' +
-          '<button class="btn btn-lg" id="pdpAdd" style="background:#333;color:#fff;box-shadow:none;border-radius:0;">' + ICON('bag', 18) + ' Add to cart</button>' +
+          '<button class="btn btn-lg" id="pdpAdd" style="background:#111;color:#fff;border-radius:12px;height:54px;font-weight:600;text-transform:none;">' + ICON('bag', 18) + ' Add to Cart</button>' +
         '</div>' +
-        '<button class="btn btn-lg btn-block" id="pdpBuy" style="background:#000;color:#fff;box-shadow:none;border-radius:0;">Buy it now</button>' +
         '<div class="secnote">' + ICON('lock', 12) + 'Secure checkout · Razorpay</div>' +
       '</div>';
   }
