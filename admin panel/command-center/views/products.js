@@ -276,18 +276,18 @@
     var currentCat = p.category || (p.categories && p.categories[0]);
     if (currentCat && typeof currentCat === 'object') currentCat = currentCat._id;
 
-    var variantsStr = '';
+    var variantsState = [];
     if (p.variants && p.variants.length > 0) {
       var isGrouped = p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
       if (isGrouped) {
-        variantsStr = p.variants.map(function(v) {
-          if (v.group && Array.isArray(v.options)) return v.group + ': ' + v.options.join(', ');
-          return '';
-        }).filter(Boolean).join(' | ');
+        variantsState = p.variants.filter(function(v) { return v && v.group && Array.isArray(v.options); });
       } else {
-        variantsStr = p.variants.map(function(v) { 
+        var stringVals = p.variants.map(function(v) { 
           return typeof v === 'string' ? v : (v && (v.name || v.label || v.title || v.size || v.color)) || ''; 
-        }).filter(Boolean).join(', ');
+        }).filter(Boolean);
+        if (stringVals.length > 0) {
+          variantsState.push({ group: 'Options', options: stringVals });
+        }
       }
     }
 
@@ -311,8 +311,11 @@
       '<div class="field"><label>Price (₹)</label><input class="input" id="fPrice" type="number" min="0" step="1" value="' + (pr.price || 0) + '"></div>' +
       '<div class="field"><label>Compare-at (₹)</label><input class="input" id="fOrig" type="number" min="0" step="1" value="' + (pr.originalPrice || 0) + '"></div>' +
       '<div class="field"><label>Stock</label><input class="input" id="fStock" type="number" min="0" step="1" value="' + (p.stock || 0) + '"></div>' +
-      '</div>' +
-      '<div class="field" style="margin-top:12px"><label>Variants (comma separated)</label><input class="input" id="fVariants" value="' + esc(variantsStr) + '" placeholder="e.g. Size: S, M | Color: Black, Silver"><div class="hint" style="font-size:11px;color:var(--ink-3)">Optional. For multiple groups use syntax: Group Name: Option 1, Option 2 | Another Group: A, B. For simple options just list them: Type-C, Lightning.</div></div>' +
+      '</div></div>' +
+
+      '<div class="dsec"><div class="dsec-title">' + icon('tag') + 'Variants</div>' +
+      '<div id="variantsHost"></div>' +
+      '<button class="btn ghost" id="addVariantBtn" style="margin-top:8px;font-size:12px;padding:4px 8px">' + icon('plus') + ' Add Variant</button>' +
       '</div>' +
 
       '<div class="dsec"><div class="dsec-title">' + icon('settings') + 'Visibility</div>' +
@@ -392,6 +395,57 @@
     }
     renderUploader();
 
+    function syncVariants() {
+      var groups = body.querySelectorAll('.v-group');
+      var opts = body.querySelectorAll('.v-opts');
+      variantsState = [];
+      for (var i = 0; i < groups.length; i++) {
+        var gName = groups[i].value.trim();
+        var optVals = opts[i].value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+        variantsState.push({ group: gName, options: optVals });
+      }
+    }
+
+    function renderVariants() {
+      var host = body.querySelector('#variantsHost');
+      if (!variantsState.length) {
+        host.innerHTML = '<div class="hint" style="font-size:13px;color:var(--ink-3)">No variants added.</div>';
+        return;
+      }
+      host.innerHTML = variantsState.map(function(v, i) {
+        return '<div style="background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:var(--r-2);padding:12px;margin-bottom:8px;position:relative">' +
+          '<button class="del-variant" data-idx="' + i + '" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--bad);cursor:pointer">' + icon('trash') + '</button>' +
+          '<div class="field" style="margin-bottom:8px"><label style="font-size:12px">Variant Name (e.g. Size)</label><input class="input v-group" value="' + esc(v.group || '') + '"></div>' +
+          '<div class="field"><label style="font-size:12px">Options (comma separated)</label><input class="input v-opts" value="' + esc((v.options || []).join(', ')) + '" placeholder="S, M, L"></div>' +
+        '</div>';
+      }).join('');
+    }
+    renderVariants();
+
+    var addVBtn = body.querySelector('#addVariantBtn');
+    if (addVBtn) {
+      addVBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        syncVariants();
+        variantsState.push({ group: '', options: [] });
+        renderVariants();
+      });
+    }
+    
+    var vHost = body.querySelector('#variantsHost');
+    if (vHost) {
+      vHost.addEventListener('click', function(e) {
+        var btn = e.target.closest('.del-variant');
+        if (btn) {
+          e.preventDefault();
+          syncVariants();
+          var idx = parseInt(btn.getAttribute('data-idx'), 10);
+          variantsState.splice(idx, 1);
+          renderVariants();
+        }
+      });
+    }
+
     foot.querySelector('#cancelEdit').addEventListener('click', close);
     foot.querySelector('#saveProduct').addEventListener('click', function () {
       var title = body.querySelector('#fTitle').value.trim();
@@ -421,19 +475,8 @@
         isFeatured: body.querySelector('#fFeatured').checked,
         isBestSeller: body.querySelector('#fBestSeller').checked,
         variants: (function() {
-          var raw = body.querySelector('#fVariants').value.trim();
-          if (!raw) return [];
-          if (raw.indexOf('|') > -1 || raw.indexOf(':') > -1) {
-            return raw.split('|').map(function(g) {
-              var parts = g.split(':');
-              if (parts.length < 2) return null;
-              var group = parts[0].trim();
-              var options = parts[1].split(',').map(function(o) { return o.trim(); }).filter(Boolean);
-              if (!group || !options.length) return null;
-              return { group: group, options: options };
-            }).filter(Boolean);
-          }
-          return raw.split(',').map(function(v) { return v.trim(); }).filter(Boolean);
+          syncVariants();
+          return variantsState.filter(function(v) { return v.group && v.options.length > 0; });
         })()
       };
 
