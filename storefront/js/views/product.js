@@ -313,7 +313,6 @@
     var body = descriptionHtml(p);
     if (body) items.push({ label: 'DESCRIPTION', html: body });
 
-    items.push({ label: 'PRODUCT DETAILS', html: detailsHtml(p) });
     items.push({
       label: 'CARE INSTRUCTIONS',
       html: '<p>Wipe with a clean, dry cloth when needed. Keep away from water and harsh chemicals to preserve the finish.</p>'
@@ -388,21 +387,6 @@
       .replace(/[ \t]+/g, ' ')
       .replace(/\n{2,}/g, '\n')
       .trim();
-  }
-
-  function detailsHtml(p) {
-    var rows = [];
-    if (p.sku) rows.push(['SKU', String(p.sku)]);
-    var cat = U.pcat(p);
-    if (cat) rows.push(['Category', cat]);
-    var stock = U.stock(p);
-    rows.push(['Availability', stock > 0 ? (stock + ' in stock') : 'Sold out']);
-    if (Array.isArray(p.tag) && p.tag.length) {
-      rows.push(['Tags', p.tag.filter(function (t) { return typeof t === 'string'; }).slice(0, 8).join(', ')]);
-    }
-    return '<div class="receipt" style="margin-top:0">' + rows.map(function (r) {
-      return '<div class="receipt-r"><span>' + U.esc(r[0]) + '</span><b>' + U.esc(r[1]) + '</b></div>';
-    }).join('') + '</div>';
   }
 
   /* ── Interaction ─────────────────────────────────────────────────────────── */
