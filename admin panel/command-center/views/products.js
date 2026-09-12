@@ -296,7 +296,9 @@
       '<div class="field"><label>Price (₹)</label><input class="input" id="fPrice" type="number" min="0" step="1" value="' + (pr.price || 0) + '"></div>' +
       '<div class="field"><label>Compare-at (₹)</label><input class="input" id="fOrig" type="number" min="0" step="1" value="' + (pr.originalPrice || 0) + '"></div>' +
       '<div class="field"><label>Stock</label><input class="input" id="fStock" type="number" min="0" step="1" value="' + (p.stock || 0) + '"></div>' +
-      '</div></div>' +
+      '</div>' +
+      '<div class="field" style="margin-top:12px"><label>Variants (comma separated)</label><input class="input" id="fVariants" value="' + esc((p.variants || []).map(function(v) { return typeof v === 'string' ? v : (v && (v.name || v.label || v.title || v.size || v.color)) || ''; }).filter(Boolean).join(', ')) + '" placeholder="e.g. Type-C, Lightning"><div class="hint" style="font-size:11px;color:var(--ink-3)">Optional. Add options for the customer to choose from.</div></div>' +
+      '</div>' +
 
       '<div class="dsec"><div class="dsec-title">' + icon('settings') + 'Visibility</div>' +
       '<div class="field"><label>Status</label><select class="select" id="fStatus">' +
@@ -402,7 +404,8 @@
         prices: { price: price, originalPrice: orig || price, discount: discount },
         status: body.querySelector('#fStatus').value,
         isFeatured: body.querySelector('#fFeatured').checked,
-        isBestSeller: body.querySelector('#fBestSeller').checked
+        isBestSeller: body.querySelector('#fBestSeller').checked,
+        variants: body.querySelector('#fVariants').value.split(',').map(function(v) { return v.trim(); }).filter(Boolean)
       };
 
       var btn = foot.querySelector('#saveProduct'); btn.disabled = true;

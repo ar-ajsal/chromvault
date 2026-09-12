@@ -442,22 +442,24 @@
 .pgrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--ink-hair);
+  border-top: 1px solid var(--ink-hair);
+  border-left: 1px solid var(--ink-hair);
 }
 .pgrid > * {
   padding: 0;
   background: var(--paper);
+  border-right: 1px solid var(--ink-hair);
+  border-bottom: 1px solid var(--ink-hair);
 }
 @media (min-width: 600px) {
-  .pgrid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .pgrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 }
 /* Best sellers grid — 2-up stays at any size up to 4-up on wide screens */
 .pgrid--bs {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 @media (min-width: 600px) {
-  .pgrid--bs { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .pgrid--bs { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 }
 @media (min-width: 1024px) {
   .pgrid--bs { grid-template-columns: repeat(4, minmax(0, 1fr)); }

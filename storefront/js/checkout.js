@@ -1028,7 +1028,7 @@
   function openRazorpay(order, items, f) {
     var n = Cart.count();
     var rzp = new window.Razorpay({
-      key: order.key || 'rzp_test_TaKxdzjE7H8ign',
+      key: order.key || 'rzp_test_Tank3T5Igx1JuX',
       amount: order.amount,               // paise, from the server
       currency: order.currency || 'INR',
       order_id: order.order_id || order.id, // server-created order ID

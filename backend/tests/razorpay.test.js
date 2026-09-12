@@ -12,10 +12,10 @@ const path = require('path');
 // Ensure env variables are set for testing
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 if (!process.env.RAZORPAY_KEY_ID) {
-  process.env.RAZORPAY_KEY_ID = 'rzp_test_TaKxdzjE7H8ign';
+  process.env.RAZORPAY_KEY_ID = 'rzp_test_Tank3T5Igx1JuX';
 }
 if (!process.env.RAZORPAY_KEY_SECRET) {
-  process.env.RAZORPAY_KEY_SECRET = 'pdt3BepqXEqZbhp8AxNfR9wG';
+  process.env.RAZORPAY_KEY_SECRET = 'y7PChWGyeY5wart366eIwBY3';
 }
 
 const { createRazorpayOrder, verifyPaymentAndCreateOrder } = require('../controllers/orderController');
