@@ -172,6 +172,8 @@
 
   /* ── Info column ─────────────────────────────────────────────────────────── */
 
+  /* ── Info column ─────────────────────────────────────────────────────────── */
+
   function infoHtml(p) {
     var title = U.text(p.title) || 'Untitled';
     var price = U.price(p);
@@ -180,43 +182,45 @@
     var stock = U.stock(p);
     var cat = U.pcat(p);
 
-    var stockLine;
-    if (stock <= 0) stockLine = '<span class="pdp-stock out"><span class="dot"></span>Sold out</span>';
-    else if (U.isLow(p)) stockLine = '<span class="pdp-stock low"><span class="dot"></span>Only ' + stock + ' left</span>';
-    else stockLine = '<span class="pdp-stock ok"><span class="dot"></span>In stock</span>';
-
-    var badges = '';
-    if (off >= 5) badges += '<span class="badge badge-ink">-' + off + '% off</span>';
-    if (p.isFeatured && stock > 0) badges += '<span class="badge badge-metal">Featured</span>';
+    var stockBadge = '';
+    if (stock <= 0) {
+      stockBadge = '<span class="pdp-stock-chip pdp-stock-out"><span class="pulse-dot out"></span>Sold out</span>';
+    } else if (U.isLow(p)) {
+      stockBadge = '<span class="pdp-stock-chip pdp-stock-low"><span class="pulse-dot low"></span>Only ' + stock + ' left · Selling fast</span>';
+    } else {
+      stockBadge = '<span class="pdp-stock-chip pdp-stock-ok"><span class="pulse-dot ok"></span>In stock · Ships today</span>';
+    }
 
     return '' +
       '<div class="pdp-info">' +
-        '<div class="stack" style="gap:var(--s3)">' +
+        /* Category Eyebrow + Live Stock Badge */
+        '<div class="pdp-top-meta">' +
           (cat
-            ? '<a class="eyebrow" href="/shop" data-nav style="color:var(--ink-3)">' + U.esc(cat) + '</a>'
-            : '<span class="eyebrow">Chromvault</span>') +
-          '<h1 class="pdp-title">' + U.esc(title) + '</h1>' +
+            ? '<a class="pdp-category-eyebrow" href="/shop" data-nav>' + U.esc(cat) + '</a>'
+            : '<span class="pdp-category-eyebrow">Chromvault Archive</span>') +
+          stockBadge +
         '</div>' +
 
-        '<div class="pdp-price">' +
-          '<span class="price">' + U.money(price) + '</span>' +
-          (was ? '<span class="price-was">' + U.money(was) + '</span>' : '') +
-          (badges ? '<span class="row" style="gap:6px">' + badges + '</span>' : '') +
+        /* Product Title */
+        '<h1 class="pdp-main-title">' + U.esc(title) + '</h1>' +
+
+        /* Price Deck */
+        '<div class="pdp-price-deck">' +
+          '<div class="pdp-price-group">' +
+            '<span class="pdp-price-val">' + U.money(price) + '</span>' +
+            (was ? '<span class="pdp-price-original">' + U.money(was) + '</span>' : '') +
+            (off >= 5 ? '<span class="pdp-save-badge">-' + off + '% OFF</span>' : '') +
+          '</div>' +
+          '<span class="pdp-tax-note">Inclusive of all taxes · Express pan-India air delivery</span>' +
         '</div>' +
 
-        stockLine +
         variantHtml(p) +
         actionsHtml(p) +
         accordionHtml(p) +
       '</div>';
   }
 
-  /* Variant options. The catalogue's `variants` array is an untyped object list
-     inherited from the import, and the backend has no per-variant price or
-     stock, so a selector is rendered ONLY when an entry exposes a plain
-     human-readable label. The chosen label travels to the order as the
-     `variant` string the Order model already stores — no client-side price is
-     ever derived from it, because the server would not honour it. */
+  /* Universal Variant Options */
   function variantHtml(p) {
     if (!p || !Array.isArray(p.variants) || !p.variants.length) return '';
     var isGrouped = p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
@@ -226,15 +230,20 @@
         if (!v.group || !Array.isArray(v.options) || v.options.length < 1) return '';
         var rawGroup = String(v.group).trim();
         var labelText = /^select\s+/i.test(rawGroup) ? rawGroup.toUpperCase() : ('SELECT ' + rawGroup.toUpperCase());
+        var initialVal = v.options[0] || '';
         return '' +
-          '<div class="opt-group" style="margin-bottom:16px">' +
-            '<div class="opt-head" style="margin-bottom:8px">' +
-              '<span class="label" style="font-family:var(--f-mono,monospace);font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)">' + U.esc(labelText) + '</span>' +
+          '<div class="pdp-opt-section">' +
+            '<div class="pdp-opt-header">' +
+              '<span class="pdp-opt-title">' + U.esc(labelText) + '</span>' +
+              '<span class="pdp-opt-current" id="optHint_' + groupIdx + '">' + U.esc(initialVal) + '</span>' +
             '</div>' +
-            '<div class="opt-vals" data-group-idx="' + groupIdx + '" style="display:flex;flex-direction:column;gap:10px">' +
+            '<div class="pdp-opt-grid opt-vals" data-group-idx="' + groupIdx + '">' +
               v.options.map(function(opt, i) {
-                return '<button class="opt opt-blk" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
-                       (i === 0 ? 'true' : 'false') + '">' + U.esc(opt) + '</button>';
+                return '<button type="button" class="pdp-opt-btn" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
+                       (i === 0 ? 'true' : 'false') + '">' +
+                       '<span class="pdp-opt-dot"></span>' +
+                       '<span>' + U.esc(opt) + '</span>' +
+                       '</button>';
               }).join('') +
             '</div>' +
           '</div>';
@@ -245,14 +254,18 @@
     if (vals.length < 2) return '';
 
     return '' +
-      '<div class="opt-group" style="margin-bottom:16px">' +
-        '<div class="opt-head" style="margin-bottom:8px">' +
-          '<span class="label" style="font-family:var(--f-mono,monospace);font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)">SELECT OPTION</span>' +
+      '<div class="pdp-opt-section">' +
+        '<div class="pdp-opt-header">' +
+          '<span class="pdp-opt-title">SELECT OPTION</span>' +
+          '<span class="pdp-opt-current" id="optHint">' + U.esc(vals[0] || '') + '</span>' +
         '</div>' +
-        '<div class="opt-vals" id="optVals" style="display:flex;flex-direction:column;gap:10px">' +
+        '<div class="pdp-opt-grid opt-vals" id="optVals">' +
           vals.map(function (v, i) {
-            return '<button class="opt opt-blk" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
-                   (i === 0 ? 'true' : 'false') + '">' + U.esc(v) + '</button>';
+            return '<button type="button" class="pdp-opt-btn" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
+                   (i === 0 ? 'true' : 'false') + '">' +
+                   '<span class="pdp-opt-dot"></span>' +
+                   '<span>' + U.esc(v) + '</span>' +
+                   '</button>';
           }).join('') +
         '</div>' +
       '</div>';
@@ -275,10 +288,9 @@
     return out;
   }
 
-  /* ── Actions ─────────────────────────────────────────────────────────────── */
+  /* ── Actions & Bundles ─────────────────────────────────────────────────────── */
 
-  /* ── Quantity-tier price resolver (client-side for display only) ──────────
-     Server always re-prices. This just keeps the displayed number in sync. */
+  /* Quantity-tier price resolver (client-side for display only) */
   function resolveDisplayPrice(p, qty) {
     var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
     if (tiers.length > 0) {
@@ -290,23 +302,33 @@
     return U.price(p);
   }
 
+  /* Interactive Volume Bundle Cards */
   function qtyPricingHtml(p) {
     var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
     if (!tiers.length) return '';
     var sorted = tiers.slice().sort(function(a, b) { return a.minQty - b.minQty; });
     var basePrice = U.price(p);
+
     return '' +
-      '<div style="border:1.5px solid var(--ink-hair);border-radius:16px;padding:14px 18px;margin-top:6px">' +
-        '<div style="font-family:var(--f-mono,monospace);font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">Buy More · Save More</div>' +
-        '<div style="display:flex;flex-direction:column;gap:8px">' +
-          sorted.map(function(t) {
+      '<div class="pdp-bundles-wrap">' +
+        '<div class="pdp-bundles-head">' +
+          '<span class="pdp-bundles-tag">Bundle & Save</span>' +
+          '<span class="pdp-bundles-sub">Tap a tier for instant discount</span>' +
+        '</div>' +
+        '<div class="pdp-bundles-grid">' +
+          sorted.map(function(t, idx) {
             var saving = basePrice > t.price ? (basePrice - t.price) : 0;
-            return '<div style="display:flex;align-items:center;justify-content:space-between">' +
-              '<span style="font-size:13px;color:var(--ink-3);font-family:var(--f-mono,monospace);font-weight:700;letter-spacing:.04em">' + t.minQty + '+</span>' +
-              '<span style="display:flex;align-items:center;gap:8px">' +
-                '<span style="font-size:14px;font-weight:700">' + U.money(t.price) + ' each</span>' +
-                (saving > 0 ? '<span style="font-size:10px;font-weight:800;letter-spacing:.04em;background:#000;color:#fff;padding:2px 7px;border-radius:4px">SAVE ' + U.money(saving) + '</span>' : '') +
-              '</span>' +
+            var isPopular = idx === 0 && sorted.length > 1;
+            return '<div class="pdp-bundle-card" data-tier-min="' + t.minQty + '" role="button" tabindex="0">' +
+              (isPopular ? '<div class="pdp-bundle-badge">Best Value</div>' : '') +
+              '<div class="pdp-bundle-top">' +
+                '<div class="pdp-bundle-radio"><span class="pdp-bundle-radio-in"></span></div>' +
+                '<span class="pdp-bundle-qty">' + t.minQty + '+ Pieces</span>' +
+              '</div>' +
+              '<div class="pdp-bundle-bottom">' +
+                '<div class="pdp-bundle-price">' + U.money(t.price) + '<span class="pdp-bundle-each"> / ea</span></div>' +
+                (saving > 0 ? '<span class="pdp-bundle-save">Save ' + U.money(saving) + '</span>' : '') +
+              '</div>' +
             '</div>';
           }).join('') +
         '</div>' +
@@ -318,76 +340,70 @@
 
     if (stock <= 0) {
       return '' +
-        '<div class="pdp-actions">' +
-          '<button class="btn btn-lg btn-block" disabled>Sold out</button>' +
-          '<p class="field-msg muted">Single-run stock. This piece will not be restocked — ' +
-            'browse the rest of the archive for what is still available.</p>' +
-          '<a class="btn btn-ghost btn-block" href="/shop" data-nav>Shop everything</a>' +
+        '<div class="pdp-actions" style="margin-top:16px;">' +
+          '<button class="btn btn-lg btn-block" disabled style="opacity:0.5;border-radius:14px;">Sold out</button>' +
+          '<p class="field-msg muted" style="text-align:center;margin-top:8px;">Single-run archival stock. This piece will not be reproduced.</p>' +
+          '<a class="btn btn-ghost btn-block" href="/shop" data-nav style="border-radius:14px;margin-top:10px;">Explore Archive Collection</a>' +
         '</div>';
     }
 
-    // Inline styles injected once — scoped to the PDP, strictly matching the visual
-    // reference screenshot: flat black buttons, outlined Add-to-Cart, monospace labels.
-    var styleBlock = '<style>' +
-      /* Option buttons — full-width solid-black pill when selected, outlined when not */
-      '.opt-blk { width:100%; min-height:60px; border-radius:16px; font-family:var(--f-sans,sans-serif); font-size:16px; font-weight:700; letter-spacing:0.01em; text-transform:none; border:1.5px solid var(--ink-hair); background:var(--paper); color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s, color 0.15s, border-color 0.15s; } ' +
-      '.opt-blk:hover { border-color:var(--ink-3); } ' +
-      '.opt-blk[aria-pressed="true"] { background:#000; color:#fff; border-color:#000; } ' +
-      /* Qty selector — light outlined pill matching screenshot */
-      '.qty-pdp { border-radius:16px; border:1.5px solid var(--ink-hair); background:var(--paper); height:56px; width:130px; flex:none; } ' +
-      /* Add to Cart — outlined pill */
-      '.btn-atc { flex:1; height:56px; border-radius:16px; border:1.5px solid var(--ink); background:var(--paper); color:var(--ink); font-family:var(--f-sans,sans-serif); font-size:14px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:background 0.15s, color 0.15s; } ' +
-      '.btn-atc:hover { background:var(--ink); color:var(--paper); } ' +
-      '.btn-atc:active { opacity:0.85; } ' +
-      /* Buy It Now — flat solid black, no gradient, no animation */
-      '.btn-bin { width:100%; height:60px; border-radius:16px; border:none; background:#000; color:#fff; font-family:var(--f-sans,sans-serif); font-size:16px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:opacity 0.15s; } ' +
-      '.btn-bin:hover { opacity:0.88; } ' +
-      '.btn-bin:active { opacity:0.75; } ' +
-      /* Secure checkout note */
-      '.secnote-pdp { display:flex; align-items:center; justify-content:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); font-family:var(--f-mono,monospace); margin-top:2px; } ' +
-    '</style>';
-
-    return styleBlock +
-      '<div class="pdp-actions" style="gap:14px;">' +
-        /* Row 1: qty selector + add to cart (matching screenshot proportions) */
-        '<div style="display:flex;gap:12px;align-items:stretch">' +
-          '<div class="qty qty-pdp">' +
-            '<button data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="16"></button>' +
-            '<output id="pdpQty" aria-live="polite">1</output>' +
-            '<button data-qty="1" aria-label="Increase quantity" data-ic="plus" data-ic-size="16"></button>' +
-          '</div>' +
-          '<button id="pdpAdd" class="btn-atc">' + ICON('bag', 18) + ' Add to Cart</button>' +
-        '</div>' +
-        /* Row 2: Buy It Now — full-width flat black */
-        '<button id="pdpBuy" class="btn-bin">Buy It Now</button>' +
-        /* Secure checkout note */
-        '<div class="secnote-pdp">' + ICON('lock', 12) + ' Secure Checkout · Razorpay</div>' +
-        /* Row 3: qty pricing table — only when configured, after secure note */
-        '<div id="pdpPriceLine" style="display:none;font-size:13px;color:var(--ink-3);text-align:center;letter-spacing:.02em"></div>' +
+    return '' +
+      '<div class="pdp-actions-cockpit">' +
         qtyPricingHtml(p) +
+        '<div id="pdpPriceLine" class="pdp-live-calc"></div>' +
+
+        /* Stepper + Add to Cart */
+        '<div class="pdp-cta-row">' +
+          '<div class="pdp-stepper">' +
+            '<button type="button" class="pdp-stepper-btn" data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="14"></button>' +
+            '<output id="pdpQty" class="pdp-stepper-val" aria-live="polite">1</output>' +
+            '<button type="button" class="pdp-stepper-btn" data-qty="1" aria-label="Increase quantity" data-ic="plus" data-ic-size="14"></button>' +
+          '</div>' +
+          '<button type="button" id="pdpAdd" class="pdp-btn-atc">' +
+            ICON('bag', 18) +
+            '<span>Add to Cart</span>' +
+          '</button>' +
+        '</div>' +
+
+        /* High-Impact Buy It Now Primary CTA */
+        '<button type="button" id="pdpBuy" class="pdp-btn-bin">' +
+          ICON('zap', 18) +
+          '<span>Buy It Now</span>' +
+          '<span class="pdp-bin-sub">&bull; Instant Checkout</span>' +
+        '</button>' +
+
+        /* Security Assurance */
+        '<div class="pdp-secure-strip">' +
+          '<span>' + ICON('lock', 12) + ' 256-Bit SSL Encrypted</span>' +
+          '<span class="pdp-secure-dot">&bull;</span>' +
+          '<span>Instant UPI / Cards via Razorpay</span>' +
+        '</div>' +
       '</div>';
   }
 
-  /* ── Accordion ───────────────────────────────────────────────────────────── */
+  /* ── Accordion & Trust ────────────────────────────────────────────────────── */
 
   function accordionHtml(p) {
     var items = [];
 
     var body = descriptionHtml(p);
-    if (body) items.push({ label: 'DESCRIPTION', html: body });
+    if (body) items.push({ label: 'DESCRIPTION & DETAILS', html: body, open: true });
 
     items.push({
-      label: 'CARE INSTRUCTIONS',
-      html: '<p>Wipe with a clean, dry cloth when needed. Keep away from water and harsh chemicals to preserve the finish.</p>'
+      label: 'CARE & PRESERVATION',
+      html: '<p>Wipe with a clean, microfiber cloth. Protect from excessive moisture and harsh chemicals to maintain mirror chrome brilliance.</p>'
     });
 
     var banner = 
-      '<div style="border: 1px solid var(--ink-hair); border-radius: var(--r-2); padding: var(--s4); display: flex; align-items: center; justify-content: center; gap: var(--s3); margin-bottom: var(--s6);">' +
-        '<div style="color:var(--ink)">' + ICON('truck', 24) + '</div>' +
-        '<div style="display:flex;flex-direction:column;">' +
-          '<span style="font-size:var(--t-xs);color:var(--ink-3);">Expected delivery</span>' +
-          '<b style="font-size:15px;">Ships in 3-5 Days</b>' +
+      '<div style="border: 1.5px solid var(--paper-edge); border-radius: 14px; background: var(--paper-sink); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 20px; margin-bottom: 20px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+          '<div style="color:var(--ink);display:flex;">' + ICON('truck', 22) + '</div>' +
+          '<div style="display:flex;flex-direction:column;">' +
+            '<span style="font-size:11px;font-family:var(--f-mono);letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">Estimated Delivery</span>' +
+            '<b style="font-size:14px;color:var(--ink);">Ships in 24 Hours &bull; 3-5 Days Arrival</b>' +
+          '</div>' +
         '</div>' +
+        '<span style="font-size:10px;font-weight:700;letter-spacing:0.04em;background:#ecfdf5;color:#047857;padding:3px 8px;border-radius:9999px;border:1px solid #a7f3d0;">AIR EXPRESS</span>' +
       '</div>';
 
     var acc = '<div class="acc">' + items.map(function (it, i) {
@@ -395,8 +411,8 @@
       return '' +
         '<div class="acc-item">' +
           '<button class="acc-btn" aria-expanded="' + (open ? 'true' : 'false') + '" data-acc="' + i + '">' +
-            '<span style="font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:0.02em;">' + U.esc(it.label) + '</span>' +
-            '<span class="ic">' + ICON('chevD', 20) + '</span>' +
+            '<span style="font-family:var(--f-display);font-weight:800;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;">' + U.esc(it.label) + '</span>' +
+            '<span class="ic">' + ICON('chevD', 18) + '</span>' +
           '</button>' +
           '<div class="acc-panel" data-open="' + (open ? 'true' : 'false') + '" data-acc-panel="' + i + '">' +
             '<div><div class="acc-body">' + it.html + '</div></div>' +
@@ -410,11 +426,35 @@
     var badgeCheck = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="m9 12 2 2 4-4"/></svg>';
 
     var badges = 
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-top:var(--s7);">' +
-        trustBadge(ICON('lock', 20), 'Secure Payment') +
-        trustBadge(shieldCheck, 'SSL Encrypted') +
-        trustBadge(ICON('truck', 20), 'Express Shipping') +
-        trustBadge(badgeCheck, 'Cult Approved') +
+      '<div class="pdp-trust-grid">' +
+        '<div class="pdp-trust-card">' +
+          '<span class="pdp-trust-icon">' + ICON('truck', 22) + '</span>' +
+          '<div class="pdp-trust-info">' +
+            '<span class="pdp-trust-title">Express Air Shipping</span>' +
+            '<span class="pdp-trust-desc">Pan-India express tracking</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pdp-trust-card">' +
+          '<span class="pdp-trust-icon">' + ICON('lock', 22) + '</span>' +
+          '<div class="pdp-trust-info">' +
+            '<span class="pdp-trust-title">Secure Payments</span>' +
+            '<span class="pdp-trust-desc">Instant UPI, Cards & NetBanking</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pdp-trust-card">' +
+          '<span class="pdp-trust-icon">' + shieldCheck + '</span>' +
+          '<div class="pdp-trust-info">' +
+            '<span class="pdp-trust-title">Authentic Pieces</span>' +
+            '<span class="pdp-trust-desc">Hand-finished mirror polish</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pdp-trust-card">' +
+          '<span class="pdp-trust-icon">' + badgeCheck + '</span>' +
+          '<div class="pdp-trust-info">' +
+            '<span class="pdp-trust-title">Cult Guarantee</span>' +
+            '<span class="pdp-trust-desc">7-day replacement support</span>' +
+          '</div>' +
+        '</div>' +
       '</div>';
 
     return banner + acc + badges;
@@ -556,6 +596,19 @@
     updateQtyPrice(p);
     syncQtyButtons(stock);
 
+    // Interactive Volume Bundle Cards
+    U.on(view, 'click', '[data-tier-min]', function (e, card) {
+      var min = Number(card.getAttribute('data-tier-min'));
+      if (min && min <= stock) {
+        S.qty = min;
+        var out = U.$('#pdpQty');
+        if (out) out.textContent = String(S.qty);
+        syncQtyButtons(stock);
+        updateQtyPrice(p);
+        paintBuyBar(p);
+      }
+    });
+
     // Add / Buy
     var add = U.$('#pdpAdd');
     if (add) add.addEventListener('click', function () { addToCart(p, false); });
@@ -592,18 +645,41 @@
     if (inc) inc.disabled = S.qty >= stock;
   }
 
-  /* Update the live price line below the qty selector when tiers are active. */
+  /* Update the live price line and active bundle cards when quantity changes */
   function updateQtyPrice(p) {
     var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
     var line = U.$('#pdpPriceLine');
-    if (!line || !tiers.length) return;
     var unitPrice = resolveDisplayPrice(p, S.qty);
     var basePrice = U.price(p);
     var total = unitPrice * S.qty;
     var saving = (basePrice - unitPrice) * S.qty;
-    var html = '<strong>' + U.money(unitPrice) + ' × ' + S.qty + '</strong> = <strong>' + U.money(total) + '</strong>';
+
+    // Highlight active bundle card
+    var cards = U.$$('[data-tier-min]');
+    if (cards && cards.length) {
+      var activeTierMin = 0;
+      var sorted = tiers.slice().sort(function(a, b) { return b.minQty - a.minQty; });
+      for (var i = 0; i < sorted.length; i++) {
+        if (S.qty >= sorted[i].minQty) { activeTierMin = sorted[i].minQty; break; }
+      }
+      cards.forEach(function(c) {
+        var cMin = Number(c.getAttribute('data-tier-min'));
+        if (cMin === activeTierMin) {
+          c.classList.add('is-active');
+        } else {
+          c.classList.remove('is-active');
+        }
+      });
+    }
+
+    if (!line) return;
+    if (!tiers.length) {
+      line.style.display = 'none';
+      return;
+    }
+    var html = '<span><strong>' + U.money(unitPrice) + ' &times; ' + S.qty + '</strong> = <strong>' + U.money(total) + '</strong></span>';
     if (saving > 0) {
-      html += ' &nbsp;<span style="color:var(--ok,#16a34a);font-weight:700">You save ' + U.money(saving) + '</span>';
+      html += ' &bull; <span style="color:#059669;font-weight:700">Total Savings: ' + U.money(saving) + '</span>';
     }
     line.innerHTML = html;
     line.style.display = 'block';
