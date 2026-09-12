@@ -476,7 +476,10 @@
         isBestSeller: body.querySelector('#fBestSeller').checked,
         variants: (function() {
           syncVariants();
-          return variantsState.filter(function(v) { return v.group && v.options.length > 0; });
+          return variantsState.map(function(v) {
+            if (!v.group && v.options.length > 0) v.group = 'Options';
+            return v;
+          }).filter(function(v) { return v.group && v.options.length > 0; });
         })()
       };
 
