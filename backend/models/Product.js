@@ -19,6 +19,14 @@ const productSchema = new mongoose.Schema({
   },
   isCombination: { type: Boolean, default: false },
   variants: [{ type: Object }],
+  // Quantity-tier pricing (Buy More Save More).
+  // Each entry: { minQty: Number, price: Number }.
+  // Sorted descending by minQty at query time. Products without this field
+  // fall through to the flat prices.price value — fully backward compatible.
+  qtyPricing: [{
+    minQty: { type: Number, required: true, min: 1 },
+    price:  { type: Number, required: true, min: 0 }
+  }],
   status: { type: String, default: 'show' },
   isFeatured: { type: Boolean, default: false },
   isBestSeller: { type: Boolean, default: false },

@@ -1,4 +1,4 @@
-/* ============================================================================
+﻿/* ============================================================================
    View: Products — card/table hybrid catalog with inventory status, search,
    category filter, and a premium editor drawer with Cloudinary image upload.
    API:
@@ -276,20 +276,26 @@
     var currentCat = p.category || (p.categories && p.categories[0]);
     if (currentCat && typeof currentCat === 'object') currentCat = currentCat._id;
 
-    var variantsState = [];
+    // ── Product Options State (formerly "variants") ──────────────────────────
+    var optionsState = [];
     if (p.variants && p.variants.length > 0) {
       var isGrouped = p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
       if (isGrouped) {
-        variantsState = p.variants.filter(function(v) { return v && v.group && Array.isArray(v.options); });
+        optionsState = p.variants.filter(function(v) { return v && v.group && Array.isArray(v.options); });
       } else {
-        var stringVals = p.variants.map(function(v) { 
-          return typeof v === 'string' ? v : (v && (v.name || v.label || v.title || v.size || v.color)) || ''; 
+        var stringVals = p.variants.map(function(v) {
+          return typeof v === 'string' ? v : (v && (v.name || v.label || v.title || v.size || v.color)) || '';
         }).filter(Boolean);
         if (stringVals.length > 0) {
-          variantsState.push({ group: 'Options', options: stringVals });
+          optionsState.push({ group: 'Options', options: stringVals });
         }
       }
     }
+
+    // ── Quantity Pricing State ────────────────────────────────────────────────
+    var qtyPricingState = Array.isArray(p.qtyPricing) ? p.qtyPricing.map(function(t) {
+      return { minQty: t.minQty, price: t.price };
+    }) : [];
 
     var body = drawerEl.querySelector('#drawerBody');
     body.innerHTML =
@@ -306,16 +312,31 @@
       _categories.map(function (c) { return '<option value="' + esc(c._id) + '"' + (c._id === currentCat ? ' selected' : '') + '>' + esc(CC.locName(c.name, 'Category')) + '</option>'; }).join('') +
       '</select><div class="hint" style="font-size:11px;color:var(--ink-3)">Every product must be assigned to a category.</div></div></div>' +
 
-      '<div class="dsec"><div class="dsec-title">' + icon('rupee') + 'Pricing & stock</div>' +
+      '<div class="dsec"><div class="dsec-title">' + icon('rupee') + 'Pricing &amp; stock</div>' +
       '<div class="grid grid-3" style="gap:12px">' +
-      '<div class="field"><label>Price (₹)</label><input class="input" id="fPrice" type="number" min="0" step="1" value="' + (pr.price || 0) + '"></div>' +
+      '<div class="field"><label>Base Price (₹)</label><input class="input" id="fPrice" type="number" min="0" step="1" value="' + (pr.price || 0) + '"></div>' +
       '<div class="field"><label>Compare-at (₹)</label><input class="input" id="fOrig" type="number" min="0" step="1" value="' + (pr.originalPrice || 0) + '"></div>' +
       '<div class="field"><label>Stock</label><input class="input" id="fStock" type="number" min="0" step="1" value="' + (p.stock || 0) + '"></div>' +
       '</div></div>' +
 
-      '<div class="dsec"><div class="dsec-title">' + icon('tag') + 'Variants</div>' +
-      '<div id="variantsHost"></div>' +
-      '<button class="btn ghost" id="addVariantBtn" style="margin-top:8px;font-size:12px;padding:4px 8px">' + icon('plus') + ' Add Variant</button>' +
+      // ── Product Options Section ──────────────────────────────────────────
+      '<div class="dsec">' +
+        '<div class="dsec-title">' + icon('sliders') + 'Product Options</div>' +
+        '<div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">' +
+          'Add selectable options for customers (e.g. Size, Color, Connector). Each option has a name and comma-separated values.' +
+        '</div>' +
+        '<div id="optionsHost"></div>' +
+        '<button class="btn ghost" id="addOptionBtn" style="margin-top:8px;font-size:12px;padding:6px 12px">' + icon('plus') + ' Add Option</button>' +
+      '</div>' +
+
+      // ── Quantity Pricing Section ─────────────────────────────────────────
+      '<div class="dsec">' +
+        '<div class="dsec-title">' + icon('dollar') + 'Quantity Pricing <span style="font-weight:400;font-size:12px;color:var(--ink-3);font-family:var(--f-body)">(Buy More Save More)</span></div>' +
+        '<div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">' +
+          'Offer lower prices for higher quantities. Leave empty to use the base price for all quantities.' +
+        '</div>' +
+        '<div id="qtyPricingHost"></div>' +
+        '<button class="btn ghost" id="addTierBtn" style="margin-top:8px;font-size:12px;padding:6px 12px">' + icon('plus') + ' Add Pricing Tier</button>' +
       '</div>' +
 
       '<div class="dsec"><div class="dsec-title">' + icon('settings') + 'Visibility</div>' +
@@ -337,7 +358,9 @@
       '<button class="btn ghost" id="cancelEdit">Cancel</button>' +
       '<button class="btn primary" id="saveProduct">' + icon('save') + (p._id ? 'Save changes' : 'Create product') + '</button>';
 
-    // ---- image uploader ----
+    // ──────────────────────────────────────────────────────────────────────────
+    // Image uploader
+    // ──────────────────────────────────────────────────────────────────────────
     function renderUploader() {
       var host = body.querySelector('#uploader');
       host.innerHTML = images.map(function (url, i) {
@@ -346,7 +369,7 @@
       }).join('') +
         '<label class="up-slot" title="Upload image">' + icon('upload') +
         '<input type="file" accept="image/*" hidden id="fileInput"></label>';
-        
+
       host.querySelectorAll('[data-rm]').forEach(function (b) {
         b.addEventListener('click', function () { images.splice(+b.getAttribute('data-rm'), 1); renderUploader(); });
       });
@@ -386,7 +409,6 @@
         var slot = host.querySelector('.up-slot');
         slot.innerHTML = '<div class="spinner" style="width:22px;height:22px;border-width:2px"></div>';
         CC.API.upload(file).then(function (res) {
-          // upload endpoint returns the URL as a plain string
           var url = typeof res === 'string' ? res : (res && (res.url || res.secure_url || res.path));
           if (!url) throw new Error('Upload failed.');
           images.push(url); renderUploader();
@@ -395,57 +417,154 @@
     }
     renderUploader();
 
-    function syncVariants() {
-      var groups = body.querySelectorAll('.v-group');
-      var opts = body.querySelectorAll('.v-opts');
-      variantsState = [];
+    // ──────────────────────────────────────────────────────────────────────────
+    // Product Options (admin-controlled, universal)
+    // ──────────────────────────────────────────────────────────────────────────
+    function syncOptions() {
+      var groups = body.querySelectorAll('.o-group');
+      var opts   = body.querySelectorAll('.o-opts');
+      optionsState = [];
       for (var i = 0; i < groups.length; i++) {
         var gName = groups[i].value.trim();
         var optVals = opts[i].value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-        variantsState.push({ group: gName, options: optVals });
+        optionsState.push({ group: gName, options: optVals });
       }
     }
 
-    function renderVariants() {
-      var host = body.querySelector('#variantsHost');
-      if (!variantsState.length) {
-        host.innerHTML = '<div class="hint" style="font-size:13px;color:var(--ink-3)">No variants added.</div>';
+    function renderOptions() {
+      var host = body.querySelector('#optionsHost');
+      if (!optionsState.length) {
+        host.innerHTML =
+          '<div style="background:var(--paper-sink);border:1px dashed var(--ink-hair);border-radius:var(--r-2);padding:16px 20px;text-align:center;color:var(--ink-3);font-size:13px">' +
+            icon('sliders') + ' No options yet. Click <strong>Add Option</strong> to add Size, Color, Connector, etc.' +
+          '</div>';
         return;
       }
-      host.innerHTML = variantsState.map(function(v, i) {
-        return '<div style="background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:var(--r-2);padding:12px;margin-bottom:8px;position:relative">' +
-          '<button class="del-variant" data-idx="' + i + '" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--bad);cursor:pointer">' + icon('trash') + '</button>' +
-          '<div class="field" style="margin-bottom:8px"><label style="font-size:12px">Variant Name (e.g. Size)</label><input class="input v-group" value="' + esc(v.group || '') + '"></div>' +
-          '<div class="field"><label style="font-size:12px">Options (comma separated)</label><input class="input v-opts" value="' + esc((v.options || []).join(', ')) + '" placeholder="S, M, L"></div>' +
+      host.innerHTML = optionsState.map(function(v, i) {
+        return '<div style="background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:var(--r-2);padding:14px 14px 14px 16px;margin-bottom:10px;position:relative">' +
+          '<button class="del-option" data-idx="' + i + '" title="Remove option" style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--bad);cursor:pointer;padding:4px">' + icon('trash') + '</button>' +
+          '<div class="grid" style="grid-template-columns:1fr 2fr;gap:10px;padding-right:36px">' +
+            '<div class="field" style="margin:0">' +
+              '<label style="font-size:12px;font-weight:600;color:var(--ink-2)">Option Name</label>' +
+              '<input class="input o-group" value="' + esc(v.group || '') + '" placeholder="e.g. Size, Color, Connector" style="margin-top:4px">' +
+            '</div>' +
+            '<div class="field" style="margin:0">' +
+              '<label style="font-size:12px;font-weight:600;color:var(--ink-2)">Values <span style="font-weight:400;color:var(--ink-4)">(comma separated)</span></label>' +
+              '<input class="input o-opts" value="' + esc((v.options || []).join(', ')) + '" placeholder="e.g. S, M, L, XL" style="margin-top:4px">' +
+            '</div>' +
+          '</div>' +
         '</div>';
       }).join('');
-    }
-    renderVariants();
 
-    var addVBtn = body.querySelector('#addVariantBtn');
-    if (addVBtn) {
-      addVBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        syncVariants();
-        variantsState.push({ group: '', options: [] });
-        renderVariants();
-      });
-    }
-    
-    var vHost = body.querySelector('#variantsHost');
-    if (vHost) {
-      vHost.addEventListener('click', function(e) {
-        var btn = e.target.closest('.del-variant');
-        if (btn) {
+      host.querySelectorAll('.del-option').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
           e.preventDefault();
-          syncVariants();
+          syncOptions();
           var idx = parseInt(btn.getAttribute('data-idx'), 10);
-          variantsState.splice(idx, 1);
-          renderVariants();
-        }
+          optionsState.splice(idx, 1);
+          renderOptions();
+        });
+      });
+    }
+    renderOptions();
+
+    var addOptBtn = body.querySelector('#addOptionBtn');
+    if (addOptBtn) {
+      addOptBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        syncOptions();
+        optionsState.push({ group: '', options: [] });
+        renderOptions();
+        // Focus the new group name input
+        var inputs = body.querySelectorAll('.o-group');
+        if (inputs.length) inputs[inputs.length - 1].focus();
       });
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Quantity Pricing (Buy More Save More)
+    // ──────────────────────────────────────────────────────────────────────────
+    function syncQtyPricing() {
+      var minQtyInputs = body.querySelectorAll('.tier-qty');
+      var priceInputs  = body.querySelectorAll('.tier-price');
+      qtyPricingState = [];
+      for (var i = 0; i < minQtyInputs.length; i++) {
+        var minQty = parseInt(minQtyInputs[i].value, 10);
+        var price  = parseFloat(priceInputs[i].value);
+        if (!isNaN(minQty) && minQty >= 1 && !isNaN(price) && price >= 0) {
+          qtyPricingState.push({ minQty: minQty, price: price });
+        }
+      }
+    }
+
+    function renderQtyPricing() {
+      var host = body.querySelector('#qtyPricingHost');
+      if (!qtyPricingState.length) {
+        host.innerHTML =
+          '<div style="background:var(--paper-sink);border:1px dashed var(--ink-hair);border-radius:var(--r-2);padding:16px 20px;text-align:center;color:var(--ink-3);font-size:13px">' +
+            icon('dollar') + ' No tiers yet. Click <strong>Add Pricing Tier</strong> to set up bulk discounts.' +
+          '</div>';
+        return;
+      }
+
+      var tableRows = qtyPricingState.map(function(t, i) {
+        return '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:8px">' +
+          '<div class="field" style="margin:0">' +
+            '<label style="font-size:12px;font-weight:600;color:var(--ink-2)">Min Qty</label>' +
+            '<input class="input tier-qty" type="number" min="1" step="1" value="' + t.minQty + '" placeholder="1" style="margin-top:4px">' +
+          '</div>' +
+          '<div class="field" style="margin:0">' +
+            '<label style="font-size:12px;font-weight:600;color:var(--ink-2)">Price per item (₹)</label>' +
+            '<input class="input tier-price" type="number" min="0" step="1" value="' + t.price + '" placeholder="899" style="margin-top:4px">' +
+          '</div>' +
+          '<button class="del-tier" data-idx="' + i + '" title="Remove tier" style="background:none;border:none;color:var(--bad);cursor:pointer;padding:8px;margin-bottom:2px">' + icon('trash') + '</button>' +
+        '</div>';
+      }).join('');
+
+      host.innerHTML =
+        '<div style="background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:var(--r-2);padding:14px 14px 6px">' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:4px;padding-bottom:8px;border-bottom:1px solid var(--ink-hair)">' +
+            '<span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)">Min Qty</span>' +
+            '<span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)">Price/item</span>' +
+            '<span></span>' +
+          '</div>' +
+          tableRows +
+        '</div>';
+
+      host.querySelectorAll('.del-tier').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          syncQtyPricing();
+          var idx = parseInt(btn.getAttribute('data-idx'), 10);
+          qtyPricingState.splice(idx, 1);
+          renderQtyPricing();
+        });
+      });
+    }
+    renderQtyPricing();
+
+    var addTierBtn = body.querySelector('#addTierBtn');
+    if (addTierBtn) {
+      addTierBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        syncQtyPricing();
+        // Suggest a sensible next min qty
+        var nextQty = 1;
+        if (qtyPricingState.length > 0) {
+          var max = Math.max.apply(null, qtyPricingState.map(function(t) { return t.minQty; }));
+          nextQty = max + 1;
+        }
+        qtyPricingState.push({ minQty: nextQty, price: 0 });
+        renderQtyPricing();
+        // Focus the new price input
+        var priceInputs = body.querySelectorAll('.tier-price');
+        if (priceInputs.length) priceInputs[priceInputs.length - 1].focus();
+      });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Save
+    // ──────────────────────────────────────────────────────────────────────────
     foot.querySelector('#cancelEdit').addEventListener('click', close);
     foot.querySelector('#saveProduct').addEventListener('click', function () {
       var title = body.querySelector('#fTitle').value.trim();
@@ -459,28 +578,36 @@
       var slug = body.querySelector('#fSlug').value.trim() ||
         title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       var price = Math.max(0, parseFloat(body.querySelector('#fPrice').value) || 0);
-      var orig = Math.max(0, parseFloat(body.querySelector('#fOrig').value) || 0);
+      var orig  = Math.max(0, parseFloat(body.querySelector('#fOrig').value) || 0);
       var discount = orig > price ? orig - price : 0;
 
+      // Sync and validate options
+      syncOptions();
+      var cleanOptions = optionsState.map(function(v) {
+        if (!v.group && v.options.length > 0) v.group = 'Options';
+        return v;
+      }).filter(function(v) { return v.group && v.options.length > 0; });
+
+      // Sync and validate qty pricing tiers
+      syncQtyPricing();
+      var cleanTiers = qtyPricingState.filter(function(t) {
+        return t.minQty >= 1 && t.price >= 0;
+      }).sort(function(a, b) { return a.minQty - b.minQty; });
+
       var payload = {
-        title: { en: title },
+        title:       { en: title },
         description: { en: body.querySelector('#fDesc').value.trim() },
-        slug: slug,
-        category: cat,
-        categories: [cat],
-        image: images,
-        stock: Math.max(0, parseInt(body.querySelector('#fStock').value, 10) || 0),
-        prices: { price: price, originalPrice: orig || price, discount: discount },
-        status: body.querySelector('#fStatus').value,
-        isFeatured: body.querySelector('#fFeatured').checked,
+        slug:        slug,
+        category:    cat,
+        categories:  [cat],
+        image:       images,
+        stock:       Math.max(0, parseInt(body.querySelector('#fStock').value, 10) || 0),
+        prices:      { price: price, originalPrice: orig || price, discount: discount },
+        status:      body.querySelector('#fStatus').value,
+        isFeatured:  body.querySelector('#fFeatured').checked,
         isBestSeller: body.querySelector('#fBestSeller').checked,
-        variants: (function() {
-          syncVariants();
-          return variantsState.map(function(v) {
-            if (!v.group && v.options.length > 0) v.group = 'Options';
-            return v;
-          }).filter(function(v) { return v.group && v.options.length > 0; });
-        })()
+        variants:    cleanOptions,
+        qtyPricing:  cleanTiers
       };
 
       var btn = foot.querySelector('#saveProduct'); btn.disabled = true;
@@ -495,3 +622,4 @@
 
   global.Views.products = { title: 'Products', crumb: 'Products', render: render, openEditor: openEditor };
 })(window);
+

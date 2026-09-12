@@ -299,7 +299,28 @@
             '<div class="order-item-thumb thumb-ph">' + icon('box') + '</div>') +
           '<div class="order-item-info">' +
           '<div class="order-item-title">' + esc(it.name) + '</div>' +
-          (it.variant ? '<div class="order-item-variant"><span class="badge neutral" style="font-size:10px">' + esc(it.variant) + '</span></div>' : '') +
+          (it.variant ? (function() {
+            // Parse "Key: Value, Key2: Value2" into labeled rows. Fall back
+            // to a plain badge if the string doesn't match the pattern.
+            var pairs = it.variant.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+            var hasKeyVal = pairs.some(function(s) { return s.indexOf(':') > 0; });
+            if (hasKeyVal) {
+              return '<div class="order-item-variant" style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">' +
+                pairs.map(function(s) {
+                  var idx = s.indexOf(':');
+                  if (idx > 0) {
+                    var k = s.slice(0, idx).trim();
+                    var v = s.slice(idx + 1).trim();
+                    return '<span style="font-size:11px;background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:6px;padding:2px 8px">' +
+                      '<span style="color:var(--ink-3)">' + esc(k) + ':</span> <strong>' + esc(v) + '</strong>' +
+                    '</span>';
+                  }
+                  return '<span class="badge neutral" style="font-size:10px">' + esc(s) + '</span>';
+                }).join('') +
+              '</div>';
+            }
+            return '<div class="order-item-variant"><span class="badge neutral" style="font-size:10px">' + esc(it.variant) + '</span></div>';
+          })() : '') +
           '<div class="cell-sub" style="font-size:12px;margin-top:2px">' + money(it.price) + ' each</div>' +
           '</div>' +
           '<div class="order-item-qty">×' + it.quantity + '</div>' +

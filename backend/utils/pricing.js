@@ -33,11 +33,31 @@ function computeDiscount(/* subTotal, lineItems */) {
 }
 
 /**
+ * Resolve the authoritative unit price for a given product + quantity.
+ * If the product has quantity-tier pricing (qtyPricing), the highest tier
+ * whose minQty <= qty is applied. Otherwise falls back to the flat price.
+ * This is the ONLY place where the unit price is determined server-side.
+ */
+function resolveUnitPrice(product, qty) {
+  const tiers = Array.isArray(product.qtyPricing) ? product.qtyPricing : [];
+  if (tiers.length > 0) {
+    // Sort descending so the first match is the best applicable tier.
+    const sorted = tiers.slice().sort((a, b) => b.minQty - a.minQty);
+    for (const tier of sorted) {
+      if (qty >= tier.minQty) return Number(tier.price);
+    }
+  }
+  // Fallback: flat price — identical to existing behaviour for all products
+  // that have no qtyPricing configured.
+  return product.prices?.price || product.prices?.originalPrice || 0;
+}
+
+/**
  * Compute authoritative order pricing from the DB.
  * Returns { error } on any problem, otherwise
  * { subTotal, discount, shippingFee, total, lineItems }.
  *
- * `lineItems` are safe, server-built cart entries (price/name/image from DB).
+ * `lineItems` are safe, server-built cart entries (price/name/image/variant from DB).
  * This single function is the source of truth for BOTH the Razorpay order
  * amount and the persisted order total, so they can never diverge.
  */
@@ -64,7 +84,8 @@ async function computeOrderPricing(cart) {
       return { error: `Insufficient stock for: ${title}. Only ${product.stock} left.` };
     }
 
-    const price = product.prices?.price || product.prices?.originalPrice || 0;
+    // Authoritative unit price — applies qty tier if configured.
+    const price = resolveUnitPrice(product, qty);
     subTotal += price * qty;
 
     const name = typeof product.title === 'object'
@@ -72,10 +93,14 @@ async function computeOrderPricing(cart) {
       : (product.title || 'Product');
     const image = Array.isArray(product.image) ? product.image[0] : (product.image || item.image || '');
 
+    // Preserve the customer's selected variant/option string so the Order record stores it.
+    const variant = typeof item.variant === 'string' ? item.variant.trim() : '';
+
     lineItems.push({
       productId: product._id,
       name,
       image,
+      variant,
       quantity: qty,
       price
     });
@@ -88,4 +113,4 @@ async function computeOrderPricing(cart) {
   return { subTotal, discount, shippingFee, total, lineItems };
 }
 
-module.exports = { computeOrderPricing, findProduct };
+module.exports = { computeOrderPricing, findProduct, resolveUnitPrice };

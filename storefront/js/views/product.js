@@ -275,6 +275,45 @@
 
   /* ── Actions ─────────────────────────────────────────────────────────────── */
 
+  /* ── Quantity-tier price resolver (client-side for display only) ──────────
+     Server always re-prices. This just keeps the displayed number in sync. */
+  function resolveDisplayPrice(p, qty) {
+    var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
+    if (tiers.length > 0) {
+      var sorted = tiers.slice().sort(function(a, b) { return b.minQty - a.minQty; });
+      for (var i = 0; i < sorted.length; i++) {
+        if (qty >= sorted[i].minQty) return Number(sorted[i].price);
+      }
+    }
+    return U.price(p);
+  }
+
+  /* ── Buy More Save More table (only renders when tiers are configured) ────── */
+  function qtyPricingHtml(p) {
+    var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
+    if (!tiers.length) return '';
+    var sorted = tiers.slice().sort(function(a, b) { return a.minQty - b.minQty; });
+    var basePrice = U.price(p);
+    return '' +
+      '<div class="qty-savings" style="background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:16px;padding:16px 20px;margin-bottom:4px">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;display:flex;align-items:center;gap:6px">' +
+          ICON('zap', 14) + ' Buy More, Save More' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px">' +
+          sorted.map(function(t) {
+            var saving = basePrice > t.price ? (basePrice - t.price) : 0;
+            return '<div style="display:flex;align-items:center;justify-content:space-between;font-size:14px">' +
+              '<span style="color:var(--ink-3)">' + t.minQty + '+ items</span>' +
+              '<span style="display:flex;align-items:center;gap:10px">' +
+                '<strong style="font-size:15px;font-weight:700">' + U.money(t.price) + ' each</strong>' +
+                (saving > 0 ? '<span style="background:var(--ok-soft,#e6f7ed);color:var(--ok,#16a34a);font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px">Save ' + U.money(saving) + '</span>' : '') +
+              '</span>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+  }
+
   function actionsHtml(p) {
     var stock = U.stock(p);
 
@@ -305,7 +344,9 @@
       '</style>';
 
     return premiumStyle +
-      '<div class="pdp-actions" style="gap:20px;">' +
+      qtyPricingHtml(p) +
+      '<div class="pdp-actions" style="gap:16px;">' +
+        '<div id="pdpPriceLine" style="display:none;font-size:14px;color:var(--ink-3);text-align:center;padding:4px 0"></div>' +
         '<div class="pdp-actions-row" style="gap:16px; align-items:stretch;">' +
           '<div class="qty qty-premium">' +
             '<button data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="16"></button>' +
@@ -503,8 +544,10 @@
       var out = U.$('#pdpQty');
       if (out) out.textContent = String(S.qty);
       syncQtyButtons(stock);
+      updateQtyPrice(p);
       paintBuyBar(p);
     });
+    updateQtyPrice(p);
     syncQtyButtons(stock);
 
     // Add / Buy
@@ -543,6 +586,23 @@
     if (inc) inc.disabled = S.qty >= stock;
   }
 
+  /* Update the live price line below the qty selector when tiers are active. */
+  function updateQtyPrice(p) {
+    var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
+    var line = U.$('#pdpPriceLine');
+    if (!line || !tiers.length) return;
+    var unitPrice = resolveDisplayPrice(p, S.qty);
+    var basePrice = U.price(p);
+    var total = unitPrice * S.qty;
+    var saving = (basePrice - unitPrice) * S.qty;
+    var html = '<strong>' + U.money(unitPrice) + ' × ' + S.qty + '</strong> = <strong>' + U.money(total) + '</strong>';
+    if (saving > 0) {
+      html += ' &nbsp;<span style="color:var(--ok,#16a34a);font-weight:700">You save ' + U.money(saving) + '</span>';
+    }
+    line.innerHTML = html;
+    line.style.display = 'block';
+  }
+
   function addToCart(p, thenCheckout) {
     var finalVariant = S.variant;
     if (S.variantSelections) {
@@ -552,7 +612,14 @@
       }
       finalVariant = parts.join(', ');
     }
-    var r = Cart.add(p, S.qty, finalVariant);
+    // Use the tier-resolved display price so the cart subtotal looks right.
+    // The server always re-prices from DB — this is display-only.
+    var displayPrice = resolveDisplayPrice(p, S.qty);
+    var pricedProduct = Object.assign({}, p);
+    if (pricedProduct.prices) {
+      pricedProduct.prices = Object.assign({}, pricedProduct.prices, { price: displayPrice });
+    }
+    var r = Cart.add(pricedProduct, S.qty, finalVariant);
     if (!r.ok) { U.toast({ title: r.reason, bad: true }); return; }
 
     Shell.paintBadge(true);
