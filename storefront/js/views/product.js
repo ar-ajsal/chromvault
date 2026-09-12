@@ -218,6 +218,28 @@
      `variant` string the Order model already stores — no client-side price is
      ever derived from it, because the server would not honour it. */
   function variantHtml(p) {
+    if (!p || !Array.isArray(p.variants) || !p.variants.length) return '';
+    var isGrouped = p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
+    
+    if (isGrouped) {
+      return p.variants.map(function(v, groupIdx) {
+        if (!v.group || !Array.isArray(v.options) || v.options.length < 1) return '';
+        return '' +
+          '<div class="opt-group">' +
+            '<div class="opt-head">' +
+              '<span class="label">' + U.esc(v.group) + '</span>' +
+              '<span class="opt" style="all:unset;font-size:var(--t-xs);color:var(--ink-4)" id="optHint_' + groupIdx + '">' + U.esc(v.options[0]) + '</span>' +
+            '</div>' +
+            '<div class="opt-vals" data-group-idx="' + groupIdx + '">' +
+              v.options.map(function(opt, i) {
+                return '<button class="opt" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
+                       (i === 0 ? 'true' : 'false') + '">' + U.esc(opt) + '</button>';
+              }).join('') +
+            '</div>' +
+          '</div>';
+      }).join('');
+    }
+
     var vals = variantValues(p);
     if (vals.length < 2) return '';
 
@@ -390,8 +412,18 @@
     if (!view) return;
     var imgs = U.images(p);
     var stock = U.stock(p);
-    var vals = variantValues(p);
-    if (vals.length >= 2) S.variant = vals[0];
+    var isGrouped = p.variants && p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
+    if (isGrouped) {
+      S.variantSelections = {};
+      p.variants.forEach(function(v) {
+        if (v.group && Array.isArray(v.options) && v.options.length > 0) {
+          S.variantSelections[v.group] = v.options[0];
+        }
+      });
+    } else {
+      var vals = variantValues(p);
+      if (vals.length >= 2) S.variant = vals[0];
+    }
 
     // Gallery
     U.on(view, 'click', '[data-thumb]', function (e, btn) {
@@ -435,10 +467,27 @@
     // Broken remote images (Cloudinary miss, dead scraped URL) are handled by
     // the single capture-phase listener in Shell — see initEvents.
 
-    // Variant
+    // Grouped Variant
+    U.on(view, 'click', '[data-opt-val]', function (e, btn) {
+      var group = btn.getAttribute('data-opt-group');
+      var val = btn.getAttribute('data-opt-val');
+      S.variantSelections[group] = val;
+      
+      var parent = btn.closest('.opt-vals');
+      U.$$('[data-opt-val]', parent).forEach(function (b) {
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+      var groupIdx = parent.getAttribute('data-group-idx');
+      var hint = U.$('#optHint_' + groupIdx);
+      if (hint) hint.textContent = val;
+    });
+
+    // Legacy Variant
     U.on(view, 'click', '[data-opt]', function (e, btn) {
+      if (btn.hasAttribute('data-opt-val')) return;
       S.variant = btn.getAttribute('data-opt') || '';
-      U.$$('[data-opt]', view).forEach(function (b) {
+      var parent = btn.closest('.opt-vals');
+      U.$$('[data-opt]', parent).forEach(function (b) {
         b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
       });
       var hint = U.$('#optHint');
@@ -495,7 +544,15 @@
   }
 
   function addToCart(p, thenCheckout) {
-    var r = Cart.add(p, S.qty, S.variant);
+    var finalVariant = S.variant;
+    if (S.variantSelections) {
+      var parts = [];
+      for (var k in S.variantSelections) {
+        parts.push(k + ': ' + S.variantSelections[k]);
+      }
+      finalVariant = parts.join(', ');
+    }
+    var r = Cart.add(p, S.qty, finalVariant);
     if (!r.ok) { U.toast({ title: r.reason, bad: true }); return; }
 
     Shell.paintBadge(true);

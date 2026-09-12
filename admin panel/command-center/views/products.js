@@ -276,6 +276,21 @@
     var currentCat = p.category || (p.categories && p.categories[0]);
     if (currentCat && typeof currentCat === 'object') currentCat = currentCat._id;
 
+    var variantsStr = '';
+    if (p.variants && p.variants.length > 0) {
+      var isGrouped = p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
+      if (isGrouped) {
+        variantsStr = p.variants.map(function(v) {
+          if (v.group && Array.isArray(v.options)) return v.group + ': ' + v.options.join(', ');
+          return '';
+        }).filter(Boolean).join(' | ');
+      } else {
+        variantsStr = p.variants.map(function(v) { 
+          return typeof v === 'string' ? v : (v && (v.name || v.label || v.title || v.size || v.color)) || ''; 
+        }).filter(Boolean).join(', ');
+      }
+    }
+
     var body = drawerEl.querySelector('#drawerBody');
     body.innerHTML =
       '<div class="dsec"><div class="dsec-title">' + icon('image') + 'Images</div>' +
@@ -297,7 +312,7 @@
       '<div class="field"><label>Compare-at (₹)</label><input class="input" id="fOrig" type="number" min="0" step="1" value="' + (pr.originalPrice || 0) + '"></div>' +
       '<div class="field"><label>Stock</label><input class="input" id="fStock" type="number" min="0" step="1" value="' + (p.stock || 0) + '"></div>' +
       '</div>' +
-      '<div class="field" style="margin-top:12px"><label>Variants (comma separated)</label><input class="input" id="fVariants" value="' + esc((p.variants || []).map(function(v) { return typeof v === 'string' ? v : (v && (v.name || v.label || v.title || v.size || v.color)) || ''; }).filter(Boolean).join(', ')) + '" placeholder="e.g. Type-C, Lightning"><div class="hint" style="font-size:11px;color:var(--ink-3)">Optional. Add options for the customer to choose from.</div></div>' +
+      '<div class="field" style="margin-top:12px"><label>Variants (comma separated)</label><input class="input" id="fVariants" value="' + esc(variantsStr) + '" placeholder="e.g. Size: S, M | Color: Black, Silver"><div class="hint" style="font-size:11px;color:var(--ink-3)">Optional. For multiple groups use syntax: Group Name: Option 1, Option 2 | Another Group: A, B. For simple options just list them: Type-C, Lightning.</div></div>' +
       '</div>' +
 
       '<div class="dsec"><div class="dsec-title">' + icon('settings') + 'Visibility</div>' +
@@ -405,7 +420,21 @@
         status: body.querySelector('#fStatus').value,
         isFeatured: body.querySelector('#fFeatured').checked,
         isBestSeller: body.querySelector('#fBestSeller').checked,
-        variants: body.querySelector('#fVariants').value.split(',').map(function(v) { return v.trim(); }).filter(Boolean)
+        variants: (function() {
+          var raw = body.querySelector('#fVariants').value.trim();
+          if (!raw) return [];
+          if (raw.indexOf('|') > -1 || raw.indexOf(':') > -1) {
+            return raw.split('|').map(function(g) {
+              var parts = g.split(':');
+              if (parts.length < 2) return null;
+              var group = parts[0].trim();
+              var options = parts[1].split(',').map(function(o) { return o.trim(); }).filter(Boolean);
+              if (!group || !options.length) return null;
+              return { group: group, options: options };
+            }).filter(Boolean);
+          }
+          return raw.split(',').map(function(v) { return v.trim(); }).filter(Boolean);
+        })()
       };
 
       var btn = foot.querySelector('#saveProduct'); btn.disabled = true;
