@@ -229,10 +229,10 @@
             '<div class="opt-head">' +
               '<span class="label" style="font-weight:700;font-size:15px;">Select ' + U.esc(v.group) + '</span>' +
             '</div>' +
-            '<div class="opt-vals" data-group-idx="' + groupIdx + '">' +
+            '<div class="opt-vals" data-group-idx="' + groupIdx + '" style="gap:12px;">' +
               v.options.map(function(opt, i) {
-                return '<button class="opt" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
-                       (i === 0 ? 'true' : 'false') + '" style="flex:1;min-height:60px;border-radius:12px;font-size:15px;text-transform:none;font-weight:600;">' + U.esc(opt) + '</button>';
+                return '<button class="opt opt-premium" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
+                       (i === 0 ? 'true' : 'false') + '">' + U.esc(opt) + '</button>';
               }).join('') +
             '</div>' +
           '</div>';
@@ -247,10 +247,10 @@
         '<div class="opt-head">' +
           '<span class="label" style="font-weight:700;font-size:15px;">Select Option</span>' +
         '</div>' +
-        '<div class="opt-vals" id="optVals">' +
+        '<div class="opt-vals" id="optVals" style="gap:12px;">' +
           vals.map(function (v, i) {
-            return '<button class="opt" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
-                   (i === 0 ? 'true' : 'false') + '" style="flex:1;min-height:60px;border-radius:12px;font-size:15px;text-transform:none;font-weight:600;">' + U.esc(v) + '</button>';
+            return '<button class="opt opt-premium" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
+                   (i === 0 ? 'true' : 'false') + '">' + U.esc(v) + '</button>';
           }).join('') +
         '</div>' +
       '</div>';
@@ -288,18 +288,36 @@
         '</div>';
     }
 
-    return '' +
-      '<div class="pdp-actions" style="gap:12px;">' +
-        '<button class="btn btn-lg btn-block" id="pdpBuy" style="background:var(--paper-sink);color:var(--ink);border:1px solid var(--ink-hair);font-weight:700;letter-spacing:0.05em;border-radius:12px;text-transform:uppercase;height:54px;">Buy Now</button>' +
-        '<div class="pdp-actions-row" style="gap:12px;">' +
-          '<div class="qty" style="border-radius:12px;border:1px solid var(--ink-hair);background:var(--paper);">' +
+    var premiumStyle = '<style>' +
+      '.btn-buy-now { position:relative; overflow:hidden; background:linear-gradient(135deg, #18181b, #000); color:#fff; border-radius:16px; height:64px; font-size:17px; font-weight:800; letter-spacing:1px; text-transform:uppercase; box-shadow:0 8px 24px rgba(0,0,0,0.2); transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border:1px solid #333; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; } ' +
+      '.btn-buy-now:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,0.3); border-color:#555; } ' +
+      '.btn-buy-now:active { transform:translateY(1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); } ' +
+      '.btn-buy-now::after { content:""; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%); transform:skewX(-25deg); animation:shine 4s infinite; } ' +
+      '@keyframes shine { 0% { left:-100%; } 20% { left:200%; } 100% { left:200%; } } ' +
+      '.btn-add-cart { background:var(--paper); color:var(--ink); border:2px solid var(--ink); border-radius:16px; height:60px; font-weight:800; font-size:16px; text-transform:uppercase; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer; flex:1; display:flex; align-items:center; justify-content:center; gap:8px; } ' +
+      '.btn-add-cart:hover { background:var(--ink); color:var(--paper); } ' +
+      '.btn-add-cart:active { transform:scale(0.97); } ' +
+      '.qty-premium { border-radius:16px; border:2px solid var(--ink-hair); background:var(--paper); font-weight:700; transition:border-color 0.2s; height:60px; } ' +
+      '.qty-premium:focus-within { border-color:var(--ink); } ' +
+      '.opt-premium { flex:1; min-height:64px; border-radius:16px; font-size:15px; text-transform:none; font-weight:600; border:2px solid var(--ink-hair); transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); background:var(--paper); color:var(--ink); cursor:pointer; padding:0 var(--s3); display:inline-grid; place-items:center; box-shadow:none; } ' +
+      '.opt-premium:hover { border-color:var(--ink-3); transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.05); } ' +
+      '.opt-premium[aria-pressed="true"] { border-color:var(--ink); background:var(--ink); color:var(--paper); box-shadow:0 6px 16px rgba(0,0,0,0.15); transform:none; } ' +
+      '</style>';
+
+    return premiumStyle +
+      '<div class="pdp-actions" style="gap:20px;">' +
+        '<div class="pdp-actions-row" style="gap:16px; align-items:stretch;">' +
+          '<div class="qty qty-premium">' +
             '<button data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="16"></button>' +
             '<output id="pdpQty" aria-live="polite">1</output>' +
             '<button data-qty="1" aria-label="Increase quantity" data-ic="plus" data-ic-size="16"></button>' +
           '</div>' +
-          '<button class="btn btn-lg" id="pdpAdd" style="background:#111;color:#fff;border-radius:12px;height:54px;font-weight:600;text-transform:none;">' + ICON('bag', 18) + ' Add to Cart</button>' +
+          '<button id="pdpAdd" class="btn-add-cart">' + ICON('bag', 20) + ' Add to Cart</button>' +
         '</div>' +
-        '<div class="secnote">' + ICON('lock', 12) + 'Secure checkout · Razorpay</div>' +
+        '<button id="pdpBuy" class="btn-buy-now btn-block">' +
+          '<span style="position:relative; z-index:2; display:flex; align-items:center; gap:8px;">' + ICON('zap', 20) + ' Buy It Now</span>' +
+        '</button>' +
+        '<div class="secnote" style="justify-content:center; font-size:13px; color:var(--ink-3); margin-top:-8px;">' + ICON('lock', 14) + ' Secure checkout · Razorpay</div>' +
       '</div>';
   }
 
