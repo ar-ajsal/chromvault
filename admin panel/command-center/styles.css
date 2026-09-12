@@ -1141,3 +1141,46 @@ svg.chart text { font-family: var(--font-mono); fill: var(--ink-3); }
 .inv-modal-body {
   flex: 1; padding: 14px; background: var(--void);
 }
+
+/* ============================ PRODUCT BUILDER ENHANCEMENTS ================= */
+.prod-type-card {
+  display: block;
+  padding: 12px 14px;
+  background: var(--paper-sink);
+  border: 1.5px solid var(--ink-hair);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+.prod-type-card:hover {
+  border-color: var(--ink-3);
+  background: var(--charcoal);
+}
+.prod-type-card.is-active {
+  border-color: var(--lime);
+  background: rgba(200, 255, 0, 0.06);
+  box-shadow: 0 0 0 1px var(--lime);
+}
+.variant-matrix-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.variant-matrix-tbl th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--ink-hair);
+}
+.variant-matrix-tbl td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ink-hair);
+  vertical-align: middle;
+}
+.variant-matrix-tbl tr:last-child td {
+  border-bottom: none;
+}

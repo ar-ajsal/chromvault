@@ -33,7 +33,7 @@
 'use strict';
 
 var PREFIX = 'chromvault-store-';
-var VERSION = 'v2';
+var VERSION = 'v3';
 
 var SHELL_CACHE = PREFIX + 'shell-' + VERSION;
 var ASSET_CACHE = PREFIX + 'assets-' + VERSION;

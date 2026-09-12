@@ -1027,11 +1027,11 @@ textarea.input { min-height: 96px; resize: vertical; line-height: 1.5; }
 
 /* Universal Option Selector */
 .pdp-opt-section {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 .pdp-opt-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   margin-bottom: 10px;
 }
@@ -1046,21 +1046,24 @@ textarea.input { min-height: 96px; resize: vertical; line-height: 1.5; }
 .pdp-opt-current {
   font-family: var(--f-sans, sans-serif);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--ink);
+  letter-spacing: 0.01em;
 }
 .pdp-opt-grid {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
+
+/* UNSELECTED STATE: Clean white surface, dark text, distinct border, NO checkmark */
 .pdp-opt-btn {
-  min-height: 48px;
+  min-height: 46px;
   min-width: 68px;
-  padding: 0 20px;
+  padding: 0 18px;
   border-radius: 12px;
   border: 1.5px solid var(--paper-edge);
-  background: var(--paper-sink);
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--f-sans, sans-serif);
   font-size: 14px;
@@ -1069,33 +1072,62 @@ textarea.input { min-height: 96px; resize: vertical; line-height: 1.5; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
 }
 .pdp-opt-btn:hover {
-  border-color: var(--ink-3);
-  background: var(--paper);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--ink-2);
+  color: var(--ink);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 .pdp-opt-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
-.pdp-opt-btn[aria-pressed="true"] {
-  background: #0a0a0b;
+
+/* SELECTED STATE: Solid deep obsidian black, white text, bold checkmark, elevation */
+.pdp-opt-btn[aria-pressed="true"],
+.pdp-opt-btn.is-selected {
+  background: #0a0a0b !important;
+  color: #ffffff !important;
+  border-color: #0a0a0b !important;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(10, 10, 11, 0.22) !important;
+  transform: none;
+}
+
+/* Checkmark Indicator */
+.pdp-opt-check {
+  display: none;
+  font-size: 13px;
+  font-weight: 900;
   color: #ffffff;
-  border-color: #0a0a0b;
-  box-shadow: 0 4px 14px rgba(10, 10, 11, 0.18);
+  line-height: 1;
 }
-.pdp-opt-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: transparent;
-  transition: background 0.15s;
+.pdp-opt-btn[aria-pressed="true"] .pdp-opt-check,
+.pdp-opt-btn.is-selected .pdp-opt-check {
+  display: inline-block;
+  animation: optCheckIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.pdp-opt-btn[aria-pressed="true"] .pdp-opt-dot {
-  background: #ffffff;
+
+@keyframes optCheckIn {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* DISABLED / UNAVAILABLE STATE: Muted, struck-through, unclickable */
+.pdp-opt-btn:disabled,
+.pdp-opt-btn.is-disabled {
+  background: var(--paper-sink) !important;
+  color: var(--ink-4) !important;
+  border-color: var(--paper-edge) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  opacity: 0.55;
+  text-decoration: line-through;
 }
 
 /* Volume Tier Bundles */
@@ -1408,4 +1440,328 @@ textarea.input { min-height: 96px; resize: vertical; line-height: 1.5; }
 .pdp-trust-desc {
   font-size: 11px;
   color: var(--ink-3);
+}
+
+/* ============================================================================
+   EXACT PRODUCT DETAIL DESIGN (Metallic Chrome Variant Cards, BUY NOW CTA, Urgency)
+   ========================================================================== */
+
+/* Top Urgency Stock Notice */
+.pdp-urgency-stock {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #09090b;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 12px;
+}
+
+.pdp-orange-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ea580c;
+  flex: none;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25);
+  animation: pdpDotGlow 2.2s infinite ease-in-out;
+}
+
+@keyframes pdpDotGlow {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25); }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(234, 88, 12, 0.45); }
+}
+
+/* Limited Edition Center Divider */
+.pdp-limited-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.pdp-limited-divider::before,
+.pdp-limited-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.pdp-limited-divider span {
+  padding: 0 16px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #71717a;
+  letter-spacing: 0.01em;
+}
+
+/* Variant Option Section */
+.pdp-opt-title-exact {
+  font-size: 15px;
+  font-weight: 700;
+  color: #09090b;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.pdp-metal-grid.opt-vals,
+.pdp-metal-grid {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 14px !important;
+  width: 100% !important;
+  margin-bottom: 20px !important;
+}
+
+/* Metallic Chrome Variant Card */
+.pdp-metal-grid .pdp-metal-card,
+.pdp-metal-card {
+  position: relative !important;
+  flex: 1 1 0% !important;
+  width: 50% !important;
+  min-width: 0 !important;
+  min-height: 78px !important;
+  padding: 14px 16px !important;
+  border-radius: 22px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  /* Realistic brushed steel / chrome gradient */
+  background: linear-gradient(145deg, #d8dbe0 0%, #ffffff 32%, #cbd2dc 70%, #b8bfc9 100%) !important;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+}
+
+.pdp-metal-card:hover {
+  transform: translateY(-1.5px);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 1), 0 5px 14px rgba(0, 0, 0, 0.09) !important;
+}
+
+.pdp-metal-card:active {
+  transform: scale(0.98);
+}
+
+/* Selected State: Electric Blue Accent + Blue Checkmark */
+.pdp-metal-card.is-selected {
+  border: 2px solid #2563eb !important;
+  box-shadow: 0 0 0 1px #2563eb, 0 3px 12px rgba(37, 99, 235, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+}
+
+.pdp-metal-check {
+  display: none;
+  position: absolute;
+  top: 9px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.35);
+}
+
+.pdp-metal-card.is-selected .pdp-metal-check {
+  display: flex;
+  animation: checkPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes checkPopIn {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pdp-metal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.pdp-metal-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 3px;
+  line-height: 1.2;
+}
+
+/* Primary BUY NOW CTA (Metallic Silver Chrome Brushed Finish) */
+.pdp-btn-buy-now {
+  width: 100%;
+  height: 56px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  /* Top slate-gray fade into radiant brushed silver/chrome matching reference */
+  background: linear-gradient(180deg, #6c7582 0%, #8e98a6 25%, #c5ccd6 65%, #edf0f4 100%);
+  color: #09090b;
+  font-family: var(--f-sans, sans-serif);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 12px;
+}
+
+.pdp-btn-buy-now:hover {
+  background: linear-gradient(180deg, #58616e 0%, #7d8795 25%, #b6bec8 65%, #e2e6eb 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16), inset 0 1px 1.5px rgba(255, 255, 255, 1);
+}
+
+.pdp-btn-buy-now:active {
+  transform: scale(0.99);
+}
+
+/* Secondary Actions Row: Stepper + Add to Cart */
+.pdp-cta-secondary-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+.pdp-stepper-exact {
+  width: 120px;
+  height: 52px;
+  border-radius: 12px;
+  border: 1.5px solid #e4e4e7;
+  background: #ffffff;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  flex: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.pdp-stepper-btn-exact {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #09090b;
+  font-size: 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pdp-stepper-btn-exact:hover {
+  background: #f4f4f5;
+}
+
+.pdp-stepper-btn-exact:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pdp-stepper-val-exact {
+  flex: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--f-sans, sans-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: #09090b;
+  text-align: center;
+  border-left: 1px solid #e4e4e7;
+  border-right: 1px solid #e4e4e7;
+}
+
+/* Add to Cart Button (Solid Black with Shopping Bag) */
+.pdp-btn-add-cart-exact {
+  flex: 1;
+  height: 52px;
+  border-radius: 12px;
+  border: none;
+  background: #000000;
+  color: #ffffff;
+  font-family: var(--f-sans, sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdp-btn-add-cart-exact:hover {
+  background: #18181b;
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.26);
+}
+
+.pdp-btn-add-cart-exact:active {
+  transform: scale(0.99);
+}
+
+/* Selling Fast Social Proof */
+.pdp-selling-fast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #27272a;
+  margin-bottom: 14px;
+}
+
+.pdp-selling-fast b {
+  font-weight: 700;
+  color: #09090b;
+}
+
+/* Guarantee Line */
+.pdp-guarantee-note {
+  text-align: center;
+  font-size: 13.5px;
+  color: #52525b;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+/* Payment Badges Pill Row */
+.pdp-pay-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.pdp-pay-pill {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }

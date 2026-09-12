@@ -1,4 +1,4 @@
-﻿/* ============================================================================
+/* ============================================================================
    View: Products — card/table hybrid catalog with inventory status, search,
    category filter, and a premium editor drawer with Cloudinary image upload.
    API:
@@ -276,12 +276,36 @@
     var currentCat = p.category || (p.categories && p.categories[0]);
     if (currentCat && typeof currentCat === 'object') currentCat = currentCat._id;
 
-    // ── Product Options State (formerly "variants") ──────────────────────────
+    // ── Product Configuration Mode ──────────────────────────────────────────
+    var prodType = 'simple';
+    if (p.isCombination || (Array.isArray(p.variants) && p.variants.some(function(v) { return v && typeof v === 'object' && (v.combination || (v.price && v.variant)); }))) {
+      prodType = 'variants';
+    } else if ((Array.isArray(p.options) && p.options.length > 0) || (Array.isArray(p.variants) && p.variants.length > 0)) {
+      prodType = 'options';
+    }
+
+    // ── Options State ────────────────────────────────────────────────────────
     var optionsState = [];
-    if (p.variants && p.variants.length > 0) {
+    if (Array.isArray(p.options) && p.options.length > 0) {
+      optionsState = p.options.map(function(o) {
+        return { group: o.name, options: (Array.isArray(o.values) ? o.values : []).slice() };
+      });
+    } else if (Array.isArray(p.variants) && p.variants.length > 0) {
       var isGrouped = p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
       if (isGrouped) {
-        optionsState = p.variants.filter(function(v) { return v && v.group && Array.isArray(v.options); });
+        var gMap = {};
+        var gOrd = [];
+        p.variants.forEach(function(v) {
+          if (!v || !v.group) return;
+          var gn = String(v.group).trim();
+          var gk = gn.toLowerCase();
+          if (!gMap[gk]) { gMap[gk] = { group: gn, options: [] }; gOrd.push(gk); }
+          (Array.isArray(v.options) ? v.options : []).forEach(function(opt) {
+            var ostr = String(opt).trim();
+            if (ostr && gMap[gk].options.indexOf(ostr) === -1) gMap[gk].options.push(ostr);
+          });
+        });
+        optionsState = gOrd.map(function(k) { return gMap[k]; });
       } else {
         var stringVals = p.variants.map(function(v) {
           return typeof v === 'string' ? v : (v && (v.name || v.label || v.title || v.size || v.color)) || '';
@@ -290,6 +314,23 @@
           optionsState.push({ group: 'Options', options: stringVals });
         }
       }
+    }
+
+    // ── Combination Variants State ───────────────────────────────────────────
+    var variantsState = [];
+    if (Array.isArray(p.variants)) {
+      variantsState = p.variants.filter(function(v) {
+        return v && typeof v === 'object' && (v.variant || v.combination);
+      }).map(function(v) {
+        return {
+          variant: v.variant || (v.combination ? Object.keys(v.combination).map(function(k) { return v.combination[k]; }).join(' / ') : ''),
+          combination: v.combination || {},
+          sku: v.sku || '',
+          price: typeof v.price === 'number' ? v.price : (pr.price || 0),
+          stock: typeof v.stock === 'number' ? v.stock : (p.stock || 0),
+          image: v.image || ''
+        };
+      });
     }
 
     // ── Quantity Pricing State ────────────────────────────────────────────────
@@ -319,17 +360,51 @@
       '<div class="field"><label>Stock</label><input class="input" id="fStock" type="number" min="0" step="1" value="' + (p.stock || 0) + '"></div>' +
       '</div></div>' +
 
-      // ── Product Options Section ──────────────────────────────────────────
+      // ── Product Configuration Mode ───────────────────────────────────────
       '<div class="dsec">' +
-        '<div class="dsec-title">' + icon('sliders') + 'Product Options</div>' +
+        '<div class="dsec-title">' + icon('sliders') + 'Product Configuration</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-top:8px">' +
+          '<label class="prod-type-card' + (prodType === 'simple' ? ' is-active' : '') + '" data-type="simple">' +
+            '<input type="radio" name="prodType" value="simple"' + (prodType === 'simple' ? ' checked' : '') + ' style="display:none">' +
+            '<div style="font-weight:700;font-size:13px;color:var(--ink)">Simple Product</div>' +
+            '<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Single price &amp; stock, no options</div>' +
+          '</label>' +
+          '<label class="prod-type-card' + (prodType === 'options' ? ' is-active' : '') + '" data-type="options">' +
+            '<input type="radio" name="prodType" value="options"' + (prodType === 'options' ? ' checked' : '') + ' style="display:none">' +
+            '<div style="font-weight:700;font-size:13px;color:var(--ink)">With Options</div>' +
+            '<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Selectable choices (e.g. Connector)</div>' +
+          '</label>' +
+          '<label class="prod-type-card' + (prodType === 'variants' ? ' is-active' : '') + '" data-type="variants">' +
+            '<input type="radio" name="prodType" value="variants"' + (prodType === 'variants' ? ' checked' : '') + ' style="display:none">' +
+            '<div style="font-weight:700;font-size:13px;color:var(--ink)">With Variants</div>' +
+            '<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Independent price, stock &amp; SKU</div>' +
+          '</label>' +
+        '</div>' +
+      '</div>' +
+
+      // ── Product Options Section (visible for options and variants modes) ──
+      '<div class="dsec" id="optionsSection" style="' + (prodType === 'simple' ? 'display:none;' : '') + '">' +
+        '<div class="dsec-title">' + icon('sliders') + 'Selectable Options</div>' +
         '<div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">' +
-          'Add selectable options for customers (e.g. Size, Color, Connector). Each option has a name and comma-separated values.' +
+          'Define option axes (e.g. Connector, Color, Size). Each option has a name and comma-separated values.' +
         '</div>' +
         '<div id="optionsHost"></div>' +
         '<button class="btn ghost" id="addOptionBtn" style="margin-top:8px;font-size:12px;padding:6px 12px">' + icon('plus') + ' Add Option</button>' +
       '</div>' +
 
-      // ── Quantity Pricing Section ─────────────────────────────────────────
+      // ── Combination Variants Matrix Section (visible only for variants mode)
+      '<div class="dsec" id="variantsMatrixSection" style="' + (prodType !== 'variants' ? 'display:none;' : '') + '">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+          '<div class="dsec-title" style="margin:0">' + icon('box') + 'Combination Matrix</div>' +
+          '<button class="btn sm" id="generateCombosBtn" style="font-size:11px;padding:4px 10px">' + icon('refresh-cw') + ' Generate Combinations</button>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">' +
+          'Configure independent pricing, stock, SKU and image for each option combination.' +
+        '</div>' +
+        '<div id="variantsMatrixHost"></div>' +
+      '</div>' +
+
+      // ── Quantity Pricing Section (Buy More Save More) ────────────────────
       '<div class="dsec">' +
         '<div class="dsec-title">' + icon('dollar') + 'Quantity Pricing <span style="font-weight:400;font-size:12px;color:var(--ink-3);font-family:var(--f-body)">(Buy More Save More)</span></div>' +
         '<div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">' +
@@ -357,6 +432,22 @@
     foot.innerHTML =
       '<button class="btn ghost" id="cancelEdit">Cancel</button>' +
       '<button class="btn primary" id="saveProduct">' + icon('save') + (p._id ? 'Save changes' : 'Create product') + '</button>';
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Mode Switcher Wire
+    // ──────────────────────────────────────────────────────────────────────────
+    body.querySelectorAll('.prod-type-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        prodType = card.getAttribute('data-type');
+        body.querySelectorAll('.prod-type-card').forEach(function(c) {
+          c.classList.toggle('is-active', c === card);
+        });
+        var optSec = body.querySelector('#optionsSection');
+        var varSec = body.querySelector('#variantsMatrixSection');
+        if (optSec) optSec.style.display = (prodType === 'simple') ? 'none' : 'block';
+        if (varSec) varSec.style.display = (prodType === 'variants') ? 'block' : 'none';
+      });
+    });
 
     // ──────────────────────────────────────────────────────────────────────────
     // Image uploader
@@ -418,7 +509,7 @@
     renderUploader();
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Product Options (admin-controlled, universal)
+    // Product Options (Universal & Dynamic)
     // ──────────────────────────────────────────────────────────────────────────
     function syncOptions() {
       var groups = body.querySelectorAll('.o-group');
@@ -427,7 +518,9 @@
       for (var i = 0; i < groups.length; i++) {
         var gName = groups[i].value.trim();
         var optVals = opts[i].value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-        optionsState.push({ group: gName, options: optVals });
+        if (gName || optVals.length) {
+          optionsState.push({ group: gName, options: optVals });
+        }
       }
     }
 
@@ -436,7 +529,7 @@
       if (!optionsState.length) {
         host.innerHTML =
           '<div style="background:var(--paper-sink);border:1px dashed var(--ink-hair);border-radius:var(--r-2);padding:16px 20px;text-align:center;color:var(--ink-3);font-size:13px">' +
-            icon('sliders') + ' No options yet. Click <strong>Add Option</strong> to add Size, Color, Connector, etc.' +
+            icon('sliders') + ' No options configured. Click <strong>Add Option</strong> to define Size, Color, Connector, etc.' +
           '</div>';
         return;
       }
@@ -475,9 +568,145 @@
         syncOptions();
         optionsState.push({ group: '', options: [] });
         renderOptions();
-        // Focus the new group name input
         var inputs = body.querySelectorAll('.o-group');
         if (inputs.length) inputs[inputs.length - 1].focus();
+      });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Combination Matrix Builder (Variants Mode)
+    // ──────────────────────────────────────────────────────────────────────────
+    function syncVariantsMatrix() {
+      var rows = body.querySelectorAll('.v-row');
+      variantsState = [];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var vTitle = r.getAttribute('data-variant');
+        var comboJson = r.getAttribute('data-combo') || '{}';
+        var combo = {};
+        try { combo = JSON.parse(comboJson); } catch (e) {}
+
+        var sku = (r.querySelector('.v-sku') && r.querySelector('.v-sku').value.trim()) || '';
+        var prVal = parseFloat(r.querySelector('.v-price') && r.querySelector('.v-price').value);
+        var stVal = parseInt(r.querySelector('.v-stock') && r.querySelector('.v-stock').value, 10);
+        var imgVal = (r.querySelector('.v-img') && r.querySelector('.v-img').value.trim()) || '';
+
+        variantsState.push({
+          variant: vTitle,
+          combination: combo,
+          sku: sku,
+          price: isNaN(prVal) ? 0 : prVal,
+          stock: isNaN(stVal) ? 0 : stVal,
+          image: imgVal
+        });
+      }
+    }
+
+    function renderVariantsMatrix() {
+      var host = body.querySelector('#variantsMatrixHost');
+      if (!host) return;
+      if (!variantsState.length) {
+        host.innerHTML =
+          '<div style="background:var(--paper-sink);border:1px dashed var(--ink-hair);border-radius:var(--r-2);padding:16px 20px;text-align:center;color:var(--ink-3);font-size:13px">' +
+            icon('box') + ' No combinations generated yet. Click <strong>Generate Combinations</strong> to auto-create variant rows from your options.' +
+          '</div>';
+        return;
+      }
+
+      host.innerHTML =
+        '<div style="background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:var(--r-2);overflow-x:auto">' +
+          '<table class="variant-matrix-tbl">' +
+            '<thead>' +
+              '<tr>' +
+                '<th>Combination</th>' +
+                '<th>SKU</th>' +
+                '<th style="width:90px">Price (₹)</th>' +
+                '<th style="width:80px">Stock</th>' +
+                '<th>Image URL</th>' +
+                '<th style="width:36px"></th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+              variantsState.map(function(v, i) {
+                return '<tr class="v-row" data-idx="' + i + '" data-variant="' + esc(v.variant) + '" data-combo="' + esc(JSON.stringify(v.combination || {})) + '">' +
+                  '<td style="font-weight:600;color:var(--ink)">' + esc(v.variant) + '</td>' +
+                  '<td><input class="input v-sku" value="' + esc(v.sku || '') + '" placeholder="SKU" style="height:32px;font-size:11.5px"></td>' +
+                  '<td><input class="input v-price" type="number" min="0" step="1" value="' + (v.price || 0) + '" style="height:32px;font-size:11.5px"></td>' +
+                  '<td><input class="input v-stock" type="number" min="0" step="1" value="' + (v.stock || 0) + '" style="height:32px;font-size:11.5px"></td>' +
+                  '<td><input class="input v-img" value="' + esc(v.image || '') + '" placeholder="https://..." style="height:32px;font-size:11.5px"></td>' +
+                  '<td><button class="del-variant" data-idx="' + i + '" title="Remove combination" style="background:none;border:none;color:var(--bad);cursor:pointer;padding:4px">' + icon('trash') + '</button></td>' +
+                '</tr>';
+              }).join('') +
+            '</tbody>' +
+          '</table>' +
+        '</div>';
+
+      host.querySelectorAll('.del-variant').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          syncVariantsMatrix();
+          var idx = parseInt(btn.getAttribute('data-idx'), 10);
+          variantsState.splice(idx, 1);
+          renderVariantsMatrix();
+        });
+      });
+    }
+    renderVariantsMatrix();
+
+    var genCombosBtn = body.querySelector('#generateCombosBtn');
+    if (genCombosBtn) {
+      genCombosBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        syncOptions();
+        var validGroups = optionsState.filter(function(g) { return g.group && g.options.length > 0; });
+        if (!validGroups.length) {
+          CC.toast('Add at least one option with values above first.', 'bad');
+          return;
+        }
+
+        // Cartesian product
+        var combos = [{}];
+        validGroups.forEach(function(g) {
+          var next = [];
+          combos.forEach(function(c) {
+            g.options.forEach(function(val) {
+              var copy = Object.assign({}, c);
+              copy[g.group] = val;
+              next.push(copy);
+            });
+          });
+          combos = next;
+        });
+
+        var basePrice = Math.max(0, parseFloat(body.querySelector('#fPrice').value) || 0);
+        var baseStock = Math.max(0, parseInt(body.querySelector('#fStock').value, 10) || 0);
+        var slug = body.querySelector('#fSlug').value.trim() || 'item';
+
+        syncVariantsMatrix();
+        var oldVariants = variantsState.slice();
+
+        variantsState = combos.map(function(c, idx) {
+          var vName = Object.keys(c).map(function(k) { return c[k]; }).join(' / ');
+          var existing = oldVariants.find(function(ev) {
+            return ev.variant === vName || (ev.combination && JSON.stringify(ev.combination) === JSON.stringify(c));
+          });
+          if (existing) {
+            existing.combination = c;
+            existing.variant = vName;
+            return existing;
+          }
+          return {
+            variant: vName,
+            combination: c,
+            sku: slug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) + '-' + (idx + 1),
+            price: basePrice,
+            stock: baseStock,
+            image: images[0] || ''
+          };
+        });
+
+        renderVariantsMatrix();
+        CC.toast('Generated ' + variantsState.length + ' combinations', 'ok');
       });
     }
 
@@ -502,7 +731,7 @@
       if (!qtyPricingState.length) {
         host.innerHTML =
           '<div style="background:var(--paper-sink);border:1px dashed var(--ink-hair);border-radius:var(--r-2);padding:16px 20px;text-align:center;color:var(--ink-3);font-size:13px">' +
-            icon('dollar') + ' No tiers yet. Click <strong>Add Pricing Tier</strong> to set up bulk discounts.' +
+            icon('dollar') + ' No tiers configured. Click <strong>Add Pricing Tier</strong> to set up bulk discounts.' +
           '</div>';
         return;
       }
@@ -548,7 +777,6 @@
       addTierBtn.addEventListener('click', function(e) {
         e.preventDefault();
         syncQtyPricing();
-        // Suggest a sensible next min qty
         var nextQty = 1;
         if (qtyPricingState.length > 0) {
           var max = Math.max.apply(null, qtyPricingState.map(function(t) { return t.minQty; }));
@@ -556,7 +784,6 @@
         }
         qtyPricingState.push({ minQty: nextQty, price: 0 });
         renderQtyPricing();
-        // Focus the new price input
         var priceInputs = body.querySelectorAll('.tier-price');
         if (priceInputs.length) priceInputs[priceInputs.length - 1].focus();
       });
@@ -580,34 +807,66 @@
       var price = Math.max(0, parseFloat(body.querySelector('#fPrice').value) || 0);
       var orig  = Math.max(0, parseFloat(body.querySelector('#fOrig').value) || 0);
       var discount = orig > price ? orig - price : 0;
+      var stock = Math.max(0, parseInt(body.querySelector('#fStock').value, 10) || 0);
 
-      // Sync and validate options
+      // Sync options
       syncOptions();
       var cleanOptions = optionsState.map(function(v) {
         if (!v.group && v.options.length > 0) v.group = 'Options';
         return v;
       }).filter(function(v) { return v.group && v.options.length > 0; });
 
-      // Sync and validate qty pricing tiers
+      // Sync variants matrix
+      syncVariantsMatrix();
+      var cleanVariants = variantsState.filter(function(v) {
+        return v.variant;
+      });
+
+      // Sync qty pricing
       syncQtyPricing();
       var cleanTiers = qtyPricingState.filter(function(t) {
         return t.minQty >= 1 && t.price >= 0;
       }).sort(function(a, b) { return a.minQty - b.minQty; });
 
+      // Build payload based on prodType
+      var finalOptions = [];
+      var finalVariants = [];
+      var isCombination = false;
+
+      if (prodType === 'simple') {
+        finalOptions = [];
+        finalVariants = [];
+        isCombination = false;
+      } else if (prodType === 'options') {
+        finalOptions = cleanOptions.map(function(o) { return { name: o.group, values: o.options }; });
+        finalVariants = cleanOptions;
+        isCombination = false;
+      } else if (prodType === 'variants') {
+        finalOptions = cleanOptions.map(function(o) { return { name: o.group, values: o.options }; });
+        finalVariants = cleanVariants;
+        isCombination = true;
+        if (cleanVariants.length > 0) {
+          var sumStock = cleanVariants.reduce(function(sum, v) { return sum + (v.stock || 0); }, 0);
+          if (sumStock > 0) stock = sumStock;
+        }
+      }
+
       var payload = {
-        title:       { en: title },
-        description: { en: body.querySelector('#fDesc').value.trim() },
-        slug:        slug,
-        category:    cat,
-        categories:  [cat],
-        image:       images,
-        stock:       Math.max(0, parseInt(body.querySelector('#fStock').value, 10) || 0),
-        prices:      { price: price, originalPrice: orig || price, discount: discount },
-        status:      body.querySelector('#fStatus').value,
-        isFeatured:  body.querySelector('#fFeatured').checked,
-        isBestSeller: body.querySelector('#fBestSeller').checked,
-        variants:    cleanOptions,
-        qtyPricing:  cleanTiers
+        title:         { en: title },
+        description:   { en: body.querySelector('#fDesc').value.trim() },
+        slug:          slug,
+        category:      cat,
+        categories:    [cat],
+        image:         images,
+        stock:         stock,
+        prices:        { price: price, originalPrice: orig || price, discount: discount },
+        status:        body.querySelector('#fStatus').value,
+        isFeatured:    body.querySelector('#fFeatured').checked,
+        isBestSeller:  body.querySelector('#fBestSeller').checked,
+        isCombination: isCombination,
+        options:       finalOptions,
+        variants:      finalVariants,
+        qtyPricing:    cleanTiers
       };
 
       var btn = foot.querySelector('#saveProduct'); btn.disabled = true;

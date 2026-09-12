@@ -18,7 +18,23 @@ const Product = require(path.join(base, 'models/Product'));
 // A tiny in-memory catalogue keyed by _id string.
 const CATALOGUE = {
   '507f1f77bcf86cd799439011': { _id: '507f1f77bcf86cd799439011', title: { en: 'Silver Ring' }, prices: { price: 1000 }, stock: 5, image: ['ring.jpg'] },
-  '507f1f77bcf86cd799439012': { _id: '507f1f77bcf86cd799439012', title: { en: 'Gold Chain' }, prices: { price: 2500 }, stock: 2, image: ['chain.jpg'] }
+  '507f1f77bcf86cd799439012': { _id: '507f1f77bcf86cd799439012', title: { en: 'Gold Chain' }, prices: { price: 2500 }, stock: 2, image: ['chain.jpg'] },
+  '507f1f77bcf86cd799439013': {
+    _id: '507f1f77bcf86cd799439013',
+    title: { en: 'Chrome Buds' },
+    prices: { price: 899 },
+    stock: 20,
+    qtyPricing: [
+      { minQty: 1, price: 899 },
+      { minQty: 2, price: 849 },
+      { minQty: 3, price: 799 }
+    ],
+    variants: [
+      { title: 'Connector: Type-C', combination: { Connector: 'Type-C' }, price: 899, stock: 15 },
+      { title: 'Connector: Lightning', combination: { Connector: 'Lightning' }, price: 899, stock: 5 },
+      { title: 'Connector: Wireless', combination: { Connector: 'Wireless' }, price: 1099, stock: 2 }
+    ]
+  }
 };
 Product.findById = async (id) => CATALOGUE[String(id)] || null;
 Product.findOne = async (q) => {
@@ -27,7 +43,7 @@ Product.findOne = async (q) => {
   return null;
 };
 
-const { computeOrderPricing } = require(path.join(base, 'utils/pricing'));
+const { computeOrderPricing, resolveUnitPrice } = require(path.join(base, 'utils/pricing'));
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -75,6 +91,30 @@ function check(name, cond) {
     { _id: '507f1f77bcf86cd799439011', quantity: -3 }
   ]);
   check('non-positive quantity coerced to 1', r.subTotal === 1000);
+
+  // 7. Quantity Tier Pricing applies dynamically.
+  r = await computeOrderPricing([
+    { _id: '507f1f77bcf86cd799439013', quantity: 2, variant: 'Connector: Type-C' }
+  ]);
+  check('quantity tier 2 applies ₹849 each', r.subTotal === 849 * 2);
+  check('variant string preserved in line item', r.lineItems[0].variant === 'Connector: Type-C');
+
+  r = await computeOrderPricing([
+    { _id: '507f1f77bcf86cd799439013', quantity: 3, variant: 'Connector: Type-C' }
+  ]);
+  check('quantity tier 3 applies ₹799 each', r.subTotal === 799 * 3);
+
+  // 8. Variant with custom price override (when no qty tiers or variant price is distinct)
+  const budsProd = CATALOGUE['507f1f77bcf86cd799439013'];
+  const pNoTiers = Object.assign({}, budsProd, { qtyPricing: [] });
+  const customVariantPrice = resolveUnitPrice(pNoTiers, 1, 'Connector: Wireless');
+  check('custom variant price overrides base price', customVariantPrice === 1099);
+
+  // 9. Variant-specific stock validation
+  r = await computeOrderPricing([
+    { _id: '507f1f77bcf86cd799439013', quantity: 3, variant: 'Connector: Wireless' } // stock is 2
+  ]);
+  check('insufficient variant stock rejected', !!r.error);
 
   console.log(`\n=== ${pass} passed, ${fail} failed ===`);
   process.exit(fail ? 1 : 0);

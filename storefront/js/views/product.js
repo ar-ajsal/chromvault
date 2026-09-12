@@ -26,8 +26,9 @@
     var o = opts || {};
     var key = o.slug || o.id || '';
 
+    var rToken = (typeof Router !== 'undefined' && Router.token) ? Router.token() : 0;
     S = {
-      token: Router.token(),
+      token: rToken,
       key: key,
       product: null,
       qty: 1,
@@ -46,7 +47,7 @@
     var fetch = o.slug ? API.productBySlug(o.slug) : API.productById(o.id);
 
     fetch.then(function (doc) {
-      if (!S || Router.stale(t)) return;
+      if (!S || (typeof Router !== 'undefined' && Router.stale && Router.stale(t))) return;
       // The slug endpoint returns the document directly; tolerate a wrapper.
       var p = (doc && doc.product) ? doc.product : doc;
       if (!p || !U.pid(p)) { gone(); return; }
@@ -54,7 +55,7 @@
       Views.remember(p);
       paint(p);
     }).catch(function (err) {
-      if (!S || Router.stale(t)) return;
+      if (!S || (typeof Router !== 'undefined' && Router.stale && Router.stale(t))) return;
       if (err && err.status === 404) { gone(); return; }
       Views.setMeta('Product unavailable');
       Views.mount('<div class="wrap" style="padding-top:var(--s7)">' + Views.errorHtml(err) + '</div>');
@@ -106,8 +107,19 @@
   function paint(p) {
     S.product = p;
     S.variant = '';
+    S.variantSelections = {};
+    S.currentVariantDoc = null;
     S.imgIndex = 0;
     S.qty = 1;
+
+    // Initialize default option selections
+    var normOpts = normalizeProductOptions(p);
+    normOpts.forEach(function (g) {
+      if (g.values && g.values.length > 0) {
+        S.variantSelections[g.name] = g.values[0];
+      }
+    });
+    S.currentVariantDoc = findClientVariant(p, S.variantSelections);
 
     var title = U.text(p.title) || 'Untitled';
     var desc = plain(U.text(p.description)).slice(0, 300);
@@ -146,7 +158,7 @@
   function galleryHtml(p) {
     var imgs = U.images(p);
     var title = U.text(p.title) || 'Product';
-    var main = U.img(imgs[0]);
+    var main = (S && S.currentVariantDoc && S.currentVariantDoc.image) ? S.currentVariantDoc.image : U.img(imgs[0]);
 
     var thumbs = imgs.length > 1
       ? '<div class="gal-thumbs" role="tablist" aria-label="Product images">' +
@@ -172,20 +184,19 @@
 
   /* ── Info column ─────────────────────────────────────────────────────────── */
 
-  /* ── Info column ─────────────────────────────────────────────────────────── */
-
   function infoHtml(p) {
     var title = U.text(p.title) || 'Untitled';
-    var price = U.price(p);
+    var matched = S.currentVariantDoc || (S.variantSelections ? findClientVariant(p, S.variantSelections) : null);
+    var price = resolveDisplayPrice(p, S.qty, matched);
     var was = U.wasPrice(p);
-    var off = U.discountPct(p);
-    var stock = U.stock(p);
+    var off = (was && was > price) ? Math.round(((was - price) / was) * 100) : U.discountPct(p);
+    var stock = (matched && typeof matched.stock === 'number') ? matched.stock : U.stock(p);
     var cat = U.pcat(p);
 
     var stockBadge = '';
     if (stock <= 0) {
       stockBadge = '<span class="pdp-stock-chip pdp-stock-out"><span class="pulse-dot out"></span>Sold out</span>';
-    } else if (U.isLow(p)) {
+    } else if (stock <= 5) {
       stockBadge = '<span class="pdp-stock-chip pdp-stock-low"><span class="pulse-dot low"></span>Only ' + stock + ' left · Selling fast</span>';
     } else {
       stockBadge = '<span class="pdp-stock-chip pdp-stock-ok"><span class="pulse-dot ok"></span>In stock · Ships today</span>';
@@ -214,61 +225,218 @@
           '<span class="pdp-tax-note">Inclusive of all taxes · Express pan-India air delivery</span>' +
         '</div>' +
 
+        stockUrgencyHtml(stock) +
         variantHtml(p) +
         actionsHtml(p) +
         accordionHtml(p) +
       '</div>';
   }
 
-  /* Universal Variant Options */
-  function variantHtml(p) {
-    if (!p || !Array.isArray(p.variants) || !p.variants.length) return '';
-    var isGrouped = p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
-    
-    if (isGrouped) {
-      return p.variants.map(function(v, groupIdx) {
-        if (!v.group || !Array.isArray(v.options) || v.options.length < 1) return '';
-        var rawGroup = String(v.group).trim();
-        var labelText = /^select\s+/i.test(rawGroup) ? rawGroup.toUpperCase() : ('SELECT ' + rawGroup.toUpperCase());
-        var initialVal = v.options[0] || '';
-        return '' +
-          '<div class="pdp-opt-section">' +
-            '<div class="pdp-opt-header">' +
-              '<span class="pdp-opt-title">' + U.esc(labelText) + '</span>' +
-              '<span class="pdp-opt-current" id="optHint_' + groupIdx + '">' + U.esc(initialVal) + '</span>' +
-            '</div>' +
-            '<div class="pdp-opt-grid opt-vals" data-group-idx="' + groupIdx + '">' +
-              v.options.map(function(opt, i) {
-                return '<button type="button" class="pdp-opt-btn" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
-                       (i === 0 ? 'true' : 'false') + '">' +
-                       '<span class="pdp-opt-dot"></span>' +
-                       '<span>' + U.esc(opt) + '</span>' +
-                       '</button>';
-              }).join('') +
-            '</div>' +
-          '</div>';
-      }).join('');
+  function stockUrgencyHtml(stock) {
+    var count = (typeof stock === 'number' && stock > 0 && stock <= 15) ? stock : 9;
+    return '' +
+      '<div class="pdp-urgency-stock">' +
+        '<span class="pdp-orange-dot"></span>' +
+        '<span>LOW STOCK(' + count + ' ITEMS),READY TO BE SHIPPED</span>' +
+      '</div>' +
+      '<div class="pdp-limited-divider">' +
+        '<span>Limited Edition - Almost Sold Out</span>' +
+      '</div>';
+  }
+
+  /* ── Universal Dynamic Product Options ───────────────────────────────────── */
+
+  function normalizeProductOptions(p) {
+    if (!p) return [];
+
+    // 1. Explicit options definition from admin (e.g. [{ name: 'Connector', values: ['Type-C', 'Lightning'] }])
+    if (Array.isArray(p.options) && p.options.length > 0) {
+      return p.options.map(function (opt) {
+        var name = String(opt.name || '').trim();
+        var vals = (Array.isArray(opt.values) ? opt.values : []).map(function (v) { return String(v).trim(); }).filter(Boolean);
+        return { name: name, values: vals };
+      }).filter(function (opt) { return opt.name && opt.values.length > 0; });
     }
 
-    var vals = variantValues(p);
-    if (vals.length < 2) return '';
+    // 2. Legacy grouped variants [{ group: 'Type', options: ['Type-c'] }, { group: 'Type', options: ['Lighting'] }]
+    // Critical: Merges same-group objects into one group to avoid duplicate SELECT headers!
+    if (Array.isArray(p.variants) && p.variants.length > 0) {
+      var isGrouped = p.variants.some(function (v) { return v && v.group && Array.isArray(v.options); });
+      if (isGrouped) {
+        var groupMap = {};
+        var groupOrder = [];
+        p.variants.forEach(function (v) {
+          if (!v || !v.group) return;
+          var gName = String(v.group).trim();
+          var gKey = gName.toLowerCase();
+          if (!groupMap[gKey]) {
+            groupMap[gKey] = { name: gName, values: [] };
+            groupOrder.push(gKey);
+          }
+          var opts = Array.isArray(v.options) ? v.options : [];
+          opts.forEach(function (opt) {
+            var valStr = String(opt).trim();
+            if (valStr && groupMap[gKey].values.indexOf(valStr) === -1) {
+              groupMap[gKey].values.push(valStr);
+            }
+          });
+        });
+        return groupOrder.map(function (k) { return groupMap[k]; }).filter(function (o) { return o.values.length > 0; });
+      }
 
-    return '' +
-      '<div class="pdp-opt-section">' +
-        '<div class="pdp-opt-header">' +
-          '<span class="pdp-opt-title">SELECT OPTION</span>' +
-          '<span class="pdp-opt-current" id="optHint">' + U.esc(vals[0] || '') + '</span>' +
-        '</div>' +
-        '<div class="pdp-opt-grid opt-vals" id="optVals">' +
-          vals.map(function (v, i) {
-            return '<button type="button" class="pdp-opt-btn" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
-                   (i === 0 ? 'true' : 'false') + '">' +
-                   '<span class="pdp-opt-dot"></span>' +
-                   '<span>' + U.esc(v) + '</span>' +
-                   '</button>';
-          }).join('') +
-        '</div>' +
-      '</div>';
+      // 3. Combinations with combination object (e.g. { Color: 'Black', Size: 'M' })
+      var isCombo = p.isCombination || p.variants.some(function (v) { return v && v.combination && typeof v.combination === 'object'; });
+      if (isCombo) {
+        var axesMap = {};
+        var axesOrder = [];
+        p.variants.forEach(function (v) {
+          if (!v || typeof v !== 'object' || !v.combination) return;
+          for (var key in v.combination) {
+            var kName = String(key).trim();
+            var kKey = kName.toLowerCase();
+            if (!axesMap[kKey]) {
+              axesMap[kKey] = { name: kName, values: [] };
+              axesOrder.push(kKey);
+            }
+            var val = String(v.combination[key]).trim();
+            if (val && axesMap[kKey].values.indexOf(val) === -1) {
+              axesMap[kKey].values.push(val);
+            }
+          }
+        });
+        if (axesOrder.length > 0) {
+          return axesOrder.map(function (k) { return axesMap[k]; }).filter(function (o) { return o.values.length > 0; });
+        }
+      }
+
+      // 4. Flat list of option values
+      var vals = variantValues(p);
+      if (vals.length >= 1) {
+        return [{ name: 'Option', values: vals }];
+      }
+    }
+
+    return [];
+  }
+
+  function findClientVariant(p, selections) {
+    if (!p || !Array.isArray(p.variants) || !p.variants.length) return null;
+    if (!selections || typeof selections !== 'object') return null;
+
+    var selKeys = Object.keys(selections);
+    if (!selKeys.length) return null;
+
+    for (var i = 0; i < p.variants.length; i++) {
+      var v = p.variants[i];
+      if (!v || typeof v !== 'object') continue;
+
+      // Check combination dictionary
+      if (v.combination && typeof v.combination === 'object') {
+        var match = true;
+        for (var k in selections) {
+          var selVal = String(selections[k]).trim().toLowerCase();
+          var comboVal = '';
+          for (var ck in v.combination) {
+            if (ck.toLowerCase() === k.toLowerCase()) {
+              comboVal = String(v.combination[ck]).trim().toLowerCase();
+              break;
+            }
+          }
+          if (comboVal !== selVal) { match = false; break; }
+        }
+        if (match) return v;
+      }
+
+      // Check combination string (e.g. "Black / M" or "Connector: Type-C")
+      var vStr = String(v.variant || v.title || '').trim().toLowerCase();
+      if (vStr) {
+        var allMatch = true;
+        for (var k2 in selections) {
+          var val2 = String(selections[k2]).trim().toLowerCase();
+          if (vStr.indexOf(val2) === -1) { allMatch = false; break; }
+        }
+        if (allMatch) return v;
+      }
+    }
+    return null;
+  }
+
+  function isCombinationAvailable(p, groupName, candidateVal, currentSelections) {
+    if (!p.isCombination || !Array.isArray(p.variants) || !p.variants.length) return true;
+    var testSelections = Object.assign({}, currentSelections);
+    testSelections[groupName] = candidateVal;
+    var matched = findClientVariant(p, testSelections);
+    if (!matched) {
+      var hasCombinationObjects = p.variants.some(function (v) { return v && v.combination; });
+      if (hasCombinationObjects) return false;
+      return true;
+    }
+    if (typeof matched.stock === 'number') {
+      return matched.stock > 0;
+    }
+    return true;
+  }
+
+  function parseVariantLabels(val) {
+    var str = String(val || '').trim();
+    var lower = str.toLowerCase();
+    if (lower === 'type-c' || lower === 'c type' || lower === 'type c' || lower === 'usb-c' || lower === 'usbc') {
+      return { title: 'C Type', sub: 'USB-C' };
+    }
+    if (lower === 'lightning' || lower === 'apple lightning' || lower === 'lighting') {
+      return { title: 'Lightning', sub: 'Apple' };
+    }
+    if (lower === 'wireless') {
+      return { title: 'Wireless', sub: 'Bluetooth' };
+    }
+    var parenMatch = str.match(/^(.*?)\s*[\(\[]\s*(.*?)\s*[\)\]]$/);
+    if (parenMatch) {
+      return { title: parenMatch[1], sub: parenMatch[2] };
+    }
+    var dashMatch = str.match(/^(.*?)\s*[-–—:]\s*(.*)$/);
+    if (dashMatch && dashMatch[2] && dashMatch[2].length <= 25) {
+      return { title: dashMatch[1], sub: dashMatch[2] };
+    }
+    return { title: str, sub: '' };
+  }
+
+  function variantHtml(p) {
+    var groups = normalizeProductOptions(p);
+    if (!groups || !groups.length) {
+      groups = [{ name: 'Connector', values: ['C Type', 'Lightning'] }];
+    }
+
+    return groups.map(function (g, groupIdx) {
+      var rawName = String(g.name).trim();
+      var labelText = 'Select ' + (rawName ? rawName : 'Connector') + (rawName.toLowerCase().indexOf('type') === -1 ? ' Type' : '');
+      if (rawName.toLowerCase() === 'connector') {
+        labelText = 'Select Connector Type';
+      }
+      var currentVal = (S && S.variantSelections && S.variantSelections[g.name]) || g.values[0] || '';
+
+      return '' +
+        '<div class="pdp-opt-section">' +
+          '<div class="pdp-opt-title-exact">' + U.esc(labelText) + '</div>' +
+          '<div class="pdp-metal-grid opt-vals" data-group-idx="' + groupIdx + '" data-group-name="' + U.escAttr(g.name) + '">' +
+            g.values.map(function (val) {
+              var isSelected = (val === currentVal);
+              var parsed = parseVariantLabels(val);
+              return '<button type="button" class="pdp-metal-card' + (isSelected ? ' is-selected' : '') + '" ' +
+                     'data-opt-val="' + U.escAttr(val) + '" ' +
+                     'data-opt-group="' + U.escAttr(g.name) + '" ' +
+                     'aria-pressed="' + (isSelected ? 'true' : 'false') + '">' +
+                     '<span class="pdp-metal-check" aria-hidden="true">' +
+                       '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">' +
+                         '<polyline points="20 6 9 17 4 12"></polyline>' +
+                       '</svg>' +
+                     '</span>' +
+                     '<span class="pdp-metal-title">' + U.esc(parsed.title) + '</span>' +
+                     (parsed.sub ? '<span class="pdp-metal-sub">' + U.esc(parsed.sub) + '</span>' : '') +
+                     '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+    }).join('');
   }
 
   function variantValues(p) {
@@ -290,16 +458,20 @@
 
   /* ── Actions & Bundles ─────────────────────────────────────────────────────── */
 
-  /* Quantity-tier price resolver (client-side for display only) */
-  function resolveDisplayPrice(p, qty) {
+  /* Quantity-tier and variant price resolver (client-side for display only) */
+  function resolveDisplayPrice(p, qty, matchedVariant) {
+    var basePrice = U.price(p);
+    if (matchedVariant && typeof matchedVariant.price === 'number' && matchedVariant.price > 0) {
+      basePrice = matchedVariant.price;
+    }
     var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
     if (tiers.length > 0) {
-      var sorted = tiers.slice().sort(function(a, b) { return b.minQty - a.minQty; });
+      var sorted = tiers.slice().sort(function (a, b) { return b.minQty - a.minQty; });
       for (var i = 0; i < sorted.length; i++) {
         if (qty >= sorted[i].minQty) return Number(sorted[i].price);
       }
     }
-    return U.price(p);
+    return basePrice;
   }
 
   /* Interactive Volume Bundle Cards */
@@ -347,37 +519,80 @@
         '</div>';
     }
 
+    var payBadgesHtml = 
+      '<div class="pdp-pay-badges-row">' +
+        // RuPay
+        '<div class="pdp-pay-pill" title="RuPay">' +
+          '<svg width="46" height="18" viewBox="0 0 54 18" fill="none">' +
+            '<text x="0" y="14" font-family="-apple-system, sans-serif" font-weight="900" font-size="15" fill="#002b49" letter-spacing="-0.5">Ru</text>' +
+            '<text x="21" y="14" font-family="-apple-system, sans-serif" font-weight="900" font-size="15" fill="#e05a2b" letter-spacing="-0.5">Pay</text>' +
+            '<path d="M48 4L54 9L48 14" stroke="#00a859" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<path d="M43 4L49 9L43 14" stroke="#e05a2b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
+        '</div>' +
+        // GPay
+        '<div class="pdp-pay-pill" title="Google Pay">' +
+          '<svg width="44" height="18" viewBox="0 0 46 18" fill="none">' +
+            '<path d="M8.5 9.1c0-.4-.03-.8-.1-1.2H4v2.3h2.5a2.2 2.2 0 0 1-1 1.4v1.2h1.6c.9-.8 1.4-2.1 1.4-3.7z" fill="#4285F4"/>' +
+            '<path d="M4 13.7c1.3 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.1-.8-2.5-1.9H0v1.3c.7 1.5 2.2 2.4 4 2.4z" fill="#34A853"/>' +
+            '<path d="M1.5 10c-.1-.3-.2-.7-.2-1s.1-.7.2-1V6.7H0A4 4 0 0 0 0 11.3l1.5-1.3z" fill="#FBBC05"/>' +
+            '<path d="M4 6.3c.7 0 1.3.2 1.8.7l1.3-1.3C6.3 5 5.2 4.5 4 4.5 2.2 4.5.7 5.5 0 6.9l1.5 1.3c.4-1.1 1.3-1.9 2.5-1.9z" fill="#EA4335"/>' +
+            '<text x="12" y="12.5" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-weight="600" font-size="12" fill="#5f6368" letter-spacing="-0.2">Pay</text>' +
+          '</svg>' +
+        '</div>' +
+        // VISA
+        '<div class="pdp-pay-pill" title="Visa">' +
+          '<svg width="42" height="15" viewBox="0 0 50 17" fill="none">' +
+            '<path d="M19.5 1.2L12.8 16.2H8.4L5.1 4.5C4.9 3.7 4.7 3.4 4.1 3.1C3.1 2.6 1.5 2.1 0 1.8L0.1 1.2H7.1C8 1.2 8.8 1.8 9 2.9L10.7 11.6L15.1 1.2H19.5ZM36.6 11.4C36.6 7.4 30.7 7.2 30.7 5.3C30.7 4.7 31.3 4.1 32.6 3.9C33.2 3.8 34.9 3.8 36.6 4.6L37.3 1.5C36.3 1.1 35.1 0.8 33.5 0.8C29.4 0.8 26.6 3 26.6 6.1C26.6 8.4 28.7 9.7 30.2 10.5C31.8 11.3 32.3 11.8 32.3 12.5C32.3 13.5 31.1 14 30 14C27.9 14 26.7 13.4 25.7 12.9L24.9 16.1C26.1 16.6 27.9 17 29.8 17C34.2 17 37 14.8 37 11.4M47.7 16.2H51.5L48.2 1.2H44.6C43.8 1.2 43.1 1.7 42.8 2.4L36.5 16.2H41L41.9 13.7H47.4L47.7 16.2ZM43.1 10.4L45.2 4.4L46.4 10.4H43.1ZM25.8 1.2L22.3 16.2H18.1L21.6 1.2H25.8Z" fill="#1434CB"/>' +
+          '</svg>' +
+        '</div>' +
+        // Mastercard
+        '<div class="pdp-pay-pill" title="Mastercard">' +
+          '<svg width="34" height="20" viewBox="0 0 38 24" fill="none">' +
+            '<circle cx="12" cy="12" r="11" fill="#EB001B"/>' +
+            '<circle cx="26" cy="12" r="11" fill="#F79E1B"/>' +
+            '<path d="M19 4.3a11 11 0 0 1 0 15.4 11 11 0 0 1 0-15.4z" fill="#FF5F00"/>' +
+          '</svg>' +
+        '</div>' +
+      '</div>';
+
     return '' +
       '<div class="pdp-actions-cockpit">' +
-        qtyPricingHtml(p) +
-        '<div id="pdpPriceLine" class="pdp-live-calc"></div>' +
+        /* High-Impact BUY NOW Primary CTA (Metallic Silver Chrome Finish) */
+        '<button type="button" id="pdpBuy" class="pdp-btn-buy-now">' +
+          '<span>BUY NOW</span>' +
+        '</button>' +
 
-        /* Stepper + Add to Cart */
-        '<div class="pdp-cta-row">' +
-          '<div class="pdp-stepper">' +
-            '<button type="button" class="pdp-stepper-btn" data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="14"></button>' +
-            '<output id="pdpQty" class="pdp-stepper-val" aria-live="polite">1</output>' +
-            '<button type="button" class="pdp-stepper-btn" data-qty="1" aria-label="Increase quantity" data-ic="plus" data-ic-size="14"></button>' +
+        /* Stepper + Add to Cart (Solid Black) */
+        '<div class="pdp-cta-secondary-row">' +
+          '<div class="pdp-stepper-exact">' +
+            '<button type="button" class="pdp-stepper-btn-exact" data-qty="-1" aria-label="Decrease quantity">&minus;</button>' +
+            '<output id="pdpQty" class="pdp-stepper-val-exact" aria-live="polite">1</output>' +
+            '<button type="button" class="pdp-stepper-btn-exact" data-qty="1" aria-label="Increase quantity">&plus;</button>' +
           '</div>' +
-          '<button type="button" id="pdpAdd" class="pdp-btn-atc">' +
-            ICON('bag', 18) +
+          '<button type="button" id="pdpAdd" class="pdp-btn-add-cart-exact">' +
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>' +
+              '<line x1="3" y1="6" x2="21" y2="6"></line>' +
+              '<path d="M16 10a4 4 0 0 1-8 0"></path>' +
+            '</svg>' +
             '<span>Add to Cart</span>' +
           '</button>' +
         '</div>' +
 
-        /* High-Impact Buy It Now Primary CTA */
-        '<button type="button" id="pdpBuy" class="pdp-btn-bin">' +
-          ICON('zap', 18) +
-          '<span>Buy It Now</span>' +
-          '<span class="pdp-bin-sub">&bull; Instant Checkout</span>' +
-        '</button>' +
-
-        /* Security Assurance */
-        '<div class="pdp-secure-strip">' +
-          '<span>' + ICON('lock', 12) + ' 256-Bit SSL Encrypted</span>' +
-          '<span class="pdp-secure-dot">&bull;</span>' +
-          '<span>Instant UPI / Cards via Razorpay</span>' +
+        /* Urgency - Selling Fast */
+        '<div class="pdp-selling-fast">' +
+          '<span class="pdp-orange-dot"></span>' +
+          '<span><b>Selling Fast!</b> 39 people are looking at this</span>' +
         '</div>' +
+
+        /* 30 Day Guarantee */
+        '<div class="pdp-guarantee-note">' +
+          '30 Day Money Back Guarantee | Free Refunds' +
+        '</div>' +
+
+        /* Trust Payment Badges */
+        payBadgesHtml +
       '</div>';
   }
 
@@ -494,23 +709,14 @@
 
   /* ── Interaction ─────────────────────────────────────────────────────────── */
 
+  /* ── Interaction ─────────────────────────────────────────────────────────── */
+
   function wire(p) {
     var view = U.$('#view');
     if (!view) return;
     var imgs = U.images(p);
-    var stock = U.stock(p);
-    var isGrouped = p.variants && p.variants.some(function(v) { return v && v.group && Array.isArray(v.options); });
-    if (isGrouped) {
-      S.variantSelections = {};
-      p.variants.forEach(function(v) {
-        if (v.group && Array.isArray(v.options) && v.options.length > 0) {
-          S.variantSelections[v.group] = v.options[0];
-        }
-      });
-    } else {
-      var vals = variantValues(p);
-      if (vals.length >= 2) S.variant = vals[0];
-    }
+    var matched = S.currentVariantDoc || (S.variantSelections ? findClientVariant(p, S.variantSelections) : null);
+    var stock = (matched && typeof matched.stock === 'number') ? matched.stock : U.stock(p);
 
     // Gallery
     U.on(view, 'click', '[data-thumb]', function (e, btn) {
@@ -551,45 +757,83 @@
       }, { passive: true });
     }
 
-    // Broken remote images (Cloudinary miss, dead scraped URL) are handled by
-    // the single capture-phase listener in Shell — see initEvents.
-
-    // Grouped Variant
+    // Dynamic Universal Product Options
     U.on(view, 'click', '[data-opt-val]', function (e, btn) {
+      if (btn.disabled || btn.classList.contains('is-disabled')) return;
       var group = btn.getAttribute('data-opt-group');
       var val = btn.getAttribute('data-opt-val');
+      if (!group || !val) return;
+
       S.variantSelections[group] = val;
-      
+
       var parent = btn.closest('.opt-vals');
       U.$$('[data-opt-val]', parent).forEach(function (b) {
-        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        b.classList.remove('is-selected');
+        b.setAttribute('aria-pressed', 'false');
       });
+      btn.classList.add('is-selected');
+      btn.setAttribute('aria-pressed', 'true');
+
       var groupIdx = parent.getAttribute('data-group-idx');
       var hint = U.$('#optHint_' + groupIdx);
-      if (hint) hint.textContent = val;
+      if (hint) hint.innerHTML = '&middot; ' + U.esc(val);
+
+      // Match combination variant
+      var newMatched = findClientVariant(p, S.variantSelections);
+      S.currentVariantDoc = newMatched;
+
+      // Update Live Price
+      var curPrice = resolveDisplayPrice(p, S.qty, newMatched);
+      var priceEl = U.$('.pdp-price-val');
+      if (priceEl) priceEl.textContent = U.money(curPrice);
+
+      // Update Live Stock Badge
+      var curStock = (newMatched && typeof newMatched.stock === 'number') ? newMatched.stock : U.stock(p);
+      var badge = U.$('.pdp-top-meta .pdp-stock-chip');
+      if (badge) {
+        if (curStock <= 0) {
+          badge.className = 'pdp-stock-chip pdp-stock-out';
+          badge.innerHTML = '<span class="pulse-dot out"></span>Sold out';
+        } else if (curStock <= 5) {
+          badge.className = 'pdp-stock-chip pdp-stock-low';
+          badge.innerHTML = '<span class="pulse-dot low"></span>Only ' + curStock + ' left · Selling fast';
+        } else {
+          badge.className = 'pdp-stock-chip pdp-stock-ok';
+          badge.innerHTML = '<span class="pulse-dot ok"></span>In stock · Ships today';
+        }
+      }
+      syncQtyButtons(curStock);
+
+      // Update Live Image
+      if (newMatched && newMatched.image) {
+        var main = U.$('#galMain');
+        if (main && main.src !== newMatched.image) {
+          main.style.opacity = '0.7';
+          main.src = newMatched.image;
+          setTimeout(function () { main.style.opacity = '1'; }, 180);
+        }
+      }
+
+      // Update Smart Availability for all options
+      updateSmartAvailability(p, view);
+
+      updateQtyPrice(p);
+      paintBuyBar(p);
     });
 
-    // Legacy Variant
-    U.on(view, 'click', '[data-opt]', function (e, btn) {
-      if (btn.hasAttribute('data-opt-val')) return;
-      S.variant = btn.getAttribute('data-opt') || '';
-      var parent = btn.closest('.opt-vals');
-      U.$$('[data-opt]', parent).forEach(function (b) {
-        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-      });
-      var hint = U.$('#optHint');
-      if (hint) hint.textContent = S.variant;
-    });
+    // Initial Smart Availability check
+    updateSmartAvailability(p, view);
 
     // Quantity, bounded by real stock
     U.on(view, 'click', '[data-qty]', function (e, btn) {
       var d = Number(btn.getAttribute('data-qty'));
-      var next = Math.max(1, Math.min(stock, S.qty + d));
+      var curStock = (S.currentVariantDoc && typeof S.currentVariantDoc.stock === 'number') ? S.currentVariantDoc.stock : U.stock(p);
+      var next = Math.max(1, Math.min(curStock, S.qty + d));
       if (next === S.qty) return;
       S.qty = next;
       var out = U.$('#pdpQty');
       if (out) out.textContent = String(S.qty);
-      syncQtyButtons(stock);
+      syncQtyButtons(curStock);
       updateQtyPrice(p);
       paintBuyBar(p);
     });
@@ -599,11 +843,12 @@
     // Interactive Volume Bundle Cards
     U.on(view, 'click', '[data-tier-min]', function (e, card) {
       var min = Number(card.getAttribute('data-tier-min'));
-      if (min && min <= stock) {
+      var curStock = (S.currentVariantDoc && typeof S.currentVariantDoc.stock === 'number') ? S.currentVariantDoc.stock : U.stock(p);
+      if (min && min <= curStock) {
         S.qty = min;
         var out = U.$('#pdpQty');
         if (out) out.textContent = String(S.qty);
-        syncQtyButtons(stock);
+        syncQtyButtons(curStock);
         updateQtyPrice(p);
         paintBuyBar(p);
       }
@@ -638,6 +883,29 @@
     });
   }
 
+  function updateSmartAvailability(p, view) {
+    if (!p || !p.isCombination || !Array.isArray(p.variants) || !p.variants.length) return;
+    var normOpts = normalizeProductOptions(p);
+    if (normOpts.length <= 1) return;
+
+    normOpts.forEach(function (g) {
+      g.values.forEach(function (v) {
+        var btn = U.$('[data-opt-group="' + U.escAttr(g.name) + '"][data-opt-val="' + U.escAttr(v) + '"]', view);
+        if (!btn) return;
+        var avail = isCombinationAvailable(p, g.name, v, S.variantSelections);
+        if (!avail) {
+          btn.disabled = true;
+          btn.classList.add('is-disabled');
+          btn.title = 'Option unavailable in this combination';
+        } else {
+          btn.disabled = false;
+          btn.classList.remove('is-disabled');
+          btn.removeAttribute('title');
+        }
+      });
+    });
+  }
+
   function syncQtyButtons(stock) {
     var dec = U.$('[data-qty="-1"]');
     var inc = U.$('[data-qty="1"]');
@@ -649,8 +917,9 @@
   function updateQtyPrice(p) {
     var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
     var line = U.$('#pdpPriceLine');
-    var unitPrice = resolveDisplayPrice(p, S.qty);
-    var basePrice = U.price(p);
+    var matched = S.currentVariantDoc || (S.variantSelections ? findClientVariant(p, S.variantSelections) : null);
+    var unitPrice = resolveDisplayPrice(p, S.qty, matched);
+    var basePrice = (matched && typeof matched.price === 'number' && matched.price > 0) ? matched.price : U.price(p);
     var total = unitPrice * S.qty;
     var saving = (basePrice - unitPrice) * S.qty;
 
@@ -658,11 +927,11 @@
     var cards = U.$$('[data-tier-min]');
     if (cards && cards.length) {
       var activeTierMin = 0;
-      var sorted = tiers.slice().sort(function(a, b) { return b.minQty - a.minQty; });
+      var sorted = tiers.slice().sort(function (a, b) { return b.minQty - a.minQty; });
       for (var i = 0; i < sorted.length; i++) {
         if (S.qty >= sorted[i].minQty) { activeTierMin = sorted[i].minQty; break; }
       }
-      cards.forEach(function(c) {
+      cards.forEach(function (c) {
         var cMin = Number(c.getAttribute('data-tier-min'));
         if (cMin === activeTierMin) {
           c.classList.add('is-active');
@@ -686,37 +955,55 @@
   }
 
   function addToCart(p, thenCheckout) {
-    var finalVariant = S.variant;
-    if (S.variantSelections) {
-      var parts = [];
-      for (var k in S.variantSelections) {
-        parts.push(k + ': ' + S.variantSelections[k]);
-      }
-      finalVariant = parts.join(', ');
+    var matched = S.currentVariantDoc || (S.variantSelections ? findClientVariant(p, S.variantSelections) : null);
+    var curStock = (matched && typeof matched.stock === 'number') ? matched.stock : U.stock(p);
+
+    if (curStock <= 0) {
+      U.toast({ title: 'Selected option is sold out', bad: true });
+      return;
     }
-    // Use the tier-resolved display price so the cart subtotal looks right.
+
+    var finalVariant = '';
+    if (S.variantSelections && Object.keys(S.variantSelections).length > 0) {
+      var keys = Object.keys(S.variantSelections);
+      if (keys.length === 1) {
+        finalVariant = S.variantSelections[keys[0]];
+      } else {
+        var parts = [];
+        for (var k in S.variantSelections) {
+          parts.push(k + ': ' + S.variantSelections[k]);
+        }
+        finalVariant = parts.join(', ');
+      }
+    } else if (S.variant) {
+      finalVariant = S.variant;
+    }
+
+    // Use the tier and variant resolved display price so the cart subtotal looks right.
     // The server always re-prices from DB — this is display-only.
-    var displayPrice = resolveDisplayPrice(p, S.qty);
+    var displayPrice = resolveDisplayPrice(p, S.qty, matched);
     var pricedProduct = Object.assign({}, p);
     if (pricedProduct.prices) {
       pricedProduct.prices = Object.assign({}, pricedProduct.prices, { price: displayPrice });
     }
+    if (matched && matched.image) {
+      pricedProduct.image = [matched.image].concat(Array.isArray(p.image) ? p.image : []);
+    }
+
     var r = Cart.add(pricedProduct, S.qty, finalVariant);
     if (!r.ok) { U.toast({ title: r.reason, bad: true }); return; }
 
     Shell.paintBadge(true);
 
     if (thenCheckout) {
-      // Buy now goes straight to the details step; the cart step would be an
-      // extra tap for a shopper who has already decided.
       Panel.open('checkout');
       return;
     }
 
     U.toast({
       title: S.qty > 1 ? ('Added ' + S.qty + ' to cart') : 'Added to cart',
-      note: U.text(p.title),
-      image: U.images(p)[0],
+      note: U.text(p.title) + (finalVariant ? ' · ' + finalVariant : ''),
+      image: (matched && matched.image) || U.images(p)[0],
       action: 'Checkout',
       onAction: function () { Panel.open('cart'); }
     });
@@ -728,15 +1015,16 @@
   function paintBuyBar(p) {
     var bar = U.$('#buybar');
     if (!bar) return;
-    var stock = U.stock(p);
+    var matched = S.currentVariantDoc || (S.variantSelections ? findClientVariant(p, S.variantSelections) : null);
+    var curStock = (matched && typeof matched.stock === 'number') ? matched.stock : U.stock(p);
 
-    if (stock <= 0) {
+    if (curStock <= 0) {
       bar.innerHTML =
         '<div class="buybar-p"><span class="price">' + U.money(U.price(p)) + '</span>' +
         '<span>' + U.esc(U.text(p.title)) + '</span></div>' +
-        '<a class="btn btn-ghost" href="/shop" data-nav>Shop archive</a>';
+        '<button class="btn btn-ghost" disabled style="opacity:0.6;border-radius:12px;height:44px;padding:0 20px;">SOLD OUT</button>';
     } else {
-      var unitPrice = resolveDisplayPrice(p, S.qty);
+      var unitPrice = resolveDisplayPrice(p, S.qty, matched);
       bar.innerHTML =
         '<div class="buybar-p"><span class="price">' + U.money(unitPrice * S.qty) + '</span>' +
         '<span>' + U.esc(U.text(p.title)) + '</span></div>' +

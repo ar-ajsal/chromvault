@@ -18,6 +18,12 @@ const productSchema = new mongoose.Schema({
     discount: { type: Number, default: 0 }
   },
   isCombination: { type: Boolean, default: false },
+  // Defined option axes (e.g. [{ name: 'Size', values: ['S', 'M', 'L'] }])
+  options: [{
+    name: { type: String, required: true },
+    values: [{ type: String, required: true }]
+  }],
+  // Combinations or legacy option groups
   variants: [{ type: Object }],
   // Quantity-tier pricing (Buy More Save More).
   // Each entry: { minQty: Number, price: Number }.

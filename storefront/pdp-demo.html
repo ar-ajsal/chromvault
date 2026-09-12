@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Chromvault — Product Options Demo &amp; Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter+Tight:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/css/tokens.css?v=2" />
+<link rel="stylesheet" href="/css/base.css?v=2" />
+<link rel="stylesheet" href="/css/components.css?v=11" />
+<link rel="stylesheet" href="/css/layout.css?v=7" />
+<style>
+  .demo-nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #0a0a0b;
+    color: #fff;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    border-bottom: 1px solid #27272a;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .demo-nav-title {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #a1a1aa;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+  .demo-nav-btn {
+    background: #27272a;
+    color: #e4e4e7;
+    border: 1px solid #3f3f46;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+  .demo-nav-btn:hover {
+    background: #3f3f46;
+    color: #fff;
+  }
+  .demo-nav-btn.active {
+    background: #ffffff;
+    color: #0a0a0b;
+    border-color: #ffffff;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-nav-bar">
+  <span class="demo-nav-title">Test Scenarios:</span>
+  <button class="demo-nav-btn active" data-scenario="buds">1. Chrome Buds (Qty Pricing)</button>
+  <button class="demo-nav-btn" data-scenario="bracelet">2. Bracelet (Size &amp; Color)</button>
+  <button class="demo-nav-btn" data-scenario="sunglasses">3. Sunglasses (Frame &amp; Lens)</button>
+  <button class="demo-nav-btn" data-scenario="necklace">4. Necklace (Length)</button>
+  <button class="demo-nav-btn" data-scenario="ring">5. Ring (Sizes)</button>
+  <button class="demo-nav-btn" data-scenario="tshirt">6. T-Shirt (Variants Stock)</button>
+  <button class="demo-nav-btn" data-scenario="simplering">7. Simple Ring (No Options)</button>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="hdr" id="hdr">
+  <div class="wrap hdr-in">
+    <div class="hdr-left">
+      <nav class="mainnav" id="mainnav" aria-label="Main">
+        <a href="/" data-nav>Archive</a>
+        <a href="/shop" data-nav>Shop</a>
+      </nav>
+    </div>
+    <a class="logo-link" href="/" aria-label="Chromvault — home">
+      <img src="/assets/logo.png" alt="Chromvault" class="header-logo" onerror="this.style.display='none'" />
+      <span style="font-family:var(--f-display);font-weight:900;font-size:20px;letter-spacing:-0.02em;">CHROMVAULT</span>
+    </a>
+    <div class="hdr-right">
+      <button class="icon-btn cart-btn" id="cartBtn" aria-label="Open cart">
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== ROUTED VIEW ===================== -->
+<main id="main">
+  <div id="view"></div>
+</main>
+
+<!-- ===================== CART / CHECKOUT PANEL ===================== -->
+<div class="panel-scrim" id="panelScrim"></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Cart" aria-hidden="true">
+  <div class="panel-head">
+    <div class="stack" style="gap:6px">
+      <span class="panel-title" id="panelTitle">Cart</span>
+      <div class="steps" id="panelSteps" aria-hidden="true"></div>
+    </div>
+    <button class="icon-btn" id="panelClose" aria-label="Close">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+  <div class="panel-foot" id="panelFoot"></div>
+</aside>
+
+<div class="buybar" id="buybar"></div>
+<div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="false"></div>
+
+<script src="/js/icons.js?v=1"></script>
+<script src="/js/util.js?v=1"></script>
+<script src="/js/api.js?v=2"></script>
+<script src="/js/cart.js?v=1"></script>
+<script src="/js/product-card.js?v=2"></script>
+<script src="/js/chrome-fx.js?v=1"></script>
+<script src="/js/shell.js?v=1"></script>
+<script src="/js/panel.js?v=1"></script>
+<script src="/js/checkout.js?v=1"></script>
+<script src="/js/views/core.js?v=1"></script>
+<script>
+  window.Router = {
+    token: function() { return 1; },
+    stale: function() { return false; },
+    go: function(path) { console.log('Router.go', path); }
+  };
+</script>
+<script src="/js/views/home.js?v=6"></script>
+<script src="/js/views/shop.js?v=1"></script>
+<script src="/js/views/product.js?v=11"></script>
+<script src="/js/views/cart.js?v=1"></script>
+
+<script>
+  // Setup Mock Test Products as requested in User Prompt
+  var TEST_PRODUCTS = {
+    // 1. Chrome Buds: Connector: Type-C, Lightning. Qty pricing: 1->899, 2->849, 3->799
+    buds: {
+      _id: 'test_buds_1',
+      productId: 'test_buds_1',
+      slug: 'chrome-buds-wireless',
+      title: { en: 'Chrome Buds Wireless' },
+      description: { en: 'High fidelity audio in an obsidian mirrored case. Universal USB-C and Lightning connectors.' },
+      category: 'Earphones',
+      categories: ['Earphones'],
+      image: [
+        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=800&auto=format&fit=crop&q=80'
+      ],
+      stock: 45,
+      prices: { price: 899, originalPrice: 1299, discount: 400 },
+      options: [
+        { name: 'Connector', values: ['Type-C', 'Lightning'] }
+      ],
+      qtyPricing: [
+        { minQty: 1, price: 899 },
+        { minQty: 2, price: 849 },
+        { minQty: 3, price: 799 }
+      ]
+    },
+
+    // 2. Bracelet: Size: S/M/L, Color: Silver/Gold/Black. No quantity pricing.
+    bracelet: {
+      _id: 'test_bracelet_2',
+      productId: 'test_bracelet_2',
+      slug: 'cuban-link-bracelet',
+      title: { en: 'Cuban Link Heavy Bracelet' },
+      description: { en: '316L Stainless steel with high-gloss mirror finish. Available in multiple wrist sizes and finishes.' },
+      category: 'Bracelets',
+      categories: ['Bracelets'],
+      image: [
+        'https://images.unsplash.com/photo-1611591475825-976988899898?w=800&auto=format&fit=crop&q=80'
+      ],
+      stock: 18,
+      prices: { price: 1499, originalPrice: 1999, discount: 500 },
+      options: [
+        { name: 'Size', values: ['S', 'M', 'L'] },
+        { name: 'Color', values: ['Silver', 'Gold', 'Black'] }
+      ],
+      qtyPricing: []
+    },
+
+    // 3. Sunglasses: Frame: Black/Silver, Lens: Smoke/Brown (Variants with stock)
+    sunglasses: {
+      _id: 'test_shades_3',
+      productId: 'test_shades_3',
+      slug: 'cyber-chrome-sunglasses',
+      title: { en: 'Cyber Chrome Sunglasses' },
+      description: { en: 'Wrap-around sculpted frame with UV400 lenses.' },
+      category: 'Sunglasses',
+      categories: ['Sunglasses'],
+      image: [
+        'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&auto=format&fit=crop&q=80'
+      ],
+      stock: 12,
+      prices: { price: 1899, originalPrice: 2499, discount: 600 },
+      isCombination: true,
+      options: [
+        { name: 'Frame', values: ['Black', 'Silver'] },
+        { name: 'Lens', values: ['Smoke', 'Brown'] }
+      ],
+      variants: [
+        { variant: 'Black / Smoke', combination: { Frame: 'Black', Lens: 'Smoke' }, price: 1899, stock: 8, sku: 'SHD-BLK-SMK' },
+        { variant: 'Black / Brown', combination: { Frame: 'Black', Lens: 'Brown' }, price: 1899, stock: 4, sku: 'SHD-BLK-BRN' },
+        { variant: 'Silver / Smoke', combination: { Frame: 'Silver', Lens: 'Smoke' }, price: 2099, stock: 0, sku: 'SHD-SLV-SMK' }, // out of stock combination!
+        { variant: 'Silver / Brown', combination: { Frame: 'Silver', Lens: 'Brown' }, price: 2099, stock: 6, sku: 'SHD-SLV-BRN' }
+      ]
+    },
+
+    // 4. Necklace: Length: 16, 18, 20 inch
+    necklace: {
+      _id: 'test_necklace_4',
+      productId: 'test_necklace_4',
+      slug: 'venetian-box-chain',
+      title: { en: 'Venetian Box Chain Necklace' },
+      description: { en: 'Dense geometric chain with custom lobster clasp.' },
+      category: 'Necklaces',
+      categories: ['Necklaces'],
+      image: [
+        'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&auto=format&fit=crop&q=80'
+      ],
+      stock: 25,
+      prices: { price: 1199, originalPrice: 1599, discount: 400 },
+      options: [
+        { name: 'Length', values: ['16 inch', '18 inch', '20 inch'] }
+      ]
+    },
+
+    // 5. Ring: Size: 7, 8, 9, 10
+    ring: {
+      _id: 'test_ring_5',
+      productId: 'test_ring_5',
+      slug: 'signet-mirror-ring',
+      title: { en: 'Signet Mirror Polish Ring' },
+      description: { en: 'Solid core signet ring polished to mirror perfection.' },
+      category: 'Rings',
+      categories: ['Rings'],
+      image: [
+        'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80'
+      ],
+      stock: 14,
+      prices: { price: 799, originalPrice: 1099, discount: 300 },
+      options: [
+        { name: 'Size', values: ['7', '8', '9', '10'] }
+      ]
+    },
+
+    // 6. T-Shirt: Color: Black/White, Size: S/M/L/XL (Variant stock)
+    tshirt: {
+      _id: 'test_tee_6',
+      productId: 'test_tee_6',
+      slug: 'heavyweight-oversized-tee',
+      title: { en: 'Heavyweight Chrome Logo Tee' },
+      description: { en: '280 GSM French Terry cotton with metallic silver screenprint.' },
+      category: 'T-Shirts',
+      categories: ['T-Shirts'],
+      image: [
+        'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80'
+      ],
+      stock: 40,
+      prices: { price: 1299, originalPrice: 1799, discount: 500 },
+      isCombination: true,
+      options: [
+        { name: 'Color', values: ['Black', 'White'] },
+        { name: 'Size', values: ['S', 'M', 'L', 'XL'] }
+      ],
+      variants: [
+        { variant: 'Black / S', combination: { Color: 'Black', Size: 'S' }, price: 1299, stock: 5 },
+        { variant: 'Black / M', combination: { Color: 'Black', Size: 'M' }, price: 1299, stock: 8 },
+        { variant: 'Black / L', combination: { Color: 'Black', Size: 'L' }, price: 1299, stock: 10 },
+        { variant: 'Black / XL', combination: { Color: 'Black', Size: 'XL' }, price: 1299, stock: 0 }, // Out of stock
+        { variant: 'White / S', combination: { Color: 'White', Size: 'S' }, price: 1299, stock: 4 },
+        { variant: 'White / M', combination: { Color: 'White', Size: 'M' }, price: 1299, stock: 7 },
+        { variant: 'White / L', combination: { Color: 'White', Size: 'L' }, price: 1299, stock: 6 },
+        { variant: 'White / XL', combination: { Color: 'White', Size: 'XL' }, price: 1299, stock: 2 }
+      ]
+    },
+
+    // 7. Simple Ring: No options at all
+    simplering: {
+      _id: 'test_simple_7',
+      productId: 'test_simple_7',
+      slug: 'raw-band-ring',
+      title: { en: 'Raw Edge Minimal Band' },
+      description: { en: 'Single size adjustable open band. Pure industrial simplicity.' },
+      category: 'Rings',
+      categories: ['Rings'],
+      image: [
+        'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=800&auto=format&fit=crop&q=80'
+      ],
+      stock: 9,
+      prices: { price: 649, originalPrice: 899, discount: 250 },
+      options: [],
+      variants: [],
+      qtyPricing: []
+    }
+  };
+
+  // Pre-load all test products into Views registry
+  for (var k in TEST_PRODUCTS) {
+    Views.remember(TEST_PRODUCTS[k]);
+  }
+
+  function loadScenario(key) {
+    var p = TEST_PRODUCTS[key];
+    if (!p) return;
+    document.querySelectorAll('.demo-nav-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-scenario') === key);
+    });
+    if (Views.teardown) Views.teardown();
+    Views.product({ slug: p.slug });
+  }
+
+  document.querySelectorAll('.demo-nav-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      loadScenario(btn.getAttribute('data-scenario'));
+    });
+  });
+
+  // Load Chrome Buds by default
+  window.addEventListener('DOMContentLoaded', function() {
+    loadScenario('buds');
+  });
+</script>
+
+</body>
+</html>
