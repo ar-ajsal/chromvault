@@ -224,14 +224,16 @@
     if (isGrouped) {
       return p.variants.map(function(v, groupIdx) {
         if (!v.group || !Array.isArray(v.options) || v.options.length < 1) return '';
+        var rawGroup = String(v.group).trim();
+        var labelText = /^select\s+/i.test(rawGroup) ? rawGroup.toUpperCase() : ('SELECT ' + rawGroup.toUpperCase());
         return '' +
-          '<div class="opt-group">' +
-            '<div class="opt-head">' +
-              '<span class="label" style="font-weight:700;font-size:15px;">Select ' + U.esc(v.group) + '</span>' +
+          '<div class="opt-group" style="margin-bottom:16px">' +
+            '<div class="opt-head" style="margin-bottom:8px">' +
+              '<span class="label" style="font-family:var(--f-mono,monospace);font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)">' + U.esc(labelText) + '</span>' +
             '</div>' +
-            '<div class="opt-vals" data-group-idx="' + groupIdx + '" style="gap:12px;">' +
+            '<div class="opt-vals" data-group-idx="' + groupIdx + '" style="display:flex;flex-direction:column;gap:10px">' +
               v.options.map(function(opt, i) {
-                return '<button class="opt opt-premium" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
+                return '<button class="opt opt-blk" data-opt-val="' + U.escAttr(opt) + '" data-opt-group="' + U.escAttr(v.group) + '" aria-pressed="' +
                        (i === 0 ? 'true' : 'false') + '">' + U.esc(opt) + '</button>';
               }).join('') +
             '</div>' +
@@ -243,13 +245,13 @@
     if (vals.length < 2) return '';
 
     return '' +
-      '<div class="opt-group">' +
-        '<div class="opt-head">' +
-          '<span class="label" style="font-weight:700;font-size:15px;">Select Option</span>' +
+      '<div class="opt-group" style="margin-bottom:16px">' +
+        '<div class="opt-head" style="margin-bottom:8px">' +
+          '<span class="label" style="font-family:var(--f-mono,monospace);font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)">SELECT OPTION</span>' +
         '</div>' +
-        '<div class="opt-vals" id="optVals" style="gap:12px;">' +
+        '<div class="opt-vals" id="optVals" style="display:flex;flex-direction:column;gap:10px">' +
           vals.map(function (v, i) {
-            return '<button class="opt opt-premium" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
+            return '<button class="opt opt-blk" data-opt="' + U.escAttr(v) + '" aria-pressed="' +
                    (i === 0 ? 'true' : 'false') + '">' + U.esc(v) + '</button>';
           }).join('') +
         '</div>' +
@@ -288,25 +290,22 @@
     return U.price(p);
   }
 
-  /* ── Buy More Save More table (only renders when tiers are configured) ────── */
   function qtyPricingHtml(p) {
     var tiers = Array.isArray(p.qtyPricing) ? p.qtyPricing : [];
     if (!tiers.length) return '';
     var sorted = tiers.slice().sort(function(a, b) { return a.minQty - b.minQty; });
     var basePrice = U.price(p);
     return '' +
-      '<div class="qty-savings" style="background:var(--paper-sink);border:1px solid var(--ink-hair);border-radius:16px;padding:16px 20px;margin-bottom:4px">' +
-        '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;display:flex;align-items:center;gap:6px">' +
-          ICON('zap', 14) + ' Buy More, Save More' +
-        '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:6px">' +
+      '<div style="border:1.5px solid var(--ink-hair);border-radius:16px;padding:14px 18px;margin-top:6px">' +
+        '<div style="font-family:var(--f-mono,monospace);font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">Buy More · Save More</div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px">' +
           sorted.map(function(t) {
             var saving = basePrice > t.price ? (basePrice - t.price) : 0;
-            return '<div style="display:flex;align-items:center;justify-content:space-between;font-size:14px">' +
-              '<span style="color:var(--ink-3)">' + t.minQty + '+ items</span>' +
-              '<span style="display:flex;align-items:center;gap:10px">' +
-                '<strong style="font-size:15px;font-weight:700">' + U.money(t.price) + ' each</strong>' +
-                (saving > 0 ? '<span style="background:var(--ok-soft,#e6f7ed);color:var(--ok,#16a34a);font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px">Save ' + U.money(saving) + '</span>' : '') +
+            return '<div style="display:flex;align-items:center;justify-content:space-between">' +
+              '<span style="font-size:13px;color:var(--ink-3);font-family:var(--f-mono,monospace);font-weight:700;letter-spacing:.04em">' + t.minQty + '+</span>' +
+              '<span style="display:flex;align-items:center;gap:8px">' +
+                '<span style="font-size:14px;font-weight:700">' + U.money(t.price) + ' each</span>' +
+                (saving > 0 ? '<span style="font-size:10px;font-weight:800;letter-spacing:.04em;background:#000;color:#fff;padding:2px 7px;border-radius:4px">SAVE ' + U.money(saving) + '</span>' : '') +
               '</span>' +
             '</div>';
           }).join('') +
@@ -327,38 +326,45 @@
         '</div>';
     }
 
-    var premiumStyle = '<style>' +
-      '.btn-buy-now { position:relative; overflow:hidden; background:linear-gradient(135deg, #18181b, #000); color:#fff; border-radius:16px; height:64px; font-size:17px; font-weight:800; letter-spacing:1px; text-transform:uppercase; box-shadow:0 8px 24px rgba(0,0,0,0.2); transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border:1px solid #333; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; } ' +
-      '.btn-buy-now:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,0.3); border-color:#555; } ' +
-      '.btn-buy-now:active { transform:translateY(1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); } ' +
-      '.btn-buy-now::after { content:""; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%); transform:skewX(-25deg); animation:shine 4s infinite; } ' +
-      '@keyframes shine { 0% { left:-100%; } 20% { left:200%; } 100% { left:200%; } } ' +
-      '.btn-add-cart { background:var(--paper); color:var(--ink); border:2px solid var(--ink); border-radius:16px; height:60px; font-weight:800; font-size:16px; text-transform:uppercase; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer; flex:1; display:flex; align-items:center; justify-content:center; gap:8px; } ' +
-      '.btn-add-cart:hover { background:var(--ink); color:var(--paper); } ' +
-      '.btn-add-cart:active { transform:scale(0.97); } ' +
-      '.qty-premium { border-radius:16px; border:2px solid var(--ink-hair); background:var(--paper); font-weight:700; transition:border-color 0.2s; height:60px; } ' +
-      '.qty-premium:focus-within { border-color:var(--ink); } ' +
-      '.opt-premium { flex:1; min-height:64px; border-radius:16px; font-size:15px; text-transform:none; font-weight:600; border:2px solid var(--ink-hair); transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); background:var(--paper); color:var(--ink); cursor:pointer; padding:0 var(--s3); display:inline-grid; place-items:center; box-shadow:none; } ' +
-      '.opt-premium:hover { border-color:var(--ink-3); transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.05); } ' +
-      '.opt-premium[aria-pressed="true"] { border-color:var(--ink); background:var(--ink); color:var(--paper); box-shadow:0 6px 16px rgba(0,0,0,0.15); transform:none; } ' +
-      '</style>';
+    // Inline styles injected once — scoped to the PDP, strictly matching the visual
+    // reference screenshot: flat black buttons, outlined Add-to-Cart, monospace labels.
+    var styleBlock = '<style>' +
+      /* Option buttons — full-width solid-black pill when selected, outlined when not */
+      '.opt-blk { width:100%; min-height:60px; border-radius:16px; font-family:var(--f-sans,sans-serif); font-size:16px; font-weight:700; letter-spacing:0.01em; text-transform:none; border:1.5px solid var(--ink-hair); background:var(--paper); color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s, color 0.15s, border-color 0.15s; } ' +
+      '.opt-blk:hover { border-color:var(--ink-3); } ' +
+      '.opt-blk[aria-pressed="true"] { background:#000; color:#fff; border-color:#000; } ' +
+      /* Qty selector — light outlined pill matching screenshot */
+      '.qty-pdp { border-radius:16px; border:1.5px solid var(--ink-hair); background:var(--paper); height:56px; width:130px; flex:none; } ' +
+      /* Add to Cart — outlined pill */
+      '.btn-atc { flex:1; height:56px; border-radius:16px; border:1.5px solid var(--ink); background:var(--paper); color:var(--ink); font-family:var(--f-sans,sans-serif); font-size:14px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:background 0.15s, color 0.15s; } ' +
+      '.btn-atc:hover { background:var(--ink); color:var(--paper); } ' +
+      '.btn-atc:active { opacity:0.85; } ' +
+      /* Buy It Now — flat solid black, no gradient, no animation */
+      '.btn-bin { width:100%; height:60px; border-radius:16px; border:none; background:#000; color:#fff; font-family:var(--f-sans,sans-serif); font-size:16px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:opacity 0.15s; } ' +
+      '.btn-bin:hover { opacity:0.88; } ' +
+      '.btn-bin:active { opacity:0.75; } ' +
+      /* Secure checkout note */
+      '.secnote-pdp { display:flex; align-items:center; justify-content:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); font-family:var(--f-mono,monospace); margin-top:2px; } ' +
+    '</style>';
 
-    return premiumStyle +
-      qtyPricingHtml(p) +
-      '<div class="pdp-actions" style="gap:16px;">' +
-        '<div id="pdpPriceLine" style="display:none;font-size:14px;color:var(--ink-3);text-align:center;padding:4px 0"></div>' +
-        '<div class="pdp-actions-row" style="gap:16px; align-items:stretch;">' +
-          '<div class="qty qty-premium">' +
+    return styleBlock +
+      '<div class="pdp-actions" style="gap:14px;">' +
+        /* Row 1: qty selector + add to cart (matching screenshot proportions) */
+        '<div style="display:flex;gap:12px;align-items:stretch">' +
+          '<div class="qty qty-pdp">' +
             '<button data-qty="-1" aria-label="Decrease quantity" data-ic="minus" data-ic-size="16"></button>' +
             '<output id="pdpQty" aria-live="polite">1</output>' +
             '<button data-qty="1" aria-label="Increase quantity" data-ic="plus" data-ic-size="16"></button>' +
           '</div>' +
-          '<button id="pdpAdd" class="btn-add-cart">' + ICON('bag', 20) + ' Add to Cart</button>' +
+          '<button id="pdpAdd" class="btn-atc">' + ICON('bag', 18) + ' Add to Cart</button>' +
         '</div>' +
-        '<button id="pdpBuy" class="btn-buy-now btn-block">' +
-          '<span style="position:relative; z-index:2; display:flex; align-items:center; gap:8px;">' + ICON('zap', 20) + ' Buy It Now</span>' +
-        '</button>' +
-        '<div class="secnote" style="justify-content:center; font-size:13px; color:var(--ink-3); margin-top:-8px;">' + ICON('lock', 14) + ' Secure checkout · Razorpay</div>' +
+        /* Row 2: Buy It Now — full-width flat black */
+        '<button id="pdpBuy" class="btn-bin">Buy It Now</button>' +
+        /* Secure checkout note */
+        '<div class="secnote-pdp">' + ICON('lock', 12) + ' Secure Checkout · Razorpay</div>' +
+        /* Row 3: qty pricing table — only when configured, after secure note */
+        '<div id="pdpPriceLine" style="display:none;font-size:13px;color:var(--ink-3);text-align:center;letter-spacing:.02em"></div>' +
+        qtyPricingHtml(p) +
       '</div>';
   }
 
@@ -654,10 +660,11 @@
         '<span>' + U.esc(U.text(p.title)) + '</span></div>' +
         '<a class="btn btn-ghost" href="/shop" data-nav>Shop archive</a>';
     } else {
+      var unitPrice = resolveDisplayPrice(p, S.qty);
       bar.innerHTML =
-        '<div class="buybar-p"><span class="price">' + U.money(U.price(p) * S.qty) + '</span>' +
+        '<div class="buybar-p"><span class="price">' + U.money(unitPrice * S.qty) + '</span>' +
         '<span>' + U.esc(U.text(p.title)) + '</span></div>' +
-        '<button class="btn btn-primary" id="barAdd">Add to cart</button>';
+        '<button class="btn btn-primary" id="barAdd" style="border-radius:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;height:44px;padding:0 20px;">ADD TO CART</button>';
       var b = U.$('#barAdd');
       if (b) b.addEventListener('click', function () { addToCart(p, false); });
     }
