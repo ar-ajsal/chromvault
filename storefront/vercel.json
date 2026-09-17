@@ -10,12 +10,12 @@
       "destination": "http://16.16.217.90:5000/api/:path*"
     },
     {
-      "source": "/products/:slug*",
-      "destination": "/products/template.html"
+      "source": "/products/:slug",
+      "destination": "/products/template"
     },
     {
-      "source": "/collections/:slug*",
-      "destination": "/collections/template.html"
+      "source": "/collections/:slug",
+      "destination": "/collections/template"
     }
   ],
   "headers": [

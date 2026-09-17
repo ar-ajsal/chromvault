@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const icon = cat.icon || cat.image || "";
                         const slug = cat.slug || name.toLowerCase().replace(/\s+/g,"-");
                         return `
-                            <a href="/collections/${slug}.html" class="category-item above-fold" style="opacity:1;transform:none;">
+                            <a href="/collections/${slug}" class="category-item above-fold" style="opacity:1;transform:none;">
                                 <div class="category-image-wrapper">
                                     <img src="${icon}" alt="${name}" loading="eager" style="display:block;max-width:65%;max-height:65%;object-fit:contain;" onerror="this.style.display='none'">
                                 </div>
@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     addToCart(product, getQty());
-                    window.location.href = "/cart.html";
+                    window.location.href = "/cart";
                 }, true);
             });
 
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     addToCart(product, getQty());
-                    window.location.href = "/cart.html";
+                    window.location.href = "/cart";
                 }, true);
             });
 
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     addToCart(product, getQty());
-                    window.location.href = "/checkout.html";
+                    window.location.href = "/checkout";
                 }, true);
             });
 
@@ -230,7 +230,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const price = getPrice(p);
                             const img = getImage(p);
                             const slug = p.slug || p._id || p.id;
-                            const href = `/products/${slug}.html`;
+                            const href = `/products/${slug}`;
                             return `
                                 <div class="product-grid-item-template--22086712361118__product_listing_grid" style="border-right:1px solid #e5e5e5;border-bottom:1px solid #e5e5e5;padding:12px;background:#fff;">
                                     <a href="${href}" class="product-image-link-template--22086712361118__product_listing_grid" style="display:block;overflow:hidden;">
@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const price = getPrice(p);
                         const img = getImage(p);
                         const slug = p.slug || p._id || p.id;
-                        const href = `/products/${slug}.html`;
+                        const href = `/products/${slug}`;
                         return `
                             <div class="product-grid-item-template--22086712361118__product_listing_grid" style="border-right:1px solid #e5e5e5;border-bottom:1px solid #e5e5e5;padding:12px;background:#fff;">
                                 <a href="${href}" class="product-image-link-template--22086712361118__product_listing_grid" style="display:block;overflow:hidden;">
@@ -345,7 +345,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const checkCart = readCart();
         if (checkCart.length === 0) {
             alert("Your cart is empty.");
-            setTimeout(() => { window.location.href = "/cart.html"; }, 500);
+            setTimeout(() => { window.location.href = "/cart"; }, 500);
             return;
         }
 
