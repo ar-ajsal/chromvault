@@ -112,69 +112,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // --- PRODUCT GRIDS ---
-    const gridSelectors = [".product-grid", ".related-products-grid", 'div[class*="product-grid-template"]:not([class*="item"])', 'div[class*="product-grid-container-template"]:not([class*="item"])', 'div[class*="photo-prod-grid-template"]:not([class*="item"])'];
-    const gridsData = [];
-    for (const sel of gridSelectors) {
-        document.querySelectorAll(sel).forEach(el => {
-            if (el && el.children.length > 0 && !gridsData.find(g => g.container === el)) {
-                const tmpl = el.children[0].cloneNode(true);
-                gridsData.push({ container: el, template: tmpl });
-                el.innerHTML = "";
-                el.appendChild(tmpl.cloneNode(true));
-            }
-        });
-    }
-    if (gridsData.length > 0) {
+    // Never overwrite homepage products to preserve authentic layout and high-res images
+    const isHomePage = window.location.pathname === "/" || window.location.pathname === "/shop" || window.location.pathname === "/shop/" || window.location.pathname === "/index.html" || window.location.pathname === "";
+    const pathMatch = window.location.pathname.match(/^\/(?:collections|product-category)\/([^/]+)/);
+
+    if (!isHomePage && pathMatch) {
+        const currentCategorySlug = pathMatch[1].replace(".html", "");
         try {
-            let productsEndpoint = `${apiBase}/products?limit=100`;
-            const pathMatch = window.location.pathname.match(/^\/(?:collections|product-category)\/([^/]+)/);
-            const isHomePage = window.location.pathname === "/" || window.location.pathname === "/shop" || window.location.pathname === "/shop/";
-
-            if (pathMatch) {
-                const currentCategorySlug = pathMatch[1];
-                const catRes = await fetch(`${apiBase}/category/all`);
-                if (catRes.ok) {
-                    const catData = await catRes.json();
-                    const cats = catData.categories || catData.data || [];
-                    const matchedCat = cats.find(c => {
-                        const slug = c.slug || (c.name?.en || c.name || "").toLowerCase().replace(/\s+/g,"-");
-                        return slug === currentCategorySlug;
-                    });
-                    if (matchedCat) productsEndpoint = `${apiBase}/products?limit=100&category=${matchedCat._id}`;
-                }
-            } else if (isHomePage) {
-                productsEndpoint = `${apiBase}/products?limit=100&bestSeller=true`;
-            }
-
-            let res = await fetch(productsEndpoint);
-            let data = await res.json();
-            let products = data.products || data.data || data;
-
-            // Fallback for homepage if no best sellers are configured
-            if (isHomePage && products.length === 0) {
-                res = await fetch(`${apiBase}/products?limit=8`);
-                data = await res.json();
-                products = data.products || data.data || data;
-            }
-
-            if (res.ok) {
-                gridsData.forEach(({ container, template }) => {
-                    container.innerHTML = "";
-                    products.forEach(product => {
-                        const item = template.cloneNode(true);
-                        const pSlug = product.slug || product._id || product.id;
-                        item.querySelectorAll("a").forEach(a => { a.href = `/products/${pSlug}`; });
-                        const pImg = getImage(product);
-                        if (pImg) { item.querySelectorAll("img").forEach(img => { img.src = pImg; img.srcset = ""; }); }
-                        const pTitle = getTitle(product);
-                        const titleLinks = item.querySelectorAll('[class*="title"] a, h3 a, h2 a');
-                        if (titleLinks.length) { titleLinks.forEach(t => { t.innerText = pTitle; }); }
-                        else { item.querySelectorAll("h3, h2").forEach(t => { t.innerText = pTitle; }); }
-                        const pPrice = getPrice(product);
-                        item.querySelectorAll('[class*="price"]').forEach(p => { if (p.children.length === 0) p.innerText = `Rs. ${pPrice}`; });
-                        container.appendChild(item);
-                    });
+            const catRes = await fetch(`${apiBase}/category/all`);
+            if (catRes.ok) {
+                const catData = await catRes.json();
+                const cats = catData.categories || catData.data || [];
+                const matchedCat = cats.find(c => {
+                    const slug = c.slug || (c.name?.en || c.name || "").toLowerCase().replace(/\s+/g,"-");
+                    return slug === currentCategorySlug;
                 });
+                if (matchedCat) {
+                    const res = await fetch(`${apiBase}/products?limit=100&category=${matchedCat._id}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const products = data.products || data.data || [];
+                        if (Array.isArray(products) && products.length > 0) {
+                            const gridEl = document.querySelector(".product-grid");
+                            if (gridEl && gridEl.children.length > 0) {
+                                const template = gridEl.children[0].cloneNode(true);
+                                gridEl.innerHTML = "";
+                                products.forEach(product => {
+                                    const item = template.cloneNode(true);
+                                    const pSlug = product.slug || product._id || product.id;
+                                    item.querySelectorAll("a").forEach(a => { a.href = `/products/${pSlug}`; });
+                                    const pImg = getImage(product);
+                                    if (pImg) { item.querySelectorAll("img").forEach(img => { img.src = pImg; img.srcset = ""; }); }
+                                    const pTitle = getTitle(product);
+                                    const titleLinks = item.querySelectorAll('[class*="title"] a, h3 a, h2 a');
+                                    if (titleLinks.length) { titleLinks.forEach(t => { t.innerText = pTitle; }); }
+                                    else { item.querySelectorAll("h3, h2").forEach(t => { t.innerText = pTitle; }); }
+                                    const pPrice = getPrice(product);
+                                    item.querySelectorAll('[class*="price"]').forEach(p => { if (p.children.length === 0) p.innerText = `Rs. ${pPrice}`; });
+                                    gridEl.appendChild(item);
+                                });
+                            }
+                        }
+                    }
+                }
             }
         } catch (err) { console.error("[vantro] Grid hydration error:", err); }
     }
@@ -432,20 +412,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         c.appendChild(a);
                     });
                 });
-                document.querySelectorAll(".category-grid").forEach(c => {
-                    if (!c.children.length) return;
-                    const tmpl = c.children[0].cloneNode(true);
-                    c.innerHTML = "";
-                    cats.forEach(cat => {
-                        const item = tmpl.cloneNode(true);
-                        const name = cat.name?.en || cat.name || "Category";
-                        const slug = cat.slug || name.toLowerCase().replace(/\s+/g,"-");
-                        item.href=`/collections/${slug}`;
-                        const img=item.querySelector("img"); if(img&&cat.image){img.src=cat.image;img.srcset="";img.alt=name;}
-                        const t=item.querySelector(".category-title, h3"); if(t) t.innerText=name.toUpperCase();
-                        c.appendChild(item);
-                    });
-                });
+                // Note: Keep .category-grid in index.html untouched to preserve original high-res design and icons
             }
         }
     } catch(e){ console.error("[vantro] Category hydration error:",e); }
