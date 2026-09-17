@@ -94,6 +94,7 @@ const CUSTOMER_ROUTES = [
   /^\/$/,
   /^\/shop\/?$/,
   /^\/product-category\/[^/]+\/?$/,
+  /^\/collections\/[^/]+\/?$/,
   /^\/product\/id\/[^/]+\/?$/,
   /^\/product\/[^/]+\/?$/,
   /^\/cart\/?$/,
@@ -133,15 +134,8 @@ function looksLikeAsset(pathname) {
   return /\.[a-zA-Z0-9]{1,8}$/.test(pathname);
 }
 
-let shellCache = null;
-
-function readShell() {
-  // Re-read every request outside production so editing index.html does not
-  // need a restart; cache it in production where the file cannot change.
-  if (IS_PROD && shellCache) return shellCache;
-  const html = fs.readFileSync(path.join(storefrontRoot, 'index.html'), 'utf8');
-  if (IS_PROD) shellCache = html;
-  return html;
+function readHtml(relativePath) {
+  return fs.readFileSync(path.join(storefrontRoot, relativePath), 'utf8');
 }
 
 /* Contact details. config.js already ships the real published ones; these
@@ -183,141 +177,254 @@ function injectConfig(html) {
     : block + html;
 }
 
-function sendShell(res, status) {
+function sendVantroHtml(res, status, relativePath) {
   let html;
   try {
-    html = injectConfig(readShell());
+    const rawHtml = readHtml(relativePath);
+    const apiBase = STOREFRONT_API_BASE ? `window.__CHROMVAULT_API_BASE__=${jsonForScript(STOREFRONT_API_BASE)};` : '';
+
+    // earlyCapture: runs synchronously during HTML parsing (before any Shopify inline script)
+    // so document.addEventListener(…, capture=true) here wins over all later Shopify listeners.
+    const earlyCapture = `<script>
+(function(){
+  function readCart(){try{return JSON.parse(localStorage.getItem('cart')||'[]');}catch(e){return[];}}
+  function writeCart(c){try{localStorage.setItem('cart',JSON.stringify(c));}catch(e){}}
+  function isProductPage(){return window.location.pathname.startsWith('/products/');}
+  function getQty(){var el=document.querySelector('.qty-number-input,[name=quantity],input[type=number]');return parseInt((el&&el.value)||'1',10)||1;}
+  function getProduct(){
+    if(window.__vantro_product__)return window.__vantro_product__;
+    var slug=window.location.pathname.split('/').filter(Boolean).pop()||'';
+    if(slug.endsWith('.html'))slug=slug.replace('.html','');
+    var h1=document.querySelector('h1.product__title,.product__title h1,h1');
+    var priceEl=document.querySelector('.price-current,.price-item--regular,[class*=price]');
+    var priceNum=0;
+    if(priceEl){
+      var match=priceEl.innerText.replace(/,/g,'').match(/(\d+(?:\.\d+)?)/);
+      if(match)priceNum=parseFloat(match[1]);
+    }
+    if(!priceNum){
+      var metaPrice=document.querySelector('meta[property="og:price:amount"]');
+      if(metaPrice)priceNum=parseFloat(metaPrice.content||'0');
+    }
+    var imgEl=document.querySelector('.slider-main img,.product__media img,meta[property="og:image"]');
+    var imgSrc=(imgEl&&(imgEl.src||imgEl.content))||'';
+    return{id:slug,title:h1?h1.innerText.trim():slug,price:priceNum,image:imgSrc};
+  }
+  function pushToCart(p,qty){
+    if(!p)return;
+    var cart=readCart(),existing=cart.find(function(i){return i.id===p.id;});
+    if(existing){existing.quantity+=qty;}else{cart.push({id:p.id,title:p.title,price:p.price,image:p.image,quantity:qty});}
+    writeCart(cart);
+  }
+  document.addEventListener('submit',function(e){
+    if(!isProductPage())return;
+    var f=e.target;
+    var isAddForm=f&&(
+      (f.id&&/productform|productpage/i.test(f.id))||
+      f.classList.contains('shopify-product-form')||
+      f.classList.contains('product-form')||
+      (f.action&&f.action.indexOf('/cart/add')!==-1)||
+      f.dataset.type==='add-to-cart-form'
+    );
+    if(!isAddForm)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    pushToCart(getProduct(),getQty());
+    window.location.href='/cart';
+  },true);
+  document.addEventListener('click',function(e){
+    if(!isProductPage())return;
+    var addBtn=e.target&&(e.target.classList.contains('btn-add-cart-outline')?e.target:(e.target.closest&&e.target.closest('.btn-add-cart-outline')));
+    if(addBtn){
+      e.preventDefault();e.stopImmediatePropagation();
+      pushToCart(getProduct(),getQty());
+      window.location.href='/cart';
+      return;
+    }
+    var buyBtn=e.target&&(e.target.classList.contains('btn-buy-now-solid')?e.target:(e.target.closest&&e.target.closest('.btn-buy-now-solid')));
+    if(buyBtn){
+      e.preventDefault();e.stopImmediatePropagation();
+      pushToCart(getProduct(),getQty());
+      window.location.href='/checkout';
+      return;
+    }
+  },true);
+})();
+<\/script>`;
+
+    const antiFlicker = `<style>
+      body:not(.vantro-loaded) main { opacity: 0 !important; }
+      main { transition: opacity 0.3s ease-in-out; }
+    </style>
+    <script>setTimeout(function(){document.body.classList.add('vantro-loaded')}, 2500);</script>`;
+
+    const inject = `${earlyCapture}\n<script>${apiBase}<\/script>\n<script src="/vantro-api.js" defer><\/script>\n${antiFlicker}`;
+    
+    html = /<head[^>]*>/i.test(rawHtml)
+      ? rawHtml.replace(/<head[^>]*>/i, (m) => m + inject)
+      : inject + rawHtml;
   } catch (err) {
-    console.error('Storefront shell is unreadable:', err.message);
-    return res.status(500).type('txt')
-      .send('Storefront is misconfigured: storefront/index.html could not be read.');
+    console.error('Storefront HTML is unreadable:', err.message);
+    return res.status(500).type('txt').send('Storefront is misconfigured.');
   }
   res.status(status)
-    // The shell carries the injected API base and Maps key, so it must never be
-    // held in a shared cache. Versioned ?v= query strings handle JS and CSS.
     .set('Cache-Control', 'no-store, must-revalidate')
     .type('html')
     .send(html);
 }
 
 function mountStorefront() {
-  /* 1. Canonical URLs, before anything can serve a body.
-        The scrape lived under /chromvault.in/, and those paths are in browser
-        histories and possibly in search results. 301 keeps them working. */
-  app.use((req, res, next) => {
-    if (req.path === '/chromvault.in' || req.path.startsWith('/chromvault.in/')) {
-      const rest = req.path.slice('/chromvault.in'.length) || '/';
-      const qs = req.originalUrl.slice(req.path.length);
-      return res.redirect(301, rest + qs);
-    }
-    // /index.html is the shell's real filename; / is its address.
-    if (req.path === '/index.html') return res.redirect(301, '/');
-    next();
-  });
-
-  /* 2. Retired WordPress surface. /wp-admin redirects rather than 410s because
-        the operator is the only one who ever typed it, and they want the admin. */
-  app.use((req, res, next) => {
-    if (/^\/wp-admin(?:\/|$)/.test(req.path)) return res.redirect(302, ADMIN_URL);
-    if (RETIRED_PATHS.some((re) => re.test(req.path))) {
-      return res.status(410).type('txt')
-        .send('Gone. This address belonged to the previous WordPress site.');
-    }
-    next();
-  });
-
-  /* 3. API proxy. Same-origin /v1 and /api → the backend, so the browser makes no
-        cross-origin request and the backend sees no Origin header. */
+  // 1. API proxy
   const apiRootTarget = (process.env.API_PROXY_TARGET || 'http://localhost:5000').replace(/\/v1\/?$/, '');
   app.use('/api', createProxyMiddleware({
     target: apiRootTarget,
-    changeOrigin: true,
-    on: {
-      error: (err, req, res) => {
-        console.error(`[proxy] ${req.method} ${req.originalUrl} → ${apiRootTarget}/api: ${err.message}`);
-        if (res && !res.headersSent && res.status) {
-          res.status(502).type('json').send(JSON.stringify({
-            message: 'The API service is unreachable. Please try again.'
-          }));
-        }
-      }
-    }
+    changeOrigin: true
   }));
 
   app.use('/v1', createProxyMiddleware({
     target: API_TARGET,
-    changeOrigin: true,
-    // Express has already stripped the '/v1' mount prefix from req.url, so the
-    // proxy appends the remainder to API_TARGET (which ends in /v1) directly.
-    // No pathRewrite is needed or wanted here.
-    on: {
-      error: (err, req, res) => {
-        console.error(`[proxy] ${req.method} ${req.originalUrl} → ${API_TARGET}: ${err.message}`);
-        if (res && !res.headersSent && res.status) {
-          res.status(502).type('json').send(JSON.stringify({
-            message: 'The catalogue service is unreachable. Please try again.'
-          }));
-        }
-      }
-    }
+    changeOrigin: true
   }));
 
-  /* 4. The service worker. Served explicitly, ahead of express.static, so the
-        no-cache header is guaranteed — a service worker that gets cached for a
-        year cannot be updated, and browsers only bypass their own HTTP cache for
-        it once every 24 hours. */
-  app.get('/service-worker.js', (req, res) => {
-    res.set('Cache-Control', 'no-cache')
-      .set('Service-Worker-Allowed', '/')
-      .type('application/javascript')
-      .sendFile(path.join(storefrontRoot, 'service-worker.js'));
+  // 2. Specific routes for the multi-page template
+  app.get(['/', '/index.html'], (req, res) => sendVantroHtml(res, 200, 'index.html'));
+
+  // Cart and Checkout: serve a clean minimal shell so Shopify's HTTrack scripts don't fire
+  app.get(['/cart', '/cart/:item'], (req, res) => {
+    const apiBase = STOREFRONT_API_BASE ? `window.__CHROMVAULT_API_BASE__=${jsonForScript(STOREFRONT_API_BASE)};` : '';
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Bag — Vantro</title>
+  <link href="/cdn/shop/t/10/assets/theme8ae7.css" rel="stylesheet">
+  <script>${apiBase}<\/script>
+  <script src="/vantro-api.js" defer><\/script>
+  <style>
+    body { margin: 0; padding-block-start: var(--header-height, 60px); font-family: var(--font-body, sans-serif); background: #fff; }
+    #cart-shell { max-width: 860px; margin: 60px auto; padding: 0 24px; }
+  <\/style>
+</head>
+<body>
+  <header class="header-wrapper" style="position:fixed;top:0;left:0;right:0;z-index:200;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #f4f4f5;">
+    <a href="/" style="text-decoration:none;color:#000;font-weight:700;font-size:18px;letter-spacing:.1em;">VANTRO</a>
+    <a href="/" style="text-decoration:none;color:#71717a;font-size:12px;">Continue Shopping</a>
+  </header>
+  <main id="cart-shell">
+    <h1 style="font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:32px;">Your Bag</h1>
+    <div id="vantro-cart-root">Loading...</div>
+  </main>
+</body>
+</html>`;
+    res.status(200).set('Cache-Control', 'no-store').type('html').send(html);
   });
 
-  /* 5. The shell, at its canonical address. Registered before express.static so
-        the injected config is never bypassed by static file resolution. */
-  app.get('/', (req, res) => sendShell(res, 200));
+  app.get(['/checkout', '/checkout.html'], (req, res) => {
+    const apiBase = STOREFRONT_API_BASE ? `window.__CHROMVAULT_API_BASE__=${jsonForScript(STOREFRONT_API_BASE)};` : '';
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — Vantro</title>
+  <link href="/cdn/shop/t/10/assets/theme8ae7.css" rel="stylesheet">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"><\/script>
+  <script>${apiBase}<\/script>
+  <script src="/vantro-api.js" defer><\/script>
+  <style>
+    body { margin: 0; padding-block-start: var(--header-height, 60px); font-family: var(--font-body, sans-serif); background: #fff; }
+    #checkout-shell { max-width: 960px; margin: 60px auto; padding: 0 24px; }
+    @media(min-width:768px){#chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;}}
+    .chk-input { padding:14px; border:1px solid #e4e4e7; border-radius:4px; font-size:14px; width:100%; box-sizing:border-box; }
+    .chk-input:focus { outline:2px solid #000; border-color:#000; }
+    #btn-pay-now { background:#000; color:#fff; padding:16px; border:none; border-radius:4px; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; cursor:pointer; width:100%; margin-top:8px; }
+    #btn-pay-now:disabled { opacity:0.6; cursor:not-allowed; }
+  <\/style>
+</head>
+<body>
+  <header style="position:fixed;top:0;left:0;right:0;z-index:200;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #f4f4f5;">
+    <a href="/" style="text-decoration:none;color:#000;font-weight:700;font-size:18px;letter-spacing:.1em;">VANTRO</a>
+    <a href="/cart" style="text-decoration:none;color:#71717a;font-size:12px;">← Back to Bag</a>
+  </header>
+  <main id="checkout-shell">
+    <h1 style="font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:32px;">Checkout</h1>
+    <div id="chk-grid">
+      <div>
+        <h2 style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:20px;">Delivery Details</h2>
+        <form id="checkout-form" novalidate style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label for="chk-name" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">Full Name *</label>
+            <input id="chk-name" class="chk-input" type="text" placeholder="Full Name *" required>
+          </div>
+          <div>
+            <label for="chk-phone" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">Mobile Number *</label>
+            <input id="chk-phone" class="chk-input" type="tel" placeholder="Mobile Number (10 digits) *" required pattern="[0-9]{10}" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
+          </div>
+          <div>
+            <label for="chk-email" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">Email Address (Optional)</label>
+            <input id="chk-email" class="chk-input" type="email" placeholder="Email Address (optional)">
+          </div>
+          <div>
+            <label for="chk-street" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">Address *</label>
+            <input id="chk-street" class="chk-input" type="text" placeholder="House No / Street / Area *" required>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label for="chk-city" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">City *</label>
+              <input id="chk-city" class="chk-input" type="text" placeholder="City *" required>
+            </div>
+            <div>
+              <label for="chk-zip" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">PIN Code *</label>
+              <input id="chk-zip" class="chk-input" type="tel" placeholder="PIN Code *" required pattern="[0-9]{6}" maxlength="6" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label for="chk-state" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">State *</label>
+              <select id="chk-state" class="chk-input" required>
+                <option value="" disabled selected>Select State *</option>
+              </select>
+            </div>
+            <div>
+              <label for="chk-district" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">District *</label>
+              <select id="chk-district" class="chk-input" required>
+                <option value="" disabled selected>Select District *</option>
+              </select>
+            </div>
+          </div>
+          <button id="btn-pay-now" type="submit">Pay Now</button>
+        </form>
+      </div>
+      <div>
+        <h2 style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:20px;">Order Summary</h2>
+        <div id="checkout-summary-items"></div>
+        <div style="margin-top:20px;padding-top:16px;border-top:2px solid #000;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;font-weight:700;text-transform:uppercase;">Total</span>
+          <span id="checkout-total" style="font-size:20px;font-weight:700;">Rs. 0</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>`;
+    res.status(200).set('Cache-Control', 'no-store').type('html').send(html);
+  });
+  
+  app.get(['/products/:slug', '/products/:slug.html'], (req, res) => {
+    sendVantroHtml(res, 200, 'products/template.html');
+  });
 
-  /* 6. Real files. index:false stops serve-static answering '/' with the raw,
-        un-injected index.html. */
+  app.get(['/collections/:slug', '/collections/:slug.html'], (req, res) => {
+    sendVantroHtml(res, 200, 'collections/template.html');
+  });
+
+  // 3. Static assets
   app.use(express.static(storefrontRoot, {
     index: false,
-    etag: true,
-    lastModified: true,
-    redirect: false,
-    setHeaders: (res, filePath) => {
-      if (/\.(?:png|jpe?g|webp|avif|gif|ico|woff2?)$/i.test(filePath)) {
-        // Icons and fonts are stable; their names change when they do.
-        res.set('Cache-Control', 'public, max-age=2592000');   // 30 days
-      } else if (/\.webmanifest$/i.test(filePath)) {
-        res.set('Cache-Control', 'public, max-age=3600');
-      } else {
-        // CSS and JS carry a ?v= query string, but relying on the operator to
-        // bump it is a footgun. Revalidate instead: a 304 costs one round trip
-        // and a stale script costs a broken checkout.
-        res.set('Cache-Control', 'no-cache');
-      }
-    }
+    redirect: false
   }));
 
-  /* 7. Legacy image compatibility. If the production database still holds
-        WordPress-relative image paths (/wp-content/uploads/…) rather than
-        Cloudinary URLs, those images keep resolving. Scoped to uploads/ only —
-        the themes, plugins and scripts under wp-content are not served.
-        Mounted only when the directory actually exists, so a deployment that
-        drops the scrape entirely does not gain a broken route. */
-  const uploadsDir = path.join(legacySiteRoot, 'wp-content', 'uploads');
-  if (fs.existsSync(uploadsDir)) {
-    app.use('/wp-content/uploads', express.static(uploadsDir, {
-      index: false,
-      redirect: false,
-      maxAge: '30d'
-    }));
-  }
-
-  /* 8. Everything left over. An asset-looking path is a genuine 404; a route
-        shape the SPA knows gets the shell with 200; anything else gets the shell
-        with 404 so the status is honest while the customer still sees a styled
-        page with navigation instead of bare text. */
+  // 4. Catch-all fallback
   app.use((req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       return res.status(405).type('txt').send('Method Not Allowed');
@@ -325,7 +432,7 @@ function mountStorefront() {
     if (looksLikeAsset(req.path)) {
       return res.status(404).type('txt').send('Not Found');
     }
-    sendShell(res, isCustomerRoute(req.path) ? 200 : 404);
+    sendVantroHtml(res, 404, 'index.html');
   });
 }
 

@@ -166,8 +166,8 @@
           fi.addEventListener('change', function () {
             var file = fi.files && fi.files[0];
             if (!file) return;
-            uploadLabel.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block"></div> Uploading…';
-            CC.API.upload(file).then(function (res) {
+            uploadLabel.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block"></div> Removing BG...';
+            CC.API.uploadProductImage(file).then(function (res) {
               var url = typeof res === 'string' ? res : (res && (res.url || res.secure_url || res.path));
               if (!url) throw new Error('Upload failed');
               urlInput.value = url;

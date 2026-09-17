@@ -141,8 +141,10 @@ const PORT = process.env.PORT || 5000;
 // Bind to 0.0.0.0 in production so AWS EC2 / containers accept external traffic.
 // On localhost this is a no-op — Node defaults to 0.0.0.0 anyway.
 const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined;
-app.listen(PORT, HOST, () => {
-  console.log(`Server is running on ${HOST || 'localhost'}:${PORT}`);
-});
-module.exports = app;
 
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, HOST, () => {
+    console.log(`Server is running on ${HOST || 'localhost'}:${PORT}`);
+  });
+}
+module.exports = app;
