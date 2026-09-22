@@ -349,7 +349,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        if (!document.getElementById("checkout-form")) {
+        if (!document.getElementById("vantro-checkout-ui")) {
             const mainEl = document.querySelector("main, #MainContent, .main-content, .page-content, body");
             const checkoutHtml = `
             <div id="vantro-checkout-ui" style="max-width:960px;margin:100px auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:40px;font-family:inherit;">
