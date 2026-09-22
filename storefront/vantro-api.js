@@ -527,7 +527,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 clearTimeout(geoapifyTimeout);
                 geoapifyTimeout = setTimeout(async () => {
                     try {
-                        const apiKey = '416db992171440c1b0591924c677962b';
+                        const apiKey = '36fa05b75aa84c5994c9e050ef718581';
                         const res = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(val)}&filter=countrycode:in&apiKey=${apiKey}`);
                         const data = await res.json();
                         
