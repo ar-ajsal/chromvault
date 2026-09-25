@@ -67,8 +67,8 @@
        env (STOREFRONT_WHATSAPP / STOREFRONT_EMAIL / STOREFRONT_INSTAGRAM) so a
        staging deploy does not have to point at the live inbox. */
     CONTACT: Object.assign({
-      whatsapp: '918086096111',          // digits only, country code first
-      whatsappLabel: '+91 80860 96111',
+      whatsapp: '918921199160',          // digits only, country code first
+      whatsappLabel: '+91 89211 99160',
       email: 'chromvaultindia@gmail.com',
       instagram: 'chromvault.in',
       replyWithin: 'Usually within 24 hours'

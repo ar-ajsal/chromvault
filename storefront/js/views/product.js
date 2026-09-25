@@ -225,28 +225,6 @@
           '<span class="pdp-tax-note">Inclusive of all taxes · Express pan-India air delivery</span>' +
         '</div>' +
 
-        /* Feature Highlight Bullets */
-        '<div class="pdp-feature-bullets">' +
-          '<div class="pdp-feature-bullet">' +
-            '<svg class="pdp-feature-check" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">' +
-              '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>' +
-            '</svg>' +
-            '<span>Crystal Clear Sound</span>' +
-          '</div>' +
-          '<div class="pdp-feature-bullet">' +
-            '<svg class="pdp-feature-check" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">' +
-              '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>' +
-            '</svg>' +
-            '<span>Premium Chrome</span>' +
-          '</div>' +
-          '<div class="pdp-feature-bullet">' +
-            '<svg class="pdp-feature-check" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">' +
-              '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>' +
-            '</svg>' +
-            '<span>Built for Daily Use</span>' +
-          '</div>' +
-        '</div>' +
-
         '<div class="pdp-checkout-deck">' +
           stockUrgencyHtml(stock) +
           variantHtml(p) +
