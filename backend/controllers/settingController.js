@@ -6,7 +6,8 @@ exports.getSetting = async (req, res) => {
     const { key } = req.params;
     const setting = await Setting.findOne({ key });
     if (!setting) {
-      return res.status(404).json({ message: 'Setting not found' });
+      // Return 200 + null so callers can distinguish "not configured" from errors.
+      return res.status(200).json({ key, value: null });
     }
     res.json({ key: setting.key, value: setting.value });
   } catch (err) {

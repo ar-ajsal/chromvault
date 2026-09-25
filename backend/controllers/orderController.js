@@ -20,8 +20,8 @@ const getRazorpayInstance = () => {
 // 1. Create Razorpay Order
 // Supports both direct amount (in paise, >= 100) and storefront cart calculation.
 const createRazorpayOrder = async (req, res) => {
-  try {
-    const { cart, currency = 'INR', amount, receipt } = req.body;
+    try {
+    const { cart, currency = 'INR', amount, receipt, deliveryAddress } = req.body;
     let orderAmountPaise;
 
     if (cart && Array.isArray(cart) && cart.length > 0) {
@@ -47,6 +47,31 @@ const createRazorpayOrder = async (req, res) => {
 
     if (orderAmountPaise < 100) {
       return res.status(400).send({ message: 'Amount must be at least 100 paise (₹1.00).' });
+    }
+
+    // --- Strict Frontend Pre-Payment Validation ---
+    if (deliveryAddress && deliveryAddress.zip) {
+      if (!/^\d{6}$/.test(deliveryAddress.zip)) {
+        return res.status(400).send({ message: 'Invalid 6-digit Pincode.' });
+      }
+      try {
+        const pinRes = await fetch(`https://api.postalpincode.in/pincode/${deliveryAddress.zip}`);
+        const pinData = await pinRes.json();
+        if (pinData && pinData[0] && pinData[0].Status === 'Success' && pinData[0].PostOffice) {
+          const pinState = pinData[0].PostOffice[0].State;
+          const pinDist = pinData[0].PostOffice[0].District;
+          const sState = (deliveryAddress.state || '').toLowerCase();
+          const pState = pinState.toLowerCase();
+          const stateMismatch = !pState.includes(sState) && !sState.includes(pState);
+          if (stateMismatch) {
+             return res.status(400).send({ message: `PIN code mismatch: PIN belongs to ${pinState}. Please verify your State.` });
+          }
+        } else if (pinData && pinData[0] && pinData[0].Status === 'Error') {
+           return res.status(400).send({ message: 'Invalid Indian Pincode provided.' });
+        }
+      } catch(err) {
+        console.log('PIN validation API failed during create order (ignored due to network):', err.message);
+      }
     }
 
     let razorpay;
@@ -535,6 +560,46 @@ const getBestSellerChart = async (req, res) => {
   }
 };
 
+// 9. Public Order Tracking
+const trackOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { phone } = req.query;
+
+    if (!orderId || !phone) {
+      return res.status(400).send({ message: 'Order ID and Phone number are required for tracking.' });
+    }
+
+    const order = await Order.findOne({ 
+      orderId: new RegExp(`^${orderId}$`, 'i'),
+      phone: new RegExp(`${phone}$`) // Match end of phone number
+    });
+
+    if (!order) {
+      return res.status(404).send({ message: 'Order not found. Please check your Order ID and Phone number.' });
+    }
+
+    res.send({
+      success: true,
+      order: {
+        orderId: order.orderId,
+        status: order.status,
+        date: order.createdAt,
+        total: order.total,
+        paymentStatus: order.paymentStatus,
+        shippingDetails: order.shippingDetails || {},
+        items: (order.cart || []).map(item => ({
+          name: item.name || item.title || 'Product',
+          quantity: item.quantity,
+          image: item.image || ''
+        }))
+      }
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 module.exports = {
   createRazorpayOrder,
   verifyPaymentAndCreateOrder,
@@ -545,5 +610,6 @@ module.exports = {
   getDashboardAmount,
   getDashboardCount,
   getDashboardRecentOrder,
-  getBestSellerChart
+  getBestSellerChart,
+  trackOrder
 };

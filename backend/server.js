@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-// ─── Fail fast if critical secrets are missing ─────────────
+// Fail fast if critical secrets are missing
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET is not set. Refusing to start. Copy backend/.env.example to backend/.env and fill it in.');
   process.exit(1);
@@ -14,9 +14,9 @@ if (!process.env.MONGODB_URI) {
 }
 
 const app = express();
-app.set('trust proxy', 1); // behind a reverse proxy in production (correct client IP / protocol)
+app.set('trust proxy', 1);
 
-// ─── CORS: allow configured origins, Vercel deployments, localhost ──────────
+// CORS: allow configured origins, Vercel deployments, localhost
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
   .map((o) => o.trim())
@@ -24,7 +24,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS || '')
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow same-origin / non-browser requests (no Origin header) e.g. curl, server-to-server.
+    // Allow same-origin / non-browser requests (no Origin header)
     if (!origin) return callback(null, true);
 
     // Allow if no CORS_ORIGINS configured or wildcard "*" present
@@ -70,9 +70,7 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// ─── Lightweight request logging ───────────────────────────
-// One structured line per request (method, path, status, duration). Kept
-// dependency-free; silenced during tests to avoid noisy output.
+// Lightweight request logging
 if (process.env.NODE_ENV !== 'test') {
   app.use((req, res, next) => {
     const start = Date.now();
@@ -84,11 +82,9 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-// ─── Health check ──────────────────────────────────────────
-// Reports process liveness and DB connectivity so load balancers / uptime
-// monitors can probe the service. Returns 503 while the DB is not connected.
+// Health check
 app.get(['/health', '/v1/health'], (req, res) => {
-  const dbState = mongoose.connection.readyState; // 0=disconnected,1=connected,2=connecting,3=disconnecting
+  const dbState = mongoose.connection.readyState;
   const dbConnected = dbState === 1;
   res.status(dbConnected ? 200 : 503).send({
     status: dbConnected ? 'ok' : 'degraded',
@@ -122,27 +118,24 @@ app.get('/', (req, res) => {
   res.send('Chromvault Backend API is running...');
 });
 
-// ─── 404 for unknown routes ────────────────────────────────
+// 404 for unknown routes
 app.use((req, res) => {
   res.status(404).send({ message: 'Route not found.' });
 });
 
-// ─── Centralized error handler ─────────────────────────────
+// Centralized error handler
 app.use((err, req, res, next) => {
   console.error('[error]', err && err.message ? err.message : err);
   if (err && /not allowed by CORS/.test(err.message || '')) {
     return res.status(403).send({ message: 'Origin not allowed.' });
   }
-  // Expose the real error message to the frontend for debugging
   res.status(500).send({ message: err ? err.message : 'Internal server error.' });
 });
 
 const PORT = process.env.PORT || 5000;
-// Bind to 0.0.0.0 in production so AWS EC2 / containers accept external traffic.
-// On localhost this is a no-op — Node defaults to 0.0.0.0 anyway.
 const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined;
 app.listen(PORT, HOST, () => {
   console.log(`Server is running on ${HOST || 'localhost'}:${PORT}`);
 });
-module.exports = app;
 
+module.exports = app;

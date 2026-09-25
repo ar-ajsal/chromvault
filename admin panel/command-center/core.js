@@ -89,6 +89,12 @@
       fd.append('file', file);
       return request('POST', '/cloudinary', fd, { raw: true });
     },
+    // Product image upload with background removal
+    uploadProductImage: function (file) {
+      var fd = new FormData();
+      fd.append('file', file);
+      return request('POST', '/cloudinary/removebg', fd, { raw: true });
+    },
     // Login is public (no bounce on 401 — we show inline error instead)
     login: function (email, password) {
       return fetch(API_BASE + '/admin/login', {

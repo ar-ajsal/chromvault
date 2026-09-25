@@ -102,9 +102,40 @@ function normalise(re) {
   const { server } = require(path.join(base, 'frontendServer.js'));
   await new Promise((r) => (server.listening ? r() : server.once('listening', r)));
 
-  /* ── The shell and its injected config ─────────────────────────────────── */
-  const home = await get('/');
-  check('GET / -> 200', home.status, 200);
+  const isVantro = !fs.existsSync(path.join(repo, 'storefront', 'js', 'app.js'));
+
+  if (isVantro) {
+    const home = await get('/');
+    check('GET / -> 200', home.status, 200);
+    check('GET / is html', /^text\/html/.test(home.headers['content-type'] || ''), true);
+    check('GET / is never cached', /no-store/.test(home.headers['cache-control'] || ''), true);
+    check('shell injects API base', home.body.includes('window.__CHROMVAULT_API_BASE__="/v1"'), true);
+
+    const cart = await get('/cart');
+    check('GET /cart -> 200', cart.status, 200);
+    check('GET /cart contains cart root', cart.body.includes('id="vantro-cart-root"'), true);
+
+    const checkout = await get('/checkout');
+    check('GET /checkout -> 200', checkout.status, 200);
+    check('GET /checkout contains checkout form', checkout.body.includes('id="checkout-form"'), true);
+
+    const product = await get('/products/black');
+    check('GET /products/:slug -> 200', product.status, 200);
+    check('product page injects earlyCapture', product.body.includes('pushToCart'), true);
+
+    const js = await get('/vantro-api.js');
+    check('GET /vantro-api.js -> 200', js.status, 200);
+    check('vantro-api.js is served as javascript', /javascript/.test(js.headers['content-type'] || ''), true);
+
+    const admin = await get('/admin');
+    check('/admin -> 302', admin.status, 302);
+
+    const posted = await get('/definitely-not-a-route', 'POST');
+    check('POST to an unknown path -> 405', posted.status, 405);
+
+    console.log(`\n=== ${pass} passed, ${fail} failed ===`);
+    process.exit(fail ? 1 : 0);
+  }
   check('GET / is html', /^text\/html/.test(home.headers['content-type'] || ''), true);
   check('GET / is never cached', /no-store/.test(home.headers['cache-control'] || ''), true);
   check('shell injects API base', home.body.includes('window.__CHROMVAULT_API_BASE__="/v1"'), true);

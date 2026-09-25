@@ -10,7 +10,8 @@ const {
   getDashboardAmount,
   getDashboardCount,
   getDashboardRecentOrder,
-  getBestSellerChart
+  getBestSellerChart,
+  trackOrder
 } = require('../controllers/orderController');
 
 const { protectAdmin } = require('../middleware/authMiddleware');
@@ -21,6 +22,7 @@ const { protectAdmin } = require('../middleware/authMiddleware');
 router.post('/create-order', createRazorpayOrder);
 router.post('/create-razorpay-order', createRazorpayOrder);
 router.post('/verify-payment', verifyPaymentAndCreateOrder);
+router.get('/track/:orderId', trackOrder);
 
 // ─── Admin-only: Dashboard Analytics ───────────────────────
 router.get('/dashboard-amount', protectAdmin, getDashboardAmount);

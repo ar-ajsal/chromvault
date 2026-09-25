@@ -1,5 +1,28 @@
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const Admin = require('../models/Admin');
 const Product = require('../models/Product');
+
+/**
+ * Lightweight "is this request from an admin?" check.
+ * Reads the Bearer token if present and verifies it against the Admin collection.
+ * Returns true only when a valid, live admin token is supplied.
+ * Never throws — failures are treated as "not admin".
+ */
+async function isAdminRequest(req) {
+  try {
+    const header = req.headers.authorization || req.headers.Authorization || '';
+    if (!header.startsWith('Bearer ')) return false;
+    const token = header.split(' ')[1];
+    if (!token || !process.env.JWT_SECRET) return false;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || !decoded.id || (decoded.type && decoded.type !== 'admin')) return false;
+    const admin = await Admin.findById(decoded.id).select('_id').lean();
+    return Boolean(admin);
+  } catch (_) {
+    return false;
+  }
+}
 
 // Distinguish Mongoose validation errors (client's fault → 400) from real
 // server errors (→ 500). Keeps HTTP semantics correct for callers.
@@ -49,10 +72,17 @@ const getAllProducts = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
-    const { category, title } = req.query;
+    const { category, title, bestSeller } = req.query;
+
+    // Unauthenticated storefront requests must only see published products.
+    // Admin panel always sends a Bearer token, so hidden products remain
+    // visible there.
+    const adminReq = await isAdminRequest(req);
 
     const query = {};
+    if (!adminReq) query.status = 'show'; // hide unpublished from storefront
     if (category) query.categories = category;
+    if (bestSeller === 'true') query.isBestSeller = true;
     if (title) {
       query.$or = [
         { 'title.en': { $regex: title, $options: 'i' } },
@@ -162,6 +192,13 @@ const getProductBySlug = async (req, res) => {
     // Root-cause fix: previously returned 200 with a null body, so the
     // storefront couldn't tell "not found" from a real product.
     if (!product) return res.status(404).send({ message: 'Product not found!' });
+
+    // Do not expose hidden products to unauthenticated (storefront) requests.
+    if (product.status === 'hide') {
+      const adminReq = await isAdminRequest(req);
+      if (!adminReq) return res.status(404).send({ message: 'Product not found!' });
+    }
+
     res.status(200).send(product);
   } catch (err) {
     sendError(res, err, 'Failed to fetch product.');

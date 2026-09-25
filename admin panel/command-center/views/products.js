@@ -342,7 +342,10 @@
     body.innerHTML =
       '<div class="dsec"><div class="dsec-title">' + icon('image') + 'Images</div>' +
       '<div class="uploader" id="uploader"></div>' +
-      '<div class="hint" style="font-size:11px;color:var(--ink-3)">First image is the cover. JPG/PNG/WebP.</div></div>' +
+      '<div class="hint" style="font-size:11px;color:var(--ink-3);display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
+      '<span>First image is the cover. JPG/PNG/WebP.</span>' +
+      '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--ink-2);font-weight:600;"><input type="checkbox" id="removeBgCheck" checked> Remove Background (AI)</label>' +
+      '</div></div>' +
 
       '<div class="dsec"><div class="dsec-title">' + icon('tag') + 'Details</div>' +
       '<div class="field"><label>Title <span style="color:var(--bad)">*</span></label><input class="input" id="fTitle" value="' + esc(CC.locName(p.title, '')) + '" placeholder="Product title"></div>' +
@@ -497,9 +500,12 @@
       var fi = host.querySelector('#fileInput');
       fi.addEventListener('change', function () {
         var file = fi.files && fi.files[0]; if (!file) return;
+        var removeBg = body.querySelector('#removeBgCheck') ? body.querySelector('#removeBgCheck').checked : true;
         var slot = host.querySelector('.up-slot');
-        slot.innerHTML = '<div class="spinner" style="width:22px;height:22px;border-width:2px"></div>';
-        CC.API.upload(file).then(function (res) {
+        slot.innerHTML = '<div class="spinner" style="width:22px;height:22px;border-width:2px;margin-bottom:8px"></div><div style="font-size:11px;text-align:center;color:var(--text-dim)">' + (removeBg ? 'Removing BG...' : 'Uploading...') + '</div>';
+        slot.style.flexDirection = 'column';
+        var uploadReq = removeBg ? CC.API.uploadProductImage(file) : CC.API.upload(file);
+        uploadReq.then(function (res) {
           var url = typeof res === 'string' ? res : (res && (res.url || res.secure_url || res.path));
           if (!url) throw new Error('Upload failed.');
           images.push(url); renderUploader();

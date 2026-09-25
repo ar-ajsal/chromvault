@@ -30,7 +30,11 @@ const addCategory = async (req, res) => {
 
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find({}).sort({ createdAt: -1 });
+    // Include a ?all=1 escape hatch used by the admin panel (which also sends
+    // a Bearer token) so it can still display hidden categories.
+    const showAll = req.query.all === '1';
+    const filter = showAll ? {} : { status: 'show' };
+    const categories = await Category.find(filter).sort({ createdAt: -1 });
     res.status(200).send({ categories });
   } catch (err) {
     sendError(res, err, 'Failed to fetch categories.');
