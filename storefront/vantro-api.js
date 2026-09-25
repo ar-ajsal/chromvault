@@ -349,7 +349,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        if (!document.getElementById("vantro-checkout-ui")) {
+        if (!document.getElementById("checkout-form")) {
             const mainEl = document.querySelector("main, #MainContent, .main-content, .page-content, body");
             const checkoutHtml = `
             <div id="vantro-checkout-ui" style="max-width:960px;margin:100px auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:40px;font-family:inherit;">
@@ -369,31 +369,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <input id="chk-email" type="email" placeholder="Email Address (optional)" style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
                   </div>
                   <div>
-                    <label for="chk-zip" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">PIN Code *</label>
-                    <input id="chk-zip" type="tel" placeholder="Enter 6-digit PIN Code *" required pattern="[0-9]{6}" maxlength="6" style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
+                    <label for="chk-street" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">Address *</label>
+                    <input id="chk-street" type="text" placeholder="House No / Street / Area *" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                      <label for="chk-city" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">City *</label>
+                      <input id="chk-city" type="text" placeholder="City *" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
+                    </div>
+                    <div>
+                      <label for="chk-zip" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">PIN Code *</label>
+                      <input id="chk-zip" type="tel" placeholder="PIN Code *" required pattern="[0-9]{6}" maxlength="6" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
+                    </div>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                     <div>
                       <label for="chk-state" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">State *</label>
-                      <select id="chk-state" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;background:#f9fafb;">
+                      <select id="chk-state" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
                         <option value="" disabled selected>Select State *</option>
                       </select>
                     </div>
                     <div>
                       <label for="chk-district" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">District *</label>
-                      <select id="chk-district" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;background:#f9fafb;">
+                      <select id="chk-district" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
                         <option value="" disabled selected>Select District *</option>
                       </select>
                     </div>
-                  </div>
-                  <div style="position:relative;">
-                    <label for="chk-street" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">Address *</label>
-                    <input id="chk-street" type="text" placeholder="Start typing your address..." autocomplete="off" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
-                    <div id="address-suggestions" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 4px 4px;z-index:10;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 6px rgba(0,0,0,0.1);"></div>
-                  </div>
-                  <div>
-                    <label for="chk-city" style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;margin-bottom:6px;display:block;">City / Town / Village *</label>
-                    <input id="chk-city" type="text" placeholder="City / Town / Village *" required style="padding:14px;border:1px solid #e4e4e7;border-radius:4px;font-size:14px;width:100%;box-sizing:border-box;">
                   </div>
                   <button id="btn-pay-now" type="submit" style="background:#000;color:#fff;padding:16px;border:none;border-radius:4px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;width:100%;margin-top:8px;">Pay Now</button>
                 </form>
@@ -428,11 +429,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        let indiaData = null;
         fetch('/india-districts.json')
             .then(res => res.json())
             .then(data => {
-                indiaData = data;
                 const stateSelect = document.getElementById("chk-state");
                 const districtSelect = document.getElementById("chk-district");
                 if (stateSelect && districtSelect && stateSelect.options.length <= 1) {
@@ -458,123 +457,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             })
             .catch(err => console.error('Failed to load districts JSON:', err));
-
-        // PIN Code Auto-fetch
-        const zipInput = document.getElementById("chk-zip");
-        if (zipInput) {
-            zipInput.addEventListener("input", async (e) => {
-                let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
-                e.target.value = val;
-                
-                if (val.length === 6 && indiaData) {
-                    try {
-                        const res = await fetch('https://api.postalpincode.in/pincode/' + val);
-                        const data = await res.json();
-                        if (data && data[0].Status === 'Success') {
-                            const postOffice = data[0].PostOffice[0];
-                            const stateName = postOffice.State;
-                            const districtName = postOffice.District;
-                            
-                            const stateSelect = document.getElementById("chk-state");
-                            const districtSelect = document.getElementById("chk-district");
-                            const cityInput = document.getElementById("chk-city");
-                            
-                            // Auto-select state
-                            let stateMatch = Array.from(stateSelect.options).find(o => o.text.toLowerCase() === stateName.toLowerCase());
-                            if (stateMatch) {
-                                stateSelect.value = stateMatch.value;
-                                // Trigger change to populate districts
-                                stateSelect.dispatchEvent(new Event('change'));
-                            }
-                            
-                            // Auto-select district
-                            setTimeout(() => {
-                                let distMatch = Array.from(districtSelect.options).find(o => o.text.toLowerCase() === districtName.toLowerCase());
-                                if (distMatch) {
-                                    districtSelect.value = distMatch.value;
-                                } else {
-                                    const opt = document.createElement('option');
-                                    opt.value = districtName;
-                                    opt.text = districtName;
-                                    districtSelect.add(opt);
-                                    districtSelect.value = districtName;
-                                }
-                            }, 50);
-                            
-                            // Auto-fill city with Region or Block
-                            if (!cityInput.value) {
-                                cityInput.value = postOffice.Block || postOffice.Region || postOffice.Name;
-                            }
-                        }
-                    } catch (err) {
-                        console.error('Pincode fetch error:', err);
-                    }
-                }
-            });
-        }
-
-        // Geoapify Address Autocomplete
-        const streetInput = document.getElementById("chk-street");
-        const suggestionsBox = document.getElementById("address-suggestions");
-        let geoapifyTimeout;
-        if (streetInput && suggestionsBox) {
-            streetInput.addEventListener("input", (e) => {
-                const val = e.target.value;
-                if (val.length < 3) {
-                    suggestionsBox.style.display = 'none';
-                    return;
-                }
-                clearTimeout(geoapifyTimeout);
-                geoapifyTimeout = setTimeout(async () => {
-                    try {
-                        const apiKey = '36fa05b75aa84c5994c9e050ef718581';
-                        const res = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(val)}&filter=countrycode:in&apiKey=${apiKey}`);
-                        const data = await res.json();
-                        
-                        if (data.features && data.features.length > 0) {
-                            suggestionsBox.innerHTML = '';
-                            data.features.forEach(f => {
-                                const props = f.properties;
-                                const item = document.createElement('div');
-                                item.style.padding = '10px 14px';
-                                item.style.cursor = 'pointer';
-                                item.style.borderBottom = '1px solid #f4f4f5';
-                                item.style.fontSize = '13px';
-                                item.innerText = props.formatted;
-                                
-                                item.addEventListener('mouseover', () => item.style.background = '#f9fafb');
-                                item.addEventListener('mouseout', () => item.style.background = '#fff');
-                                
-                                item.addEventListener('click', () => {
-                                    streetInput.value = props.address_line1 || props.name || props.street || props.formatted.split(',')[0];
-                                    suggestionsBox.style.display = 'none';
-                                    
-                                    const cityInput = document.getElementById("chk-city");
-                                    const zipInp = document.getElementById("chk-zip");
-                                    if (props.city && !cityInput.value) cityInput.value = props.city;
-                                    if (props.postcode && !zipInp.value) {
-                                        zipInp.value = props.postcode;
-                                        zipInp.dispatchEvent(new Event('input')); // trigger pincode fetch
-                                    }
-                                });
-                                suggestionsBox.appendChild(item);
-                            });
-                            suggestionsBox.style.display = 'block';
-                        } else {
-                            suggestionsBox.style.display = 'none';
-                        }
-                    } catch (err) {
-                        console.error('Geoapify error:', err);
-                    }
-                }, 300);
-            });
-            
-            document.addEventListener("click", (e) => {
-                if (e.target !== streetInput && e.target !== suggestionsBox) {
-                    suggestionsBox.style.display = 'none';
-                }
-            });
-        }
 
         const form = document.getElementById("checkout-form");
         if (form) {
